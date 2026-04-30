@@ -6,11 +6,14 @@ import { requireLojista, AuthRequest } from '../middleware/auth.js';
 export const produtosRouter = Router();
 
 produtosRouter.get('/', async (req, res) => {
-  const lojaId = req.query.lojaId as string;
-  if (!lojaId) { res.status(400).json({ error: 'lojaId obrigatório' }); return; }
+  const lojaId = Array.isArray(req.query.lojaId) ? String(req.query.lojaId[0]) : String(req.query.lojaId ?? '');
+  if (!lojaId || lojaId === 'undefined') {
+    res.status(400).json({ error: 'lojaId obrigatório' });
+    return;
+  }
   const produtos = await prisma.produto.findMany({
     where: { lojaId, ativo: true },
-    orderBy: { destaque: 'desc' }
+    orderBy: { destaque: 'desc' },
   });
   res.json(produtos);
 });
@@ -18,7 +21,7 @@ produtosRouter.get('/', async (req, res) => {
 produtosRouter.get('/admin', requireLojista, async (req: AuthRequest, res) => {
   const produtos = await prisma.produto.findMany({
     where: { lojaId: req.user!.lojaId },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
   res.json(produtos);
 });
@@ -33,17 +36,18 @@ const updateSchema = z.object({
 });
 
 produtosRouter.patch('/:id', requireLojista, async (req: AuthRequest, res) => {
+  const produtoId = String(req.params.id);
   const parse = updateSchema.safeParse(req.body);
   if (!parse.success) { res.status(400).json({ error: parse.error.errors }); return; }
 
   const produto = await prisma.produto.findFirst({
-    where: { id: req.params.id, lojaId: req.user!.lojaId }
+    where: { id: produtoId, lojaId: req.user!.lojaId },
   });
   if (!produto) { res.status(404).json({ error: 'Produto não encontrado' }); return; }
 
   const updated = await prisma.produto.update({
-    where: { id: req.params.id },
-    data: parse.data
+    where: { id: produtoId },
+    data: parse.data,
   });
   res.json(updated);
 });

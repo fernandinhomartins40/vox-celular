@@ -40,7 +40,8 @@ fidelidadeRouter.post('/resgatar/:recompensaId', requireAuth, async (req: AuthRe
   const cliente = await prisma.cliente.findFirst({ where: { usuarioId: req.user!.userId } });
   if (!cliente) { res.status(404).json({ error: 'Cliente não encontrado' }); return; }
 
-  const recompensa = await prisma.recompensaCatalogo.findUnique({ where: { id: req.params.recompensaId } });
+  const recompensaId = String(req.params.recompensaId);
+  const recompensa = await prisma.recompensaCatalogo.findUnique({ where: { id: recompensaId } });
   if (!recompensa) { res.status(404).json({ error: 'Recompensa não encontrada' }); return; }
   if (cliente.pontos < recompensa.pontos) { res.status(400).json({ error: 'Pontos insuficientes' }); return; }
 

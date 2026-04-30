@@ -5,52 +5,58 @@ import { requireAuth, requireLojista, AuthRequest } from '../middleware/auth.js'
 export const pedidosRouter = Router();
 
 pedidosRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
-  const { status, search } = req.query as Record<string, string>;
+  const status = Array.isArray(req.query.status) ? String(req.query.status[0]) : String(req.query.status ?? '');
+  const search = Array.isArray(req.query.search) ? String(req.query.search[0]) : String(req.query.search ?? '');
+
   const where: Record<string, unknown> = { lojaId: req.user!.lojaId };
-  if (status && status !== 'Todos') where.status = status.replace(' ', '_').toUpperCase();
-  if (search) where.OR = [
-    { codigo: { contains: search, mode: 'insensitive' } },
-    { cliente: { usuario: { nome: { contains: search, mode: 'insensitive' } } } }
-  ];
+  if (status && status !== 'Todos' && status !== 'undefined') {
+    where.status = status.replace(' ', '_').toUpperCase();
+  }
+  if (search && search !== 'undefined') {
+    where.OR = [
+      { codigo: { contains: search, mode: 'insensitive' } },
+      { cliente: { usuario: { nome: { contains: search, mode: 'insensitive' } } } },
+    ];
+  }
 
   const pedidos = await prisma.pedido.findMany({
     where,
     include: {
       cliente: { include: { usuario: true } },
       itens: true,
-      timeline: { orderBy: { ordem: 'asc' } }
+      timeline: { orderBy: { ordem: 'asc' } },
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
   res.json(pedidos);
 });
 
 pedidosRouter.get('/meus', requireAuth, async (req: AuthRequest, res) => {
   const cliente = await prisma.cliente.findFirst({
-    where: { usuarioId: req.user!.userId }
+    where: { usuarioId: req.user!.userId },
   });
   if (!cliente) { res.status(404).json({ error: 'Cliente não encontrado' }); return; }
 
   const pedidos = await prisma.pedido.findMany({
     where: { clienteId: cliente.id },
     include: { itens: true, timeline: { orderBy: { ordem: 'asc' } } },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
   res.json(pedidos);
 });
 
 pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res) => {
-  const { status } = req.body;
-  const statusMap: Record<string, string> = {
-    'NOVO': 'NOVO',
-    'EM_PREPARO': 'EM_PREPARO',
-    'PRONTO': 'PRONTO',
-    'ENTREGUE': 'ENTREGUE',
-  };
-  if (!statusMap[status]) { res.status(400).json({ error: 'Status inválido' }); return; }
+  const pedidoId = String(req.params.id);
+  const { status } = req.body as { status: string };
+
+  const validStatuses = ['NOVO', 'EM_PREPARO', 'PRONTO', 'ENTREGUE'];
+  if (!validStatuses.includes(status)) {
+    res.status(400).json({ error: 'Status inválido' });
+    return;
+  }
 
   const pedido = await prisma.pedido.findFirst({
-    where: { id: req.params.id, lojaId: req.user!.lojaId }
+    where: { id: pedidoId, lojaId: req.user!.lojaId },
   });
   if (!pedido) { res.status(404).json({ error: 'Pedido não encontrado' }); return; }
 
@@ -63,17 +69,20 @@ pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res)
     ENTREGUE: 'Entregue',
   };
 
-  await prisma.pedido.update({ where: { id: req.params.id }, data: { status: status as any } });
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: { status: status as 'NOVO' | 'EM_PREPARO' | 'PRONTO' | 'ENTREGUE' },
+  });
 
   for (const s of statusOrder.slice(0, novoIdx + 1)) {
     await prisma.timelinePedido.updateMany({
-      where: { pedidoId: req.params.id, status: statusToLabel[s] },
+      where: { pedidoId, status: statusToLabel[s] },
       data: { ok: true, data: new Date() },
     });
   }
 
   const updated = await prisma.pedido.findUnique({
-    where: { id: req.params.id },
+    where: { id: pedidoId },
     include: { itens: true, timeline: { orderBy: { ordem: 'asc' } } },
   });
   res.json(updated);
