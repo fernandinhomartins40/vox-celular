@@ -3,13 +3,13 @@ WORKDIR /app
 
 # Install production dependencies only
 FROM base AS deps
-COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+COPY package.json ./
+RUN npm install --omit=dev --ignore-scripts
 
 # Install all dependencies (including devDeps) for building
 FROM base AS build-deps
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json ./
+RUN npm install --ignore-scripts
 
 # Build stage
 FROM build-deps AS build
