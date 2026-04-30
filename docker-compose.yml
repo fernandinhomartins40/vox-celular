@@ -1,0 +1,79 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: vox_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vox
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vox123}
+      POSTGRES_DB: voxcelular
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - vox-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vox -d voxcelular"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: vox_api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://vox:${POSTGRES_PASSWORD:-vox123}@db:5432/voxcelular
+      JWT_SECRET: ${JWT_SECRET:-vox-dev-secret-change-in-production}
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3096
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - vox-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    container_name: vox_web
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - vox-net
+    depends_on:
+      - api
+
+  nginx:
+    image: nginx:alpine
+    container_name: vox_nginx
+    restart: unless-stopped
+    ports:
+      - "3096:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+      - api
+    networks:
+      - vox-net
+
+networks:
+  vox-net:
+    driver: bridge
+
+volumes:
+  pgdata:

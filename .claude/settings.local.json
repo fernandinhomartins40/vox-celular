@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "PowerShell(Copy-Item -Force \"c:\\\\Projetos Cursor\\\\vox-celular\\\\app\\\\src\\\\main.jsx\" \"c:\\\\Projetos Cursor\\\\vox-celular\\\\apps\\\\web\\\\src\\\\main.jsx\")",
+      "Bash(npx tsc *)",
+      "Bash(git add *)"
+    ]
+  }
+}
