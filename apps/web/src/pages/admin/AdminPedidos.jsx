@@ -31,10 +31,10 @@ export default function AdminPedidos() {
 
   const filtrados = pedidos.filter(p => {
     const matchFiltro = filtro === 'TODOS' || p.status === filtro;
-    const clienteNome = typeof p.cliente === 'object' ? p.cliente?.nome : p.cliente;
+    const clienteNome = p.clienteNome ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.nome : p.cliente) ?? '';
     const matchBusca  = busca === '' ||
       String(p.id).includes(busca) ||
-      (clienteNome ?? '').toLowerCase().includes(busca.toLowerCase());
+      clienteNome.toLowerCase().includes(busca.toLowerCase());
     return matchFiltro && matchBusca;
   });
 
@@ -102,8 +102,8 @@ export default function AdminPedidos() {
             </thead>
             <tbody>
               {filtrados.map((p, i) => {
-                const clienteNome = typeof p.cliente === 'object' ? p.cliente?.nome : p.cliente;
-                const clienteEmail = typeof p.cliente === 'object' ? p.cliente?.email : p.email;
+                const clienteNome = p.clienteNome ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.nome : p.cliente) ?? '';
+                const clienteEmail = p.clienteEmail ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.email : p.email) ?? '';
                 const itensList = (p.produtos ?? p.itens ?? []).map(x => x.nome ?? x.produto?.nome).filter(Boolean).join(', ');
                 return (
                   <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
@@ -166,8 +166,8 @@ export default function AdminPedidos() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">Cliente</div>
-                  <div className="font-semibold">{typeof detalhe.cliente === 'object' ? detalhe.cliente?.nome : detalhe.cliente}</div>
-                  <div className="text-[12px] text-zinc-500">{typeof detalhe.cliente === 'object' ? detalhe.cliente?.email : detalhe.email}</div>
+                  <div className="font-semibold">{detalhe.clienteNome ?? (typeof detalhe.cliente === 'object' ? detalhe.cliente?.usuario?.nome : detalhe.cliente) ?? ''}</div>
+                  <div className="text-[12px] text-zinc-500">{detalhe.clienteEmail ?? (typeof detalhe.cliente === 'object' ? detalhe.cliente?.usuario?.email : detalhe.email) ?? ''}</div>
                 </div>
                 <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[12px] font-semibold border ${STATUS_STYLE[detalhe.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
                   {STATUS_LABEL[detalhe.status] ?? detalhe.status}

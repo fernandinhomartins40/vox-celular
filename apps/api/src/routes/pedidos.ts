@@ -22,13 +22,20 @@ pedidosRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
   const pedidos = await prisma.pedido.findMany({
     where,
     include: {
-      cliente: { include: { usuario: true } },
+      cliente: { include: { usuario: { select: { nome: true, email: true } } } },
       itens: true,
       timeline: { orderBy: { ordem: 'asc' } },
     },
     orderBy: { createdAt: 'desc' },
   });
-  res.json(pedidos);
+
+  const flat = pedidos.map(({ cliente, ...p }) => ({
+    ...p,
+    clienteNome: cliente?.usuario?.nome ?? '',
+    clienteEmail: cliente?.usuario?.email ?? '',
+    clienteTelefone: cliente?.telefone ?? '',
+  }));
+  res.json(flat);
 });
 
 pedidosRouter.get('/meus', requireAuth, async (req: AuthRequest, res) => {

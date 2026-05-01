@@ -155,7 +155,7 @@ export default function AdminDashboard() {
               {recentes.map((p, i) => (
                 <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
                   <td className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)]">{p.id}</td>
-                  <td className="px-5 py-3.5 text-zinc-700">{p.cliente?.nome ?? p.cliente}</td>
+                  <td className="px-5 py-3.5 text-zinc-700">{p.clienteNome ?? p.cliente?.usuario?.nome ?? ''}</td>
                   <td className="px-5 py-3.5 font-semibold">{formatBRL(p.total)}</td>
                   <td className="px-5 py-3.5 text-zinc-500">{p.pagamento}</td>
                   <td className="px-5 py-3.5">
