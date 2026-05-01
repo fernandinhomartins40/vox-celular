@@ -1,5 +1,5 @@
-export const formatBRL = (n) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-export const formatBRLNoSym = (n) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const formatBRL = (n) => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+export const formatBRLNoSym = (n) => (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export const badgeStyle = (b) => {
   if (b === 'OFERTA')     return 'bg-[var(--red-500)] text-white';

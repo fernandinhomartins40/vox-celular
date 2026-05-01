@@ -8,11 +8,14 @@ dashboardRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
   const lojaId = req.user!.lojaId;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
+  const ontem = new Date(hoje);
+  ontem.setDate(ontem.getDate() - 1);
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
-  const [pedidosHoje, pedidosMes, clientesNovos, estoqueBaixo, grafico] = await Promise.all([
+  const [pedidosHoje, pedidosMes, pedidosOntem, clientesNovos, estoqueBaixo, grafico] = await Promise.all([
     prisma.pedido.count({ where: { lojaId, createdAt: { gte: hoje } } }),
     prisma.pedido.findMany({ where: { lojaId, createdAt: { gte: inicioMes } }, select: { total: true } }),
+    prisma.pedido.findMany({ where: { lojaId, createdAt: { gte: ontem, lt: hoje } }, select: { total: true } }),
     prisma.cliente.count({ where: { lojaId, createdAt: { gte: inicioMes } } }),
     prisma.produto.count({ where: { lojaId, estoque: { lte: 5 }, ativo: true } }),
     prisma.$queryRaw`
@@ -26,11 +29,13 @@ dashboardRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
   ]);
 
   const faturamentoMes = pedidosMes.reduce((s: number, p: { total: unknown }) => s + Number(p.total), 0);
+  const faturamentoOntem = pedidosOntem.reduce((s: number, p: { total: unknown }) => s + Number(p.total), 0);
 
   res.json({
     pedidosHoje,
     pedidosMes: pedidosMes.length,
     faturamentoMes,
+    faturamentoOntem,
     clientesNovos,
     estoqueBaixo,
     ticketMedio: pedidosMes.length ? Math.round(faturamentoMes / pedidosMes.length) : 0,
