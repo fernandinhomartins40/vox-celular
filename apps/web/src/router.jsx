@@ -18,17 +18,17 @@ import ClientePromocoes from './pages/cliente/ClientePromocoes';
 
 function RequireAuth({ role, children }) {
   const { user } = useAuth();
-  if (!user) return <Navigate to={role === 'lojista' ? '/admin/login' : '/area-cliente/login'} replace />;
+  if (!user) return <Navigate to={role === 'LOJISTA' ? '/admin/login' : '/area-cliente/login'} replace />;
   if (user.role !== role) return <Navigate to="/" replace />;
   return children;
 }
 
 export function ProtectedAdmin({ children }) {
-  return <RequireAuth role="lojista">{children}</RequireAuth>;
+  return <RequireAuth role="LOJISTA">{children}</RequireAuth>;
 }
 
 export function ProtectedCliente({ children }) {
-  return <RequireAuth role="cliente">{children}</RequireAuth>;
+  return <RequireAuth role="CLIENTE">{children}</RequireAuth>;
 }
 
 export const router = createBrowserRouter([
