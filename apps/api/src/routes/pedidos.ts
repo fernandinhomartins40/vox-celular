@@ -4,6 +4,14 @@ import { requireAuth, requireLojista, AuthRequest } from '../middleware/auth.js'
 
 export const pedidosRouter = Router();
 
+type PedidoAdmin = {
+  cliente: {
+    telefone: string;
+    usuario: { nome: string; email: string };
+  } | null;
+  [key: string]: unknown;
+};
+
 pedidosRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
   const status = Array.isArray(req.query.status) ? String(req.query.status[0]) : String(req.query.status ?? '');
   const search = Array.isArray(req.query.search) ? String(req.query.search[0]) : String(req.query.search ?? '');
@@ -29,7 +37,7 @@ pedidosRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     orderBy: { createdAt: 'desc' },
   });
 
-  const flat = pedidos.map(({ cliente, ...p }) => ({
+  const flat = pedidos.map(({ cliente, ...p }: PedidoAdmin) => ({
     ...p,
     clienteNome: cliente?.usuario?.nome ?? '',
     clienteEmail: cliente?.usuario?.email ?? '',

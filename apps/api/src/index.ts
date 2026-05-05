@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'node:path';
 import { authRouter } from './routes/auth.js';
 import { produtosRouter } from './routes/produtos.js';
 import { pedidosRouter } from './routes/pedidos.js';
@@ -13,9 +14,11 @@ import { lojaRouter } from './routes/loja.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const uploadsDir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '8mb' }));
+app.use('/uploads', express.static(uploadsDir));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));

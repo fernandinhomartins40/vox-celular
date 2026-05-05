@@ -28,7 +28,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:-vox-dev-secret-change-in-production}
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3096}
+      UPLOADS_DIR: /app/uploads
       NODE_ENV: production
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -75,3 +78,4 @@ networks:
 
 volumes:
   pgdata:
+  uploads:

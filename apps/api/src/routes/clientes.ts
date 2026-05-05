@@ -4,6 +4,25 @@ import { requireLojista, AuthRequest } from '../middleware/auth.js';
 
 export const clientesRouter = Router();
 
+type PedidoClienteResumo = {
+  id: string;
+  total: unknown;
+  status: string;
+  createdAt: Date;
+};
+
+type ClienteAdmin = {
+  id: string;
+  usuario: { nome: string; email: string };
+  telefone: string;
+  cidade: string;
+  pontos: number;
+  nivel: string;
+  totalGasto: unknown;
+  createdAt: Date;
+  pedidos: PedidoClienteResumo[];
+};
+
 clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
   const search = Array.isArray(req.query.search) ? String(req.query.search[0]) : (req.query.search as string | undefined);
   const clientes = await prisma.cliente.findMany({
@@ -21,7 +40,7 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     orderBy: { createdAt: 'desc' }
   });
 
-  const flat = clientes.map(c => ({
+  const flat = clientes.map((c: ClienteAdmin) => ({
     id: c.id,
     nome: c.usuario.nome,
     email: c.usuario.email,
@@ -32,7 +51,7 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     totalGasto: c.totalGasto,
     createdAt: c.createdAt,
     pedidos: c.pedidos.length,
-    historicoPedidos: c.pedidos.map(p => ({
+    historicoPedidos: c.pedidos.map((p: PedidoClienteResumo) => ({
       id: p.id,
       total: p.total,
       status: p.status,

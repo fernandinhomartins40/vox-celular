@@ -1,4 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const ASSET_BASE_URL = BASE_URL.replace(/\/api\/?$/, '');
 
 export const LOJA_ID = import.meta.env.VITE_LOJA_ID || localStorage.getItem('vox_loja_id') || '';
 
@@ -32,3 +33,9 @@ export const api = {
   put:    (path, body)  => request(path, { method: 'PUT',    body: JSON.stringify(body) }),
   delete: (path)        => request(path, { method: 'DELETE' }),
 };
+
+export function assetUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url) || url.startsWith('data:')) return url;
+  return `${ASSET_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+}
