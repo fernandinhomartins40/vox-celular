@@ -18,6 +18,21 @@ P0: recompensas de outra loja ou inativas podem ser resgatadas; concorrência po
 ## Ordem de implementação
 Segurança/transações → catálogo real e busca → pedidos/feedback → integração/lint/build/navegador → corrigir → relatório.
 
+## Plano de execução e análise por fluxo
+| Fluxo | Objetivo e desperdício | Reconstrução/menor esforço | Decisão |
+|---|---|---|---|
+| Encontrar produto | Vitrine fictícia e navegação por categorias fixas | Buscar → escolher → adicionar; reutilizar cadastro/estoque/preço | OP-01/02, sem índice/serviço novo |
+| Atender pedido | Procurar pelo ID interno e abrir WhatsApp incorreto | Buscar código → contatar ou avançar; reaproveitar telefone e timeline | OP-03 |
+| Resgatar benefício | Recarregar para conferir saldo e erro invisível | Escolher recompensa → resgatar → apresentar código | OP-04, débito condicional transacional |
+| Configurar loja | Formulário enviava campos sem persistência | Editar campos suportados → salvar → refletir no site | OP-05, sem inventar regra comercial |
+| Criar conta | Botão sem ação embora API pronta | Criar conta → informar nome/email/senha → enviar | OP-06, reutilizar cadastro e bônus existentes |
+| Consultar promoções | Falha confundida com ausência de ofertas e mês fixo | Mostrar dados reais, erro distinto e data corrente | OP-07 |
+| Pagar/cancelar/acumular pontos | Sem regra/integração comprovada | Não inferir confirmação comercial a partir de WhatsApp | Bloqueado por regra comercial |
+
+OP-06 (CRIAR/JUNTAR, P1, baixo risco): ligar cadastro existente à tela, eliminar credenciais demo e obter loja atual no envio. Teste: cadastro real no Chromium e API.
+OP-07 (ELIMINAR, P2, baixo risco): retirar promessa de personalização sem algoritmo e data fixa; mostrar erro real. Teste: lint/build.
+Cinco movimentos avaliados: eliminar campos/feedback fictícios; juntar busca/filtros e contato/status; automatizar vitrine e saldo; antecipar estoque e próxima ação; criar acesso ao cadastro já existente. Nenhum novo serviço, coleta adicional ou automação financeira.
+
 ## Itens que não serão alterados
 Identidade visual e recorte de imagens preservados. Checkout por WhatsApp não implica pedido confirmado/pagamento; não inventar sincronização ou criar pedidos automaticamente. Pontos por entrega e cancelamento exigem regra comercial; não automatizar. Dados estáticos não utilizados não serão removidos por suposição. Não alterar schema destrutivamente nem criar containers/dependências de runtime.
 

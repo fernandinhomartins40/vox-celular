@@ -7,12 +7,12 @@ const FALLBACK = { horarioSemana: '', horarioSabado: '', heroSlide1Titulo: '', h
 function Field({ label, name, value, onChange, textarea, hint }) {
   return (
     <div>
-      <label className="block font-medium text-[12.5px] text-zinc-700 mb-1.5">{label}</label>
+      <label htmlFor={name} className="block font-medium text-[12.5px] text-zinc-700 mb-1.5">{label}</label>
       {textarea ? (
-        <textarea name={name} value={value ?? ''} onChange={onChange} rows={2}
+        <textarea id={name} name={name} value={value ?? ''} onChange={onChange} rows={2}
           className="w-full px-3 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[13px] focus:outline-none focus:border-[var(--royal-700)] resize-none transition" />
       ) : (
-        <input name={name} value={value ?? ''} onChange={onChange}
+        <input id={name} name={name} value={value ?? ''} onChange={onChange}
           className="w-full px-3 py-2.5 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[13px] focus:outline-none focus:border-[var(--royal-700)] transition" />
       )}
       {hint && <p className="text-[11px] text-zinc-400 mt-1">{hint}</p>}

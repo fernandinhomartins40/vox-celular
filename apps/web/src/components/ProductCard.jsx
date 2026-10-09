@@ -33,7 +33,7 @@ export default function ProductCard({ p, onAdd, onOpen }) {
         )}
         {p.estoque <= 5 && (
           <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur px-2.5 py-1 rounded-full font-medium text-[11px] text-amber-700">
-            Últimas {p.estoque} unidades
+            {p.estoque <= 0 ? 'Sem estoque' : `Últimas ${p.estoque} unidades`}
           </div>
         )}
       </div>

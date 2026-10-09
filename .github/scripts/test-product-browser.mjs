@@ -41,6 +41,16 @@ try {
   await page.getByRole('button', { name: 'Salvo!' }).waitFor();
   await page.goto(base);
   await page.getByText('Seg–Sex 9h–18h CI', { exact: false }).first().waitFor();
+  const customerPage = await browser.newPage();
+  await customerPage.goto(`${base}/area-cliente/login`);
+  await customerPage.getByRole('button', { name: 'Criar conta grátis' }).click();
+  await customerPage.getByLabel('Nome', { exact: true }).fill('CI Browser Customer');
+  await customerPage.locator('input[type="email"]').fill('ci-browser-customer@example.com');
+  await customerPage.locator('input[type="password"]').fill('ci-browser-password-123');
+  await customerPage.getByRole('button', { name: 'Criar minha conta' }).click();
+  await customerPage.waitForURL(`${base}/area-cliente`);
+  await customerPage.goto(`${base}/area-cliente/fidelidade`);
+  await customerPage.getByText('SEU SALDO', { exact: true }).waitFor();
   console.log('PASS: real catalog, search, filter reset, stock, sorting, product details, mobile/desktop, order code search and saved public hours.');
 } finally {
   await browser.close();

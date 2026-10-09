@@ -29,7 +29,8 @@ export function AuthProvider({ children }) {
   async function register(nome, email, senha, extra = {}) {
     setLoading(true);
     try {
-      const lojaId = localStorage.getItem('vox_loja_id') || import.meta.env.VITE_LOJA_ID || '';
+      const lojaId = import.meta.env.VITE_LOJA_ID || (await api.get('/loja')).id;
+      localStorage.setItem('vox_loja_id', lojaId);
       const data = await api.post('/auth/register', { nome, email, senha, lojaId, ...extra });
       const stored = { ...data.user, token: data.token };
       localStorage.setItem('vox_user', JSON.stringify(stored));

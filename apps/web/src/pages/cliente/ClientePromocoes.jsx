@@ -15,13 +15,14 @@ export default function ClientePromocoes() {
   const { user } = useAuth();
   const [promocoes, setPromocoes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const lojaId = user?.lojaId ?? localStorage.getItem('vox_loja_id') ?? '';
     const path = lojaId ? `/promocoes?lojaId=${lojaId}` : '/promocoes';
     api.get(path)
       .then(data => setPromocoes(Array.isArray(data) ? data : (data.promocoes ?? [])))
-      .catch(() => setPromocoes([]))
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [user]);
 
@@ -39,7 +40,7 @@ export default function ClientePromocoes() {
           <span className="font-display text-[var(--red-500)] font-semibold text-[11px] tracking-[0.28em]">SÓ PARA VOCÊ</span>
         </div>
         <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Promoções exclusivas</h1>
-        <p className="text-zinc-500 text-[14px] mt-1">Ofertas personalizadas baseadas no seu histórico de compras.</p>
+        <p className="text-zinc-500 text-[14px] mt-1">Confira as ofertas disponíveis na loja.</p>
       </div>
 
       {/* Banner de urgência */}
@@ -53,11 +54,11 @@ export default function ClientePromocoes() {
             <div className="text-[12px] text-white/60">Aproveite antes que acabem. Exclusivo para clientes cadastrados.</div>
           </div>
         </div>
-        <div className="text-[12px] text-white/50 shrink-0">Abril 2026</div>
+        <div className="text-[12px] text-white/50 shrink-0">{new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</div>
       </div>
 
       {/* Estado vazio */}
-      {promocoes.length === 0 ? (
+      {error ? <p role="alert" className="text-red-600">Não foi possível carregar as ofertas. {error}</p> : promocoes.length === 0 ? (
         <div className="text-center py-16 bg-white border border-[var(--line)] rounded-2xl">
           <div className="w-16 h-16 mx-auto rounded-full bg-zinc-100 grid place-items-center mb-4">
             <Icon.tag className="w-7 h-7 text-zinc-400" />

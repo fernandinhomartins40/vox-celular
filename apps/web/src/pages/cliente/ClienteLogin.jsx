@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth.js';
 import { Icon } from '../../icons';
+import { PHONE_DIGITS } from '../../data';
 
 export default function ClienteLogin() {
-  const { login, user } = useAuth();
+  const { login, register, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', senha: '' });
+  const [form, setForm] = useState({ nome: '', email: '', senha: '' });
+  const [creating, setCreating] = useState(false);
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
@@ -20,13 +22,11 @@ export default function ClienteLogin() {
     e.preventDefault();
     setErro('');
     setLoading(true);
-    const result = await login(form.email, form.senha);
+    const result = creating ? await register(form.nome.trim(), form.email.trim(), form.senha) : await login(form.email.trim(), form.senha);
     setLoading(false);
     if (result.ok) { navigate('/area-cliente', { replace: true }); }
     else { setErro(result.error || 'E-mail ou senha incorretos.'); }
   };
-
-  const fillDemo = () => setForm({ email: 'joao@email.com', senha: '123456' });
 
   return (
     <div className="min-h-screen bg-[var(--paper)] flex flex-col">
@@ -55,6 +55,12 @@ export default function ClienteLogin() {
 
           <div className="bg-white border border-[var(--line)] rounded-2xl p-8 shadow-sm">
             <form onSubmit={submit} className="space-y-4">
+              {creating && <div>
+                <label htmlFor="customer-name" className="block font-medium text-[13px] mb-1.5">Nome</label>
+                <input id="customer-name" required minLength={2} autoComplete="name" value={form.nome}
+                  onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+                  className="w-full px-4 py-3 border rounded-xl" />
+              </div>}
               <div>
                 <label className="block font-medium text-[13px] text-zinc-700 mb-1.5">E-mail</label>
                 <input
@@ -67,11 +73,11 @@ export default function ClienteLogin() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block font-medium text-[13px] text-zinc-700">Senha</label>
-                  <button type="button" className="text-[12px] text-[var(--royal-700)] hover:underline">Esqueci a senha</button>
+                  {!creating && <a href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent('Olá! Preciso de orientação para recuperar o acesso à minha conta.')}`} target="_blank" rel="noopener noreferrer" className="text-[12px] text-[var(--royal-700)] hover:underline">Preciso de ajuda</a>}
                 </div>
                 <div className="relative">
                   <input
-                    type={showSenha ? 'text' : 'password'} required autoComplete="current-password"
+                    type={showSenha ? 'text' : 'password'} required minLength={6} autoComplete={creating ? 'new-password' : 'current-password'}
                     value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
                     placeholder="••••••"
                     className="w-full px-4 py-3 pr-11 bg-[var(--paper)] border border-[var(--line)] rounded-xl focus:outline-none focus:border-[var(--royal-700)] text-[14px] transition"
@@ -94,28 +100,17 @@ export default function ClienteLogin() {
                 {loading ? (
                   <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10"/></svg>
                 ) : <Icon.arrowRight className="w-4 h-4" />}
-                {loading ? 'Entrando…' : 'Entrar na minha conta'}
+                {loading ? 'Aguarde…' : creating ? 'Criar minha conta' : 'Entrar na minha conta'}
               </button>
             </form>
 
             <div className="mt-5 text-center text-[13px] text-zinc-500">
-              Ainda não tem conta?{' '}
-              <button className="text-[var(--royal-700)] font-medium hover:underline">Criar conta grátis</button>
+              {creating ? 'Já tem conta? ' : 'Ainda não tem conta? '}
+              <button disabled={loading} onClick={() => { setCreating(v => !v); setErro(''); }} className="text-[var(--royal-700)] font-medium hover:underline">{creating ? 'Entrar' : 'Criar conta grátis'}</button>
             </div>
           </div>
 
-          {/* Demo hint */}
-          <div className="mt-4 p-4 bg-[var(--royal-50)] border border-[var(--royal-100)] rounded-xl">
-            <div className="font-display font-bold text-[12px] text-[var(--royal-700)] tracking-wider mb-2">DEMONSTRAÇÃO</div>
-            <div className="text-[12px] text-zinc-600 space-y-0.5">
-              <div><span className="text-zinc-400">E-mail:</span> joao@email.com</div>
-              <div><span className="text-zinc-400">Senha:</span> 123456</div>
-            </div>
-            <button onClick={fillDemo}
-              className="mt-3 text-[12px] font-medium text-[var(--royal-700)] hover:underline">
-              Preencher automaticamente →
-            </button>
-          </div>
+
         </div>
       </div>
     </div>
