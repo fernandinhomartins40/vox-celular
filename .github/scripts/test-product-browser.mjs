@@ -23,7 +23,7 @@ try {
     await page.getByRole('combobox', { name: 'Ordenar produtos' }).selectOption('menor');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `No horizontal overflow at ${width}px`);
     await card.first().click();
-    await page.getByRole('heading', { name: 'CI product', exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'CI product', exact: true, level: 2 }).waitFor();
     assert.equal(errors.length, 0, errors.join('\n'));
     await page.close();
   }
