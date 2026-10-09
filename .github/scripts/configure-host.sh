@@ -18,6 +18,9 @@ if grep -RlE 'server_name[^;]*(^|[[:space:]])(www\.)?voxcelular\.com\.br([[:spac
   echo 'Vox domain appears in another active Nginx site.' >&2; exit 1
 fi
 mkdir -p /var/www/voxcelular-acme "$APP_ROOT/backups/$RELEASE"
+# ACME tokens are public and must be traversable by Nginx workers even when
+# the deploy process uses umask 077 to protect application secrets/backups.
+chmod 755 /var/www/voxcelular-acme
 old="$APP_ROOT/backups/$RELEASE/nginx.conf"
 had_old=0
 [[ ! -f "$site" ]] || { cp -p "$site" "$old"; had_old=1; }
