@@ -21,7 +21,8 @@ async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    const message = Array.isArray(err.error) ? err.error.map(issue => issue.message).filter(Boolean).join('; ') : err.error;
+    throw new Error(typeof message === 'string' && message ? message : `Não foi possível concluir a solicitação (HTTP ${res.status})`);
   }
   return res.json();
 }

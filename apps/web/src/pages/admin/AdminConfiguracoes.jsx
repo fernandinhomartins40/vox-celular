@@ -26,11 +26,12 @@ export default function AdminConfiguracoes() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     api.get('/config')
       .then(data => setConfig({ ...FALLBACK, ...data }))
-      .catch(e => setError(e.message))
+      .catch(e => { setError(e.message); setLoadFailed(true); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -99,7 +100,7 @@ export default function AdminConfiguracoes() {
 
         <div className="flex items-center justify-between pt-2">
           <p className="text-[12px] text-zinc-400">As alterações serão salvas no servidor.</p>
-          <button type="submit" disabled={saving}
+          <button type="submit" disabled={saving || loadFailed}
             className={`inline-flex items-center gap-2 px-7 h-11 rounded-xl font-semibold text-[14px] transition ${
               salvo ? 'bg-emerald-600 text-white' : 'bg-[var(--royal-700)] hover:bg-[var(--royal-800)] disabled:opacity-60 text-white'
             }`}>
