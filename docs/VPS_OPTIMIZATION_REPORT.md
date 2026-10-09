@@ -116,3 +116,12 @@ Após execução do CI e primeiro deploy, coletar docker stats/picos/OOM/pool/la
 Workflow utiliza apenas o secret VPS_PASSWORD existente e GITHUB_TOKEN automático; nunca fornecer secrets pelo chat. Primeiro deploy gera ADMIN_EMAIL=lojista@vox.com e senha administrativa aleatória em /opt/voxcelular/.env (600). Consultar essa senha somente no próprio terminal, sem copiá-la para o chat, e gerenciá-la como credencial de aplicação.
 
 Desenvolvimento local continua npm run dev --workspace=@vox/api e --workspace=@vox/web. Makefile build é exclusivo local; usar as tags vox-api:local, vox-web:local e vox-migration:local no .env. Produção usa apenas imagens publicadas pelo GitHub Actions.
+
+## Validação de produção concluída — 09/10/2026, 16:24 BRT
+Esta atualização substitui as pendências de build/integração/deploy registradas acima. Workflow 37979410003 concluído com sucesso: builds API/web paralelos, integração PostgreSQL real e deploy GHCR. Release 90325ada2903e725ea431905f2ba15d9d45e5fae promovida em /opt/voxcelular/current. Correções identificadas pelo CI: preservar zod instalado no workspace da API; ACME webroot legível; aguardar novos workers Nginx após reload antes de validar certificado.
+
+HTTPS externo em www.voxcelular.com.br e rota /admin/login retornam 200; HTTP redireciona para HTTPS; /api/ready retorna ok=true. Certificado cobre raiz/www, expira em 07/01/2027; certbot.timer habilitado e hook existente recarrega Nginx. Domínio deixou de cair no virtual host padrão Velomail. Nenhum virtual host vizinho foi alterado. Ajuste direto limitado ao virtual host Vox; implantação de imagens exclusivamente GitHub Actions.
+
+MEASURED snapshot de produção: vox_db 39.49 MiB, vox_api 26.75 MiB, vox_web 2.789 MiB (~69 MiB somados, consumo de container no snapshot, não pico). Não existe baseline de Vox anterior e não declarar percentual de economia. Três containers saudáveis. Testes CI reais de migrations, bootstrap idempotente, auth/roles, upload, agregações, persistência, DNS e restore passaram. Limitações de backup externo, retenção e carga representativa continuam aplicáveis.
+
+Execução: https://github.com/fernandinhomartins40/vox-celular/actions/runs/37979410003
