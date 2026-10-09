@@ -46,3 +46,6 @@ OP-01 a OP-07 implementadas, validadas e publicadas na main. Builds/lint/testes 
 
 ## Publicação validada
 Workflow main 37988464216 aprovado, incluindo deploy. Release e845bfd636aacd74fbaf511cc06ae6b938ed4cb7 ativa. HTTPS https://www.voxcelular.com.br respondeu 200; /api/ready retornou ok:true; vox_web, vox_api e vox_db saudáveis. Trabalhar diretamente na main nas próximas alterações.
+
+## Redesign fornecido pelo usuário
+Implementar as pranchetas desktop e mobile com assets locais: cabeçalho/busca compartilhada, hero, benefícios, categorias, cartões de produtos reais, faixa TIM, três passos, serviços, depoimentos, contato e navegação inferior mobile. Preservar carrinho, WhatsApp, cadastro e acesso ao lojista. Converter assets para WebP sem ampliar; manter originais. CSS restrito à landing page para preservar painel/área do cliente. Validar visualmente em 390/1440 px e no Chromium com API/PostgreSQL real. Status: implementado; publicação e regressão final em andamento.

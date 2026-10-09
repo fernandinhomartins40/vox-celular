@@ -1,39 +1,15 @@
-import { Icon } from '../icons';
+﻿import { Icon } from '../icons';
 import SectionHeader from './SectionHeader';
-
+import phones from '../assets/redesign/03-categoria-celulares.webp';
+import accessories from '../assets/redesign/04-categoria-acessorios.webp';
+import used from '../assets/redesign/05-categoria-seminovos.webp';
+import chip from '../assets/redesign/06-chip-portabilidade.webp';
 const cats = [
-  { label: 'Celulares', tag: '20+ modelos', target: 'Celulares',
-    img: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=900&q=85' },
-  { label: 'Acessórios', tag: 'Capas, fones, cabos', target: 'Acessórios',
-    img: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=900&q=85' },
-  { label: 'Seminovos', tag: 'Revisados c/ garantia', target: 'Seminovos',
-    img: 'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=900&q=85' },
-  { label: 'Serviços TIM', tag: 'Planos e portabilidade', target: 'Serviços',
-    img: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=900&q=85' },
+  { label: 'Celulares', sub: 'Smartphones das melhores marcas', target: 'Celulares', img: phones },
+  { label: 'Acessórios', sub: 'Carregadores, capas, fones e muito mais', target: 'Acessórios', img: accessories },
+  { label: 'Seminovos', sub: 'Aparelhos revisados e com procedência', target: 'Seminovos', img: used },
+  { label: 'Serviços TIM', sub: 'Planos, recargas e portabilidade', target: 'Serviços', img: chip },
 ];
-
 export default function CategoryGrid({ onPick }) {
-  return (
-    <section className="max-w-7xl mx-auto px-4 lg:px-8 mt-20 reveal">
-      <SectionHeader eyebrow="Navegue por departamento" title="Categorias" />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {cats.map((c) => (
-          <button key={c.label} onClick={() => onPick(c.target)}
-            className="group relative overflow-hidden rounded-2xl text-left aspect-[4/5] bg-zinc-100">
-            <img src={c.img} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent"/>
-            <div className="absolute inset-0 p-5 flex flex-col justify-end text-white">
-              <div className="font-display text-[10px] tracking-[0.25em] text-white/70 mb-1">{c.tag}</div>
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-display font-bold text-2xl sm:text-3xl leading-tight">{c.label}</h3>
-                <span className="w-9 h-9 rounded-full bg-white/15 backdrop-blur grid place-items-center group-hover:bg-white group-hover:text-[var(--royal-800)] transition">
-                  <Icon.arrowUpRight className="w-4 h-4"/>
-                </span>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
+  return <section className="store-container store-categories"><SectionHeader title="Compre por categoria" sub="Encontre exatamente o que você precisa." /><div className="category-grid">{cats.map(c => <button key={c.label} onClick={() => onPick(c.target)} className="category-card"><img src={c.img} alt="" loading="lazy" width="1536" height="1024"/><div><h3>{c.label}</h3><p>{c.sub}</p></div><span><Icon.arrowRight /></span></button>)}</div></section>;
 }

@@ -3,8 +3,7 @@ import { filterCatalog } from '../lib/catalog';
 import SectionHeader from './SectionHeader';
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ products, filter, setFilter, onAdd, onOpen, loading = false, error = '', onRetry }) {
-  const [search, setSearch] = useState('');
+export default function ProductGrid({ products, filter, setFilter, onAdd, onOpen, loading = false, error = '', onRetry, search = '', setSearch = () => {} }) {
   const [sort, setSort] = useState('destaque');
   const [available, setAvailable] = useState(false);
   const categories = ['Todos', ...new Set(products.map(p => p.categoria)), ...(filter !== 'Todos' ? [filter] : [])].filter((c, i, all) => all.indexOf(c) === i);

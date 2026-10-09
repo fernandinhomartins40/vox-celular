@@ -4,7 +4,7 @@ import SectionHeader from './SectionHeader';
 
 export default function Testimonials() {
   return (
-    <section className="max-w-7xl mx-auto px-4 lg:px-8 mt-24 reveal">
+    <section className="store-testimonials max-w-7xl mx-auto px-4 lg:px-8 mt-24 reveal">
       <SectionHeader eyebrow="Avaliações reais" title="O que dizem nossos clientes" />
       <div className="grid md:grid-cols-3 gap-4">
         {TESTIMONIALS.map((t, i) => (

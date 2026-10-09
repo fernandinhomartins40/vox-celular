@@ -10,6 +10,16 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base);
+    const headerSearch = page.getByRole('textbox', { name: 'Pesquisar no catálogo', exact: true });
+    await headerSearch.fill('produto ausente');
+    await page.getByText('Nenhum produto corresponde aos filtros.').waitFor();
+    await headerSearch.fill('ci product');
+    assert.equal(await page.getByRole('textbox', { name: 'Buscar produtos', exact: true }).inputValue(), 'ci product');
+    if (width === 390) {
+      assert.equal(await page.getByRole('navigation', { name: 'Navegação inferior' }).isVisible(), true);
+      await page.getByRole('button', { name: 'Abrir menu' }).click();
+      await page.getByRole('navigation', { name: 'Menu mobile' }).getByRole('link', { name: 'Produtos', exact: true }).click();
+    }
     assert.equal(await page.getByRole('link', { name: 'Painel do lojista', exact: true }).getAttribute('href'), '/admin/login');
     const search = page.getByRole('textbox', { name: 'Buscar produtos' });
     await search.fill('ci product');
@@ -23,7 +33,7 @@ try {
     await page.getByRole('checkbox', { name: 'Disponíveis em estoque' }).check();
     await page.getByRole('combobox', { name: 'Ordenar produtos' }).selectOption('menor');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `No horizontal overflow at ${width}px`);
-    await card.first().click();
+    await card.first().getByRole('button', { name: 'Ver detalhes de CI product' }).click();
     await page.getByRole('heading', { name: 'CI product', exact: true, level: 2 }).waitFor();
     assert.equal(errors.length, 0, errors.join('\n'));
     await page.close();

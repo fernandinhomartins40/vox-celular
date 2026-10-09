@@ -14,6 +14,8 @@ import Footer from './components/Footer';
 import FloatingWA from './components/FloatingWA';
 import CartDrawer from './components/CartDrawer';
 import ProductModal from './components/ProductModal';
+import { Benefits, BuyingSteps, MobileNav } from './components/StoreExtras';
+import './redesign.css';
 
 export default function LandingPage() {
   const [filter, setFilter] = useState('Todos');
@@ -25,6 +27,7 @@ export default function LandingPage() {
   const [catalogError, setCatalogError] = useState('');
   const [reload, setReload] = useState(0);
   const [storeConfig, setStoreConfig] = useState(null);
+  const [search, setSearch] = useState('');
   useEffect(() => {
     let active = true;
     async function load() {
@@ -65,22 +68,26 @@ export default function LandingPage() {
   };
 
   return (
-    <>
-      <Header cartCount={cartCount} onOpenCart={() => setCartOpen(true)} />
+    <div className="vox-store">
+      <Header cartCount={cartCount} onOpenCart={() => setCartOpen(true)} search={search} onSearch={setSearch} />
       <main>
         <Hero config={storeConfig} />
+        <Benefits />
+        <BuyingSteps mobile />
         <CategoryGrid onPick={handlePickCategory} />
         <ProductGrid products={products} filter={filter} setFilter={setFilter} onAdd={addToCart} onOpen={setModalProduct}
-          loading={catalogLoading} error={catalogError} onRetry={() => { setCatalogError(''); setCatalogLoading(true); setReload(n => n + 1); }} />
+          search={search} setSearch={setSearch} loading={catalogLoading} error={catalogError} onRetry={() => { setCatalogError(''); setCatalogLoading(true); setReload(n => n + 1); }} />
         <EditorialBand />
+        <BuyingSteps />
         <ServicesSection />
         <Testimonials />
         <ContactSection config={storeConfig} />
       </main>
       <Footer config={storeConfig} />
-      <FloatingWA />
+      <div className="desktop-wa"><FloatingWA /></div>
+      <MobileNav />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cart} setItems={setCart} />
       <ProductModal product={modalProduct} onClose={() => setModalProduct(null)} onAdd={addToCart} />
-    </>
+    </div>
   );
 }
