@@ -1,7 +1,7 @@
 # Relatório Final
 
 ## Resumo
-Aplicação analisada como loja e ferramenta de atendimento. Melhorias implementadas na branch `feat/product-usability`, com plano priorizado em `docs/IMPLEMENTATION_PLAN.md`. Nenhum dado de produção foi criado para testes. Alterações integradas na main conforme instrução do usuário; branch removida e PR encerrado.
+Aplicação analisada como loja e ferramenta de atendimento. As sete melhorias do plano priorizado em `docs/IMPLEMENTATION_PLAN.md` estão implementadas e publicadas na main. Nenhum dado de produção foi criado para testes. Trabalhos futuros devem ocorrer diretamente na main.
 
 ## Melhorias realizadas
 - OP-01/02: vitrine usa produtos ativos da API, fotos persistentes, preços e estoque reais. Busca sem distinção de acento/maiúsculas, categorias do cadastro, ordenação por preço, disponibilidade, limpar filtros e tentativa de recarga.
@@ -40,7 +40,7 @@ Sem container, worker ou dependência de runtime adicional. Playwright existe so
 - Integração real: seis resgates concorrentes resultaram em um sucesso e cinco recusas por saldo; saldo final zero e somente um resgate persistido. Recompensas inativas/de outra loja recusadas; tentativa de substituir identidade na configuração ignorada; foto preservada após imagem inválida; avanço/repetição de status preservam datas concluídas.
 - Chromium: busca/filtros/limpeza/ordenação/estoque/modal, celular e desktop, pedido por código, salvar horário e vê-lo na página pública, cadastro real e acesso à fidelidade aprovados.
 - Primeira execução encontrou seletor de teste ambíguo entre heading do card e modal; corrigido para heading de nível 2, sem desabilitar teste. Uma execução intermediária foi cancelada porque ainda continha esse seletor antigo; a execução final completa está verde.
-- Deploy de produção marcado `skipped` pelo próprio workflow por esta ser uma branch de validação.
+- Workflow de produção 37988464216 aprovado na main: builds, integração, Chromium e deploy concluídos. API pronta e três contêineres saudáveis reconfirmados após a publicação.
 
 ## Itens bloqueados
 Pagamento automático, cancelamento e pontos por entrega exigem regra comercial/integração. Frete, parcelas e slogan apresentados pelo formulário antigo não possuíam armazenamento nem funcionamento; não foram transformados em regras comerciais fictícias. Recuperação automática de senha requer canal e política de verificação de identidade.

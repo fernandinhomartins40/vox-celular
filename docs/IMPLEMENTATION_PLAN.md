@@ -14,6 +14,8 @@ P0: recompensas de outra loja ou inativas podem ser resgatadas; concorrência po
 | OP-03 | ANTECIPAR | Pedido ID técnico/contato incorreto | Código legível, busca por código, WhatsApp do cliente, erro/saving | Próximo passo no mesmo contexto | P1 | Baixo | Integração, lint | DONE |
 | OP-04 | AUTOMATIZAR | Saldo fica desatualizado | Atualizar fidelidade após resgate, informar erros, impedir concorrência | Eliminar reload/conferência manual | P0 | Médio | Integração concorrente | DONE |
 | OP-05 | ELIMINAR | Entrada insegura e foto perdida em falha | Allowlist de config; atualizar banco antes de remover imagem antiga | Preservar dados e isolamento | P0 | Baixo | Integração | DONE |
+| OP-06 | CRIAR/JUNTAR | Cadastro sem ação na interface | Formulário conectado ao cadastro existente e loja atual | Criar conta sem atendimento manual | P1 | Baixo | Cadastro real no Chromium | DONE |
+| OP-07 | ELIMINAR | Promoções com data fixa e falha invisível | Data corrente, ofertas reais e erro explícito | Evitar informação enganosa | P2 | Baixo | Lint/build | DONE |
 
 ## Ordem de implementação
 Segurança/transações → catálogo real e busca → pedidos/feedback → integração/lint/build/navegador → corrigir → relatório.
@@ -37,10 +39,10 @@ Cinco movimentos avaliados: eliminar campos/feedback fictícios; juntar busca/fi
 Identidade visual e recorte de imagens preservados. Checkout por WhatsApp não implica pedido confirmado/pagamento; não inventar sincronização ou criar pedidos automaticamente. Pontos por entrega e cancelamento exigem regra comercial; não automatizar. Dados estáticos não utilizados não serão removidos por suposição. Não alterar schema destrutivamente nem criar containers/dependências de runtime.
 
 ## Bloqueios reais
-Página de configurações contém campos que não existem no schema (frete/parcelas/slogan). Não fingir persistência desses campos; plano de consolidação completo exige decisão sobre regras comerciais. Docker local indisponível; testes de banco real serão executados no runner GitHub com dados descartáveis. Produção não será usada para criar dados de teste.
+Frete, parcelas e slogan do formulário antigo não tinham persistência; os campos suportados foram conectados ao site. Definir novas condições comerciais, pagamento automático, cancelamento, pontuação por entrega e recuperação automática de senha exige regras ou integrações ainda não definidas. Docker local indisponível; testes de banco real foram executados com sucesso no runner GitHub com dados descartáveis. Produção não foi usada para criar dados de teste.
 
 ## Validação final
-OP-01 a OP-07 implementadas e validadas. Builds/lint/testes locais aprovados; PostgreSQL real e Chromium aprovados no run 37987242206. Publicação fora desta validação: deploy foi skipped na branch feat/product-usability. Relatório em docs/IMPLEMENTATION_REPORT.md.
+OP-01 a OP-07 implementadas, validadas e publicadas na main. Builds/lint/testes locais aprovados; PostgreSQL real e Chromium aprovados, incluindo a execução de produção 37988464216. Não há implementação segura pendente entre essas sete oportunidades. Relatório em docs/IMPLEMENTATION_REPORT.md.
 
 ## Publicação validada
 Workflow main 37988464216 aprovado, incluindo deploy. Release e845bfd636aacd74fbaf511cc06ae6b938ed4cb7 ativa. HTTPS https://www.voxcelular.com.br respondeu 200; /api/ready retornou ok:true; vox_web, vox_api e vox_db saudáveis. Trabalhar diretamente na main nas próximas alterações.
