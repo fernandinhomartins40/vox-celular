@@ -230,3 +230,44 @@
  .map-directions { font-size:10px; left:6px; right:6px; padding:6px; }
 }
 @media(max-width:767px) { .store-steps h2 { white-space:normal; } }
+
+/* Typography follows the boards: condensed display, regular reading text. */
+.vox-store {
+ --store-font-body: 'DM Sans', system-ui, sans-serif;
+ --store-font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+ font-family: var(--store-font-body);
+}
+.vox-store :is(button, input, select, textarea) { font-family:var(--store-font-body); letter-spacing:normal; }
+.vox-store :is(p, small, label), .vox-store .font-display { font-family:var(--store-font-body); letter-spacing:normal; }
+.vox-store :is(h1, h2, h3), .vox-store .product-price, .vox-store .price {
+ font-family:var(--store-font-display);
+ letter-spacing:-.015em;
+ font-weight:700;
+}
+.vox-store .hero-copy h1, .vox-store main > section h2 { font-weight:800; }
+.vox-store .store-brand strong, .vox-store footer .font-black { font-family:var(--store-font-display); font-weight:900; }
+.vox-store .store-benefits strong, .vox-store .steps-list strong {
+ font-family:var(--store-font-display);
+ font-size:18px;
+ font-weight:700;
+ line-height:1.15;
+ letter-spacing:normal;
+}
+.vox-store :is(.store-benefits small, .steps-list small) { font-size:12px; line-height:1.4; }
+.vox-store .steps-list b { font-family:var(--store-font-display); font-weight:700; }
+.vox-store .hero-copy p { font-size:16px; line-height:1.45; }
+.vox-store .hero-caption { font-size:17px; line-height:1.35; }
+.vox-store .hero-caption strong { font-family:var(--store-font-display); font-size:22px; }
+.vox-store :is(.store-button, .header-wa, .header-account, .header-cart, .product-add) { letter-spacing:normal; font-weight:600; }
+.vox-store .contact-card .font-display { font-size:12px; font-weight:700; letter-spacing:normal; }
+.vox-store .contact-form > .font-display { font-family:var(--store-font-display); font-size:22px; font-weight:700; }
+.vox-store .store-testimonials .font-display { font-size:12px; font-weight:700; }
+.vox-store footer .tracking-\[0\.32em\] { font-family:var(--store-font-display); letter-spacing:.06em; font-size:12px; }
+.vox-store footer .uppercase { font-family:var(--store-font-display); font-size:18px; letter-spacing:.02em; }
+@media(max-width:767px) {
+ .vox-store .hero-copy p { font-size:13px; line-height:1.4; }
+ .vox-store :is(.store-benefits strong, .steps-list strong) { font-size:19px; }
+ .vox-store .category-card p, .vox-store .product-info p, .vox-store #servicos p { font-size:11px; line-height:1.35; }
+ .vox-store .product-installments { font-size:11px; line-height:1.35; }
+ .vox-store .store-bottom-nav a { font-size:11px; }
+}
