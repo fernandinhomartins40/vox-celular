@@ -239,7 +239,7 @@
 }
 .vox-store :is(button, input, select, textarea) { font-family:var(--store-font-body); letter-spacing:normal; }
 .vox-store :is(p, small, label), .vox-store .font-display { font-family:var(--store-font-body); letter-spacing:normal; }
-.vox-store :is(h1, h2, h3), .vox-store .product-price, .vox-store .price {
+.vox-store :is(h1, h2, h3), .vox-store :is(h1, h2, h3).font-display, .vox-store .product-price, .vox-store .price {
  font-family:var(--store-font-display);
  letter-spacing:-.015em;
  font-weight:700;
