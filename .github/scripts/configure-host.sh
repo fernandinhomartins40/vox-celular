@@ -81,6 +81,7 @@ EOF
 ln -sfn "$site" "$link"
 nginx -t
 systemctl reload nginx
-curl --fail --silent --show-error --resolve "www.voxcelular.com.br:443:127.0.0.1" --max-time 15 \
+curl --fail --silent --show-error --retry 10 --retry-all-errors --retry-delay 1 \
+  --resolve "www.voxcelular.com.br:443:127.0.0.1" --max-time 15 \
   https://www.voxcelular.com.br/api/ready >/dev/null
 trap - ERR
