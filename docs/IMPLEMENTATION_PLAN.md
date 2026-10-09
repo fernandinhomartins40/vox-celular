@@ -41,3 +41,6 @@ Página de configurações contém campos que não existem no schema (frete/parc
 
 ## Validação final
 OP-01 a OP-07 implementadas e validadas. Builds/lint/testes locais aprovados; PostgreSQL real e Chromium aprovados no run 37987242206. Publicação fora desta validação: deploy foi skipped na branch feat/product-usability. Relatório em docs/IMPLEMENTATION_REPORT.md.
+
+## Publicação validada
+Workflow main 37988464216 aprovado, incluindo deploy. Release e845bfd636aacd74fbaf511cc06ae6b938ed4cb7 ativa. HTTPS https://www.voxcelular.com.br respondeu 200; /api/ready retornou ok:true; vox_web, vox_api e vox_db saudáveis. Trabalhar diretamente na main nas próximas alterações.

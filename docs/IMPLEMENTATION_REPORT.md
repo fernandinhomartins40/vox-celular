@@ -1,7 +1,7 @@
 # Relatório Final
 
 ## Resumo
-Aplicação analisada como loja e ferramenta de atendimento. Melhorias implementadas na branch `feat/product-usability`, com plano priorizado em `docs/IMPLEMENTATION_PLAN.md`. Nenhum dado de produção foi criado para testes; publicação depende da autorização operacional prevista em `AGENTS.md`.
+Aplicação analisada como loja e ferramenta de atendimento. Melhorias implementadas na branch `feat/product-usability`, com plano priorizado em `docs/IMPLEMENTATION_PLAN.md`. Nenhum dado de produção foi criado para testes. Alterações integradas na main conforme instrução do usuário; branch removida e PR encerrado.
 
 ## Melhorias realizadas
 - OP-01/02: vitrine usa produtos ativos da API, fotos persistentes, preços e estoque reais. Busca sem distinção de acento/maiúsculas, categorias do cadastro, ordenação por preço, disponibilidade, limpar filtros e tentativa de recarga.
@@ -46,7 +46,10 @@ Sem container, worker ou dependência de runtime adicional. Playwright existe so
 Pagamento automático, cancelamento e pontos por entrega exigem regra comercial/integração. Frete, parcelas e slogan apresentados pelo formulário antigo não possuíam armazenamento nem funcionamento; não foram transformados em regras comerciais fictícias. Recuperação automática de senha requer canal e política de verificação de identidade.
 
 ## Riscos restantes
-Busca do catálogo e pedidos é local sobre a lista recebida; paginação será necessária se o volume justificar. Fechamento no WhatsApp não confirma pedido/pagamento no banco. Suporte de acesso não redefine senha automaticamente. Publicação via main ainda não executada nesta tarefa.
+Busca do catálogo e pedidos é local sobre a lista recebida; paginação será necessária se o volume justificar. Fechamento no WhatsApp não confirma pedido/pagamento no banco. Suporte de acesso não redefine senha automaticamente. Publicado pela main via GitHub Actions; saúde HTTPS e contêineres validada.
 
 ## Próximas melhorias recomendadas
 Definir ciclo comercial do pedido (criação/confirmação/cancelamento/pagamento), regra de pontuação e recuperação autenticada de acesso antes de automatizar essas operações.
+
+## Publicação validada
+Workflow main 37988464216 aprovado, incluindo deploy. Release e845bfd636aacd74fbaf511cc06ae6b938ed4cb7 ativa. HTTPS https://www.voxcelular.com.br respondeu 200; /api/ready retornou ok:true; vox_web, vox_api e vox_db saudáveis. Trabalhar diretamente na main nas próximas alterações.
