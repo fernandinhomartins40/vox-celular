@@ -229,3 +229,4 @@
  .vox-store .contact-card .space-y-5 > div > div:first-child { color:#003cff; background:#eaf0ff; }
  .map-directions { font-size:10px; left:6px; right:6px; padding:6px; }
 }
+@media(max-width:767px) { .store-steps h2 { white-space:normal; } }
