@@ -7,6 +7,21 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 export const authRouter = Router();
 
+authRouter.patch('/senha', requireAuth, async (req: AuthRequest, res) => {
+  const parsed = z.object({ senhaAtual: z.string().min(1).max(72), novaSenha: z.string().min(12).max(72) }).safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Use uma nova senha entre 12 e 72 caracteres.' }); return; }
+  try {
+    const user = await prisma.usuario.findUnique({ where: { id: req.user!.userId } });
+    if (!user || !(await bcrypt.compare(parsed.data.senhaAtual, user.senhaHash))) {
+      res.status(400).json({ error: 'Senha atual incorreta.' }); return;
+    }
+    const senhaHash = await bcrypt.hash(parsed.data.novaSenha, 12);
+    const changed = await prisma.usuario.updateMany({ where: { id: user.id, senhaHash: user.senhaHash }, data: { senhaHash } });
+    if (changed.count !== 1) { res.status(409).json({ error: 'Senha alterada em outra sessão.' }); return; }
+    res.json({ ok: true });
+  } catch { res.status(500).json({ error: 'Não foi possível alterar a senha.' }); }
+});
+
 const loginSchema = z.object({
   email: z.string().email(),
   senha: z.string().min(6),

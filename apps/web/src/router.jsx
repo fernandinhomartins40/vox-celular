@@ -9,6 +9,7 @@ import AdminPedidos from './pages/admin/AdminPedidos';
 import AdminProdutos from './pages/admin/AdminProdutos';
 import AdminClientes from './pages/admin/AdminClientes';
 import AdminConfiguracoes from './pages/admin/AdminConfiguracoes';
+import AdminConta from './pages/admin/AdminConta';
 import ClienteLogin from './pages/cliente/ClienteLogin';
 import ClienteLayout from './pages/cliente/ClienteLayout';
 import ClienteHome from './pages/cliente/ClienteHome';
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: 'produtos',       element: <AdminProdutos /> },
       { path: 'clientes',       element: <AdminClientes /> },
       { path: 'configuracoes',  element: <AdminConfiguracoes /> },
+      { path: 'conta',          element: <AdminConta /> },
     ],
   },
 

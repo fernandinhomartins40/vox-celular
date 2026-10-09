@@ -37,6 +37,7 @@ export default function Footer({ config }) {
             <li><a href="#produtos" className="hover:text-white transition">Produtos</a></li>
             <li><a href="#servicos" className="hover:text-white transition">Serviços</a></li>
             <li><a href="#contato" className="hover:text-white transition">Contato</a></li>
+            <li><Link to="/admin/login" className="inline-flex items-center gap-2 text-white hover:underline"><Icon.lock className="w-4 h-4" /> Painel do lojista</Link></li>
             <li><a href={MAPS_URL} target="_blank" rel="noopener" className="hover:text-white transition">Como chegar</a></li>
             <li>
               <Link to="/area-cliente/login"

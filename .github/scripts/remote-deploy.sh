@@ -130,3 +130,17 @@ APP_ROOT="$APP_ROOT" RELEASE="$RELEASE" DEPLOY_PORT="$DEPLOY_PORT" bash "$RELEAS
 ln -sfn "$RELEASE_DIR" "$APP_ROOT/current"
 trap - ERR
 printf 'Release %s healthy. No images, backups or persistent volumes were pruned.\n' "$RELEASE"
+if [[ "${CREATE_TEST_ADMIN:-false}" == true ]]; then
+  access_file="$APP_ROOT/test-admin.env"
+  if [[ ! -f "$access_file" ]]; then
+    access_tmp=$(mktemp "$APP_ROOT/test-admin.env.XXXXXX")
+    printf 'TEST_ADMIN_EMAIL=teste.lojista@voxcelular.com.br\nTEST_ADMIN_PASSWORD=%s\n' "$(openssl rand -hex 18)" > "$access_tmp"
+    chmod 600 "$access_tmp"
+    mv -T "$access_tmp" "$access_file"
+  fi
+  set -a; source "$access_file"; set +a
+  ALLOW_TEST_ADMIN_SEED=true
+  export ALLOW_TEST_ADMIN_SEED
+  compose --profile tools run --rm --no-deps -e TEST_ADMIN_EMAIL -e TEST_ADMIN_PASSWORD -e ALLOW_TEST_ADMIN_SEED migrate node dist/seed.js
+  unset TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD ALLOW_TEST_ADMIN_SEED
+fi

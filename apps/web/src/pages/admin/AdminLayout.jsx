@@ -9,6 +9,7 @@ const NAV = [
   { to: '/admin/produtos',      label: 'Produtos',        icon: 'tag' },
   { to: '/admin/clientes',      label: 'Clientes',        icon: 'users' },
   { to: '/admin/configuracoes', label: 'Configurações',   icon: 'settings' },
+  { to: '/admin/conta',         label: 'Minha conta',     icon: 'user' },
 ];
 
 function SidebarContent({ onClose }) {

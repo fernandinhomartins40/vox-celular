@@ -10,6 +10,7 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base);
+    assert.equal(await page.getByRole('link', { name: 'Painel do lojista', exact: true }).getAttribute('href'), '/admin/login');
     const search = page.getByRole('textbox', { name: 'Buscar produtos' });
     await search.fill('ci product');
     const card = page.locator('.product-card');
@@ -41,6 +42,12 @@ try {
   await page.getByRole('button', { name: 'Salvo!' }).waitFor();
   await page.goto(base);
   await page.getByText('Seg–Sex 9h–18h CI', { exact: false }).first().waitFor();
+  await page.goto(`${base}/admin/conta`);
+  await page.getByLabel('Senha atual', { exact: true }).fill('ci-admin-password-only-123');
+  await page.getByLabel('Nova senha', { exact: true }).fill('ci-browser-admin-password');
+  await page.getByLabel('Confirmar nova senha', { exact: true }).fill('ci-browser-admin-password');
+  await page.getByRole('button', { name: 'Alterar senha', exact: true }).click();
+  await page.getByText('Senha alterada com sucesso.', { exact: true }).waitFor();
   const customerPage = await browser.newPage();
   await customerPage.goto(`${base}/area-cliente/login`);
   await customerPage.getByRole('button', { name: 'Criar conta grátis' }).click();

@@ -42,6 +42,19 @@ const unauthorized = await fetch(base + '/api/dashboard');
 assert.equal(unauthorized.status, 401);
 const admin = await json('/api/auth/login', { method: 'POST', body: { email: env.ADMIN_EMAIL, senha: env.ADMIN_PASSWORD } });
 const loja = await json('/api/loja');
+const testSeed = (password) => compose('--profile', 'tools', 'run', '--rm', '--no-deps', '-e', 'ALLOW_TEST_ADMIN_SEED=true',
+  '-e', 'TEST_ADMIN_PASSWORD=' + password, 'migrate', 'node', 'dist/seed.js');
+const userCount = sql('SELECT count(*) FROM "Usuario";');
+testSeed('ci-test-operator-password');
+testSeed('ci-second-password-preserved');
+assert.equal(Number(sql('SELECT count(*) FROM "Usuario";')), Number(userCount) + 1);
+assert.equal(sql('SELECT id FROM "Loja";'), loja.id);
+const testOperator = await json('/api/auth/login', { method: 'POST', body: { email: 'teste.lojista@voxcelular.com.br', senha: 'ci-test-operator-password' } });
+assert.equal(testOperator.user.role, 'LOJISTA');
+await json('/api/auth/senha', { token: testOperator.token, method: 'PATCH', status: 400, body: { senhaAtual: 'wrong', novaSenha: 'ci-new-test-password' } });
+await json('/api/auth/senha', { token: testOperator.token, method: 'PATCH', body: { senhaAtual: 'ci-test-operator-password', novaSenha: 'ci-new-test-password' } });
+await json('/api/auth/login', { method: 'POST', status: 401, body: { email: testOperator.user.email, senha: 'ci-test-operator-password' } });
+await json('/api/auth/login', { method: 'POST', body: { email: testOperator.user.email, senha: 'ci-new-test-password' } });
 const customer = await json('/api/auth/register', { method: 'POST', status: 201, body: {
   nome: 'CI Customer', email: 'ci-customer@example.com', senha: 'ci-customer-password', lojaId: loja.id,
 } });
