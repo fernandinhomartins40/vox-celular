@@ -53,3 +53,12 @@ Definir ciclo comercial do pedido (criação/confirmação/cancelamento/pagament
 
 ## Publicação validada
 Workflow main 37988464216 aprovado, incluindo deploy. Release e845bfd636aacd74fbaf511cc06ae6b938ed4cb7 ativa. HTTPS https://www.voxcelular.com.br respondeu 200; /api/ready retornou ok:true; vox_web, vox_api e vox_db saudáveis. Trabalhar diretamente na main nas próximas alterações.
+
+## Painel e acesso de teste
+Painel existente revisado: métricas, produtos/estoque/preços/fotos, pedidos, clientes e configuração da página pública. Link **Painel do lojista** destacado no menu Loja do rodapé. Nova tela **Minha conta** permite trocar senha com verificação da senha atual e confirmação da nova senha.
+
+Seed destrutivo substituído por criação exclusiva de lojista de teste. Preserva usuários, senhas, produtos, clientes e vendas. Execução produtiva exige opção explícita do workflow; senha aleatória gerada fora do repositório, sem publicação nos logs. Repetir o seed não redefine senha. Instruções em `docs/LOJISTA_ACCESS.md`.
+
+Builds locais, lint, actionlint e testes reais PostgreSQL/Chromium aprovados. Integração cobre seed repetido, preservação da loja, login, senha atual incorreta e invalidação da senha antiga após troca. Navegador verifica link e troca de senha. Docker Hub apresentou 429/timeout; runners passaram a usar mirror público documentado em https://docs.docker.com/build/buildkit/configure/ para builds, sem alterar daemon da VPS.
+
+Workflow main 37993078097 aprovado com deploy e criação de acesso. Login HTTPS do usuário de teste confirmado com role LOJISTA e dashboard autorizado; API ready e três contêineres saudáveis. Nenhuma credencial foi versionada nos documentos.
