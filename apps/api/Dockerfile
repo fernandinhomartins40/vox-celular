@@ -23,6 +23,7 @@ RUN apk add --no-cache openssl && mkdir -p /app/uploads && chown node:node /app/
 ENV NODE_ENV=production
 WORKDIR /app/apps/api
 COPY --from=production-deps /app/node_modules /app/node_modules
+COPY --from=production-deps /app/apps/api/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./dist
 COPY apps/api/package.json ./package.json
 USER node
