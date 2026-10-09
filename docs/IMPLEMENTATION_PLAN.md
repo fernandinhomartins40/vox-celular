@@ -9,11 +9,11 @@ P0: recompensas de outra loja ou inativas podem ser resgatadas; concorrência po
 ## Oportunidades de melhoria
 | ID | TIPO | SITUAÇÃO ATUAL | OPORTUNIDADE/SOLUÇÃO | ESFORÇO ELIMINADO/BENEFÍCIO | PRIORIDADE | RISCO | TESTE | STATUS |
 |---|---|---|---|---|---|---|---|---|
-| OP-01 | AUTOMATIZAR | Vitrine estática | Catálogo real carregado por loja, vazio/erro/retry | Cadastrar uma vez e aparecer na vitrine | P1 | Baixo | Build, integração, navegador | DOING |
-| OP-02 | JUNTAR | Só categorias fixas | Busca, categorias reais, ordenar preço e disponibilidade | Localizar produto sem percorrer catálogo | P2 | Baixo | Testes lógica, navegador | DOING |
-| OP-03 | ANTECIPAR | Pedido ID técnico/contato incorreto | Código legível, busca por código, WhatsApp do cliente, erro/saving | Próximo passo no mesmo contexto | P1 | Baixo | Integração, lint | DOING |
-| OP-04 | AUTOMATIZAR | Saldo fica desatualizado | Atualizar fidelidade após resgate, informar erros, impedir concorrência | Eliminar reload/conferência manual | P0 | Médio | Integração concorrente | DOING |
-| OP-05 | ELIMINAR | Entrada insegura e foto perdida em falha | Allowlist de config; atualizar banco antes de remover imagem antiga | Preservar dados e isolamento | P0 | Baixo | Integração | DOING |
+| OP-01 | AUTOMATIZAR | Vitrine estática | Catálogo real carregado por loja, vazio/erro/retry | Cadastrar uma vez e aparecer na vitrine | P1 | Baixo | Build, integração, navegador | DONE |
+| OP-02 | JUNTAR | Só categorias fixas | Busca, categorias reais, ordenar preço e disponibilidade | Localizar produto sem percorrer catálogo | P2 | Baixo | Testes lógica, navegador | DONE |
+| OP-03 | ANTECIPAR | Pedido ID técnico/contato incorreto | Código legível, busca por código, WhatsApp do cliente, erro/saving | Próximo passo no mesmo contexto | P1 | Baixo | Integração, lint | DONE |
+| OP-04 | AUTOMATIZAR | Saldo fica desatualizado | Atualizar fidelidade após resgate, informar erros, impedir concorrência | Eliminar reload/conferência manual | P0 | Médio | Integração concorrente | DONE |
+| OP-05 | ELIMINAR | Entrada insegura e foto perdida em falha | Allowlist de config; atualizar banco antes de remover imagem antiga | Preservar dados e isolamento | P0 | Baixo | Integração | DONE |
 
 ## Ordem de implementação
 Segurança/transações → catálogo real e busca → pedidos/feedback → integração/lint/build/navegador → corrigir → relatório.
@@ -38,3 +38,6 @@ Identidade visual e recorte de imagens preservados. Checkout por WhatsApp não i
 
 ## Bloqueios reais
 Página de configurações contém campos que não existem no schema (frete/parcelas/slogan). Não fingir persistência desses campos; plano de consolidação completo exige decisão sobre regras comerciais. Docker local indisponível; testes de banco real serão executados no runner GitHub com dados descartáveis. Produção não será usada para criar dados de teste.
+
+## Validação final
+OP-01 a OP-07 implementadas e validadas. Builds/lint/testes locais aprovados; PostgreSQL real e Chromium aprovados no run 37987242206. Publicação fora desta validação: deploy foi skipped na branch feat/product-usability. Relatório em docs/IMPLEMENTATION_REPORT.md.
