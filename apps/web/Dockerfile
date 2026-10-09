@@ -1,22 +1,16 @@
-FROM node:22-alpine AS base
+# syntax=docker/dockerfile:1
+FROM node:22-alpine AS build
 WORKDIR /app
-
-# Install all dependencies
-FROM base AS deps
-COPY package.json ./
-RUN npm install --ignore-scripts
-
-# Build stage
-FROM deps AS build
-COPY . .
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/package.json
+RUN --mount=type=cache,target=/root/.npm npm ci --workspace=@vox/web --include-workspace-root=false --ignore-scripts --no-audit --no-fund
+COPY apps/web apps/web
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
-RUN npm run build
+RUN npm run lint --workspace=@vox/web && npm run build --workspace=@vox/web
 
-# Serve with a minimal static server
-FROM node:22-alpine AS runner
-WORKDIR /app
-RUN npm install -g serve
-COPY --from=build /app/dist ./dist
-EXPOSE 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+FROM nginx:stable-alpine AS runner
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+EXPOSE 80

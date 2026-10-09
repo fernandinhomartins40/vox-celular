@@ -14,8 +14,8 @@ dashboardRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
 
   const [pedidosHoje, pedidosMes, pedidosOntem, clientesNovos, estoqueBaixo, grafico] = await Promise.all([
     prisma.pedido.count({ where: { lojaId, createdAt: { gte: hoje } } }),
-    prisma.pedido.findMany({ where: { lojaId, createdAt: { gte: inicioMes } }, select: { total: true } }),
-    prisma.pedido.findMany({ where: { lojaId, createdAt: { gte: ontem, lt: hoje } }, select: { total: true } }),
+    prisma.pedido.aggregate({ where: { lojaId, createdAt: { gte: inicioMes } }, _sum: { total: true }, _count: { _all: true } }),
+    prisma.pedido.aggregate({ where: { lojaId, createdAt: { gte: ontem, lt: hoje } }, _sum: { total: true } }),
     prisma.cliente.count({ where: { lojaId, createdAt: { gte: inicioMes } } }),
     prisma.produto.count({ where: { lojaId, estoque: { lte: 5 }, ativo: true } }),
     prisma.$queryRaw`
@@ -28,17 +28,18 @@ dashboardRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     `,
   ]);
 
-  const faturamentoMes = pedidosMes.reduce((s: number, p: { total: unknown }) => s + Number(p.total), 0);
-  const faturamentoOntem = pedidosOntem.reduce((s: number, p: { total: unknown }) => s + Number(p.total), 0);
+  const faturamentoMes = Number(pedidosMes._sum.total ?? 0);
+  const faturamentoOntem = Number(pedidosOntem._sum.total ?? 0);
+  const quantidadeMes = pedidosMes._count._all;
 
   res.json({
     pedidosHoje,
-    pedidosMes: pedidosMes.length,
+    pedidosMes: quantidadeMes,
     faturamentoMes,
     faturamentoOntem,
     clientesNovos,
     estoqueBaixo,
-    ticketMedio: pedidosMes.length ? Math.round(faturamentoMes / pedidosMes.length) : 0,
+    ticketMedio: quantidadeMes ? Math.round(faturamentoMes / quantidadeMes) : 0,
     grafico,
   });
 });

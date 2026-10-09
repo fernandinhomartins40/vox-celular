@@ -1,22 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Icon } from '../icons';
 import { PHONE_DIGITS } from '../data';
 import { formatBRL, badgeStyle } from '../utils';
 
-export default function ProductModal({ product, onClose, onAdd }) {
+export default function ProductModal(props) {
+  if (!props.product) return null;
+  return <ProductModalContent key={props.product.id} {...props} />;
+}
+
+function ProductModalContent({ product, onClose, onAdd }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
-
-  useEffect(() => { if (product) setQty(1); }, [product]);
-
-  if (!product) return null;
+  const closeTimer = useRef(null);
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
 
   const discount = product.precoOriginal ? Math.round((1 - product.preco / product.precoOriginal) * 100) : 0;
 
   const handleAdd = () => {
     onAdd(product, qty);
     setAdded(true);
-    setTimeout(() => { setAdded(false); onClose(); }, 900);
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => { setAdded(false); onClose(); }, 900);
   };
 
   return (

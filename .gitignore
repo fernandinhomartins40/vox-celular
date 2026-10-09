@@ -4,3 +4,6 @@ dist
 .turbo
 uploads
 *.log
+
+# Configuracao local de agentes
+/.claude/

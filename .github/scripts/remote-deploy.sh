@@ -1,128 +1,132 @@
 #!/usr/bin/env bash
-# Runs on the VPS. Called by the deploy workflow.
-# ENV expected: APP_ROOT, RELEASE, DEPLOY_PORT
-set -euo pipefail
-
+# GitHub Actions only. Inputs are non-secret environment values; registry token is stdin.
+set -Eeuo pipefail
+umask 077
+: "${APP_ROOT:?}" "${RELEASE:?}" "${DEPLOY_PORT:?}" "${GHCR_USER:?}"
+[[ "$APP_ROOT" == /opt/voxcelular && "$RELEASE" =~ ^[a-f0-9]{40}-[0-9]+-[0-9]+$ ]] || exit 1
+[[ "$DEPLOY_PORT" =~ ^[0-9]+$ ]] && (( DEPLOY_PORT >= 1024 && DEPLOY_PORT <= 65535 )) || exit 1
+for name in vox_db vox_api vox_web; do
+  if docker inspect "$name" >/dev/null 2>&1; then
+    [[ $(docker inspect "$name" --format '{{index .Config.Labels "com.docker.compose.project"}}') == voxcelular ]] || {
+      echo "Container $name has unknown ownership." >&2; exit 1;
+    }
+  fi
+done
 RELEASE_DIR="$APP_ROOT/releases/$RELEASE"
-CURRENT_LINK="$APP_ROOT/current"
 ENV_FILE="$APP_ROOT/.env"
-COMPOSE_FILE="$RELEASE_DIR/docker-compose.yml"
-
-echo "==> Starting deploy of release: $RELEASE"
-
-# ── 1. Validate required files ────────────────────────────────────────────────
-if [ ! -f "$COMPOSE_FILE" ]; then
-  echo "ERROR: docker-compose.yml not found at $COMPOSE_FILE" >&2
-  exit 1
+mkdir -p "$APP_ROOT/backups"
+exec 9>"$APP_ROOT/deploy.lock"
+flock -n 9 || { echo 'Another Vox deployment is running.' >&2; exit 1; }
+for tool in docker curl openssl tar ss; do command -v "$tool" >/dev/null; done
+docker compose version >/dev/null
+# Refuse to displace another application or host listener.
+if ss -H -lnt "sport = :$DEPLOY_PORT" | grep -q .; then
+  own_port=$(docker inspect vox_web --format '{{range (index .NetworkSettings.Ports "80/tcp")}}{{.HostPort}}{{end}}' 2>/dev/null || true)
+  [[ "$own_port" == "$DEPLOY_PORT" ]] || { echo "Port $DEPLOY_PORT is already in use by another service." >&2; exit 1; }
 fi
-if [ ! -f "$ENV_FILE" ]; then
-  echo "ERROR: .env not found at $ENV_FILE — run the 'Ensure .env' step first" >&2
-  exit 1
-fi
+[[ -f "$RELEASE_DIR/release.env" && -f "$RELEASE_DIR/docker-compose.yml" ]] || exit 1
+# Validate the uploaded immutable image manifest before sourcing it.
+[[ $(wc -l < "$RELEASE_DIR/release.env") -eq 3 ]] || exit 1
+while IFS= read -r line; do
+  [[ "$line" =~ ^(API_IMAGE|WEB_IMAGE|MIGRATION_IMAGE)=ghcr\.io/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$ ]] || exit 1
+done < "$RELEASE_DIR/release.env"
+set -a
+source "$RELEASE_DIR/release.env"
+set +a
+for key in API_IMAGE WEB_IMAGE MIGRATION_IMAGE; do [[ -n "${!key:-}" ]] || exit 1; done
 
-# ── 2. Patch docker-compose.yml port binding to match DEPLOY_PORT ─────────────
-# The repo's docker-compose.yml maps 3096:80. On the VPS nginx handles TLS and
-# forwards to DEPLOY_PORT (also 3096). The container's nginx listens on 80.
-# We override the published port so the container binds exactly DEPLOY_PORT.
-sed -i "s|\"[0-9]*:80\"|\"${DEPLOY_PORT}:80\"|g" "$COMPOSE_FILE"
+# Credentials are limited to this deploy and never printed/persisted in app files.
+DOCKER_CONFIG=$(mktemp -d /tmp/voxcelular-registry.XXXXXX)
+export DOCKER_CONFIG
+cleanup() { rm -rf -- "$DOCKER_CONFIG"; }
+trap cleanup EXIT
+IFS= read -r registry_token
+printf '%s' "$registry_token" | docker login ghcr.io -u "$GHCR_USER" --password-stdin >/dev/null
+unset registry_token
 
-# ── 3. Symlink shared .env into release ──────────────────────────────────────
-ln -sf "$ENV_FILE" "$RELEASE_DIR/.env"
-
-# ── 4. Preserve persistent volumes across releases ───────────────────────────
-# Docker named volumes (pgdata) are independent of the release dir.
-# We just need to ensure the project name is stable so volume names don't change.
-export COMPOSE_PROJECT_NAME=voxcelular
-
-# ── 5. Pull / build images ────────────────────────────────────────────────────
-echo "==> Building images..."
-docker compose \
-  --project-name "$COMPOSE_PROJECT_NAME" \
-  --file "$COMPOSE_FILE" \
-  --env-file "$ENV_FILE" \
-  build --no-cache
-
-# ── 6. Stop old containers gracefully (keep volumes) ─────────────────────────
-echo "==> Stopping previous containers (if any)..."
-if [ -L "$CURRENT_LINK" ] && [ -f "$CURRENT_LINK/docker-compose.yml" ]; then
-  docker compose \
-    --project-name "$COMPOSE_PROJECT_NAME" \
-    --file "$CURRENT_LINK/docker-compose.yml" \
-    --env-file "$ENV_FILE" \
-    down --remove-orphans --timeout 30 || true
-fi
-
-# ── 7. Start new containers ───────────────────────────────────────────────────
-echo "==> Starting containers..."
-docker compose \
-  --project-name "$COMPOSE_PROJECT_NAME" \
-  --file "$COMPOSE_FILE" \
-  --env-file "$ENV_FILE" \
-  up -d --remove-orphans
-
-# ── 8. Wait for the DB to be healthy before running migrations ────────────────
-echo "==> Waiting for database to be ready..."
-WAIT=0
-until docker compose \
-  --project-name "$COMPOSE_PROJECT_NAME" \
-  --file "$COMPOSE_FILE" \
-  exec -T db pg_isready -U vox -d voxcelular >/dev/null 2>&1; do
-  WAIT=$((WAIT+1))
-  if [ "$WAIT" -gt 30 ]; then
-    echo "ERROR: Database did not become ready within 60s" >&2
-    docker compose \
-      --project-name "$COMPOSE_PROJECT_NAME" \
-      --file "$COMPOSE_FILE" \
-      logs db || true
+# Create secrets exactly once. Preserve every existing value on later deployments.
+if [[ ! -f "$ENV_FILE" ]]; then
+  if docker volume inspect voxcelular_pgdata >/dev/null 2>&1; then
+    echo 'Persistent database exists without .env. Restore original credentials before deploying.' >&2
     exit 1
   fi
-  echo "  waiting for db... (${WAIT}/30)"
-  sleep 2
-done
-echo "  database is ready."
-
-# ── 9. Run Prisma migrations ──────────────────────────────────────────────────
-echo "==> Running database migrations..."
-docker compose \
-  --project-name "$COMPOSE_PROJECT_NAME" \
-  --file "$COMPOSE_FILE" \
-  --env-file "$ENV_FILE" \
-  exec -T api npx prisma migrate deploy
-
-# ── 10. Run seed only on first deploy (when Loja table is empty) ──────────────
-ROW_COUNT=$(docker compose \
-  --project-name "$COMPOSE_PROJECT_NAME" \
-  --file "$COMPOSE_FILE" \
-  exec -T db psql -U vox -d voxcelular -tAc \
-  "SELECT COUNT(*) FROM \"Loja\";" 2>/dev/null || echo "0")
-ROW_COUNT=$(echo "$ROW_COUNT" | tr -d '[:space:]')
-
-if [ "${ROW_COUNT:-0}" = "0" ]; then
-  echo "==> Running database seed (first deploy)..."
-  docker compose \
-    --project-name "$COMPOSE_PROJECT_NAME" \
-    --file "$COMPOSE_FILE" \
-    --env-file "$ENV_FILE" \
-    exec -T api node dist/seed.js || \
-  docker compose \
-    --project-name "$COMPOSE_PROJECT_NAME" \
-    --file "$COMPOSE_FILE" \
-    --env-file "$ENV_FILE" \
-    exec -T api npx tsx src/seed.ts
-  echo "  seed complete."
-else
-  echo "==> Database already seeded (${ROW_COUNT} loja(s) found), skipping seed."
+  database_password=$(openssl rand -hex 32)
+  jwt_secret=$(openssl rand -hex 32)
+  admin_password=$(openssl rand -hex 24)
+  env_tmp=$(mktemp "$APP_ROOT/.env.XXXXXX")
+  printf 'POSTGRES_PASSWORD=%s\nJWT_SECRET=%s\nADMIN_EMAIL=lojista@vox.com\nADMIN_PASSWORD=%s\nCORS_ORIGIN=https://www.voxcelular.com.br\n' \
+    "$database_password" "$jwt_secret" "$admin_password" > "$env_tmp"
+  chmod 600 "$env_tmp"
+  mv -T "$env_tmp" "$ENV_FILE"
+  unset database_password jwt_secret admin_password
+fi
+chmod 600 "$ENV_FILE"
+export DEPLOY_PORT
+compose() { docker compose --project-name voxcelular --file "$RELEASE_DIR/docker-compose.yml" --env-file "$ENV_FILE" "$@"; }
+compose config --quiet
+# Pull sequentially to reduce network/decompression pressure on this shared host.
+export COMPOSE_PARALLEL_LIMIT=1
+compose --profile tools pull db api web migrate
+previous=$(readlink -f "$APP_ROOT/current" 2>/dev/null || true)
+if [[ -e "$APP_ROOT/current" || -L "$APP_ROOT/current" ]]; then
+  [[ "$previous" == "$APP_ROOT/releases/"* ]] || { echo 'Unknown current release path.' >&2; exit 1; }
 fi
 
-# ── 11. Update current symlink ────────────────────────────────────────────────
-ln -sfn "$RELEASE_DIR" "$CURRENT_LINK"
-echo "==> Symlink updated: $CURRENT_LINK -> $RELEASE_DIR"
-
-# ── 12. Prune old releases (keep last 5) ─────────────────────────────────────
-echo "==> Pruning old releases..."
-ls -1dt "$APP_ROOT/releases"/*/ 2>/dev/null | tail -n +6 | xargs rm -rf || true
-
-# ── 13. Clean up dangling Docker images ──────────────────────────────────────
-docker image prune -f || true
-
-echo "==> Deploy of $RELEASE completed successfully."
+# Back up the existing database and uploads BEFORE migrations; failures abort deploy.
+backup="$APP_ROOT/backups/$RELEASE"
+backup_current() {
+  mkdir -p "$backup"
+  docker exec vox_db pg_dump -U vox -d voxcelular -Fc > "$backup/database.dump.partial"
+  docker exec -i vox_db pg_restore --list < "$backup/database.dump.partial" >/dev/null
+  mv "$backup/database.dump.partial" "$backup/database.dump"
+  if docker volume inspect voxcelular_uploads >/dev/null 2>&1; then
+    docker run --rm --network none --memory 64m --cpus 0.5 --mount type=volume,source=voxcelular_uploads,target=/uploads,readonly \
+      --entrypoint tar "$WEB_IMAGE" -czf - -C /uploads . > "$backup/uploads.tar.gz.partial"
+    tar -tzf "$backup/uploads.tar.gz.partial" >/dev/null
+    mv "$backup/uploads.tar.gz.partial" "$backup/uploads.tar.gz"
+  fi
+}
+if docker inspect vox_db >/dev/null 2>&1; then
+  [[ $(docker inspect vox_db --format '{{.State.Running}}') == true ]] || { echo 'Existing database must be running for backup.' >&2; exit 1; }
+  backup_current
+fi
+compose up -d --no-build --wait --wait-timeout 120 db
+# A retained volume can exist even when its old container has been removed.
+# Always cover that case before applying migrations.
+if [[ ! -f "$backup/database.dump" ]]; then
+  backup_current
+fi
+# Migration is serialized and is NOT repeated on API startup.
+compose --profile tools run --rm --no-deps migrate
+lojas=$(docker exec vox_db psql -U vox -d voxcelular -tAc 'SELECT COUNT(*) FROM "Loja";')
+if [[ "$lojas" == 0 ]]; then
+  # Secret is read by psql-independent bootstrap; never emit it into the job logs.
+  ADMIN_EMAIL=$(sed -n 's/^ADMIN_EMAIL=//p' "$ENV_FILE")
+  ADMIN_PASSWORD=$(sed -n 's/^ADMIN_PASSWORD=//p' "$ENV_FILE")
+  [[ -n "$ADMIN_EMAIL" && ${#ADMIN_PASSWORD} -ge 12 ]] || { echo 'Initialization credentials missing in app .env.' >&2; exit 1; }
+  export ADMIN_EMAIL ADMIN_PASSWORD
+  compose --profile tools run --rm --no-deps -e ADMIN_EMAIL -e ADMIN_PASSWORD migrate node dist/bootstrap.js
+  unset ADMIN_EMAIL ADMIN_PASSWORD
+fi
+rollback() {
+  local failed=$?
+  trap - ERR
+  if [[ -n "$previous" && -f "$previous/release.env" ]]; then
+    echo 'New release failed. Restoring previous application images (database is not reverted).'
+    set -a; source "$previous/release.env"; set +a
+    docker compose --project-name voxcelular --file "$previous/docker-compose.yml" --env-file "$ENV_FILE" \
+      up -d --no-build --wait --wait-timeout 120 api web || true
+  else
+    echo 'First deployment failed; persistent data is retained for diagnosis.' >&2
+  fi
+  exit "$failed"
+}
+# Safe for the additive migration in this repository. Breaking future migrations
+# require an explicit compatibility/restore plan before image rollback is enabled.
+trap rollback ERR
+compose up -d --no-build --wait --wait-timeout 180 api web
+APP_ROOT="$APP_ROOT" RELEASE="$RELEASE" DEPLOY_PORT="$DEPLOY_PORT" bash "$RELEASE_DIR/.github/scripts/remote-health-check.sh"
+APP_ROOT="$APP_ROOT" RELEASE="$RELEASE" DEPLOY_PORT="$DEPLOY_PORT" bash "$RELEASE_DIR/.github/scripts/configure-host.sh"
+ln -sfn "$RELEASE_DIR" "$APP_ROOT/current"
+trap - ERR
+printf 'Release %s healthy. No images, backups or persistent volumes were pruned.\n' "$RELEASE"

@@ -57,6 +57,7 @@ model Usuario {
   sessoes      Sessao[]
 
   @@unique([lojaId, email])
+  @@index([email])
 }
 
 enum Role {
@@ -90,6 +91,7 @@ model Cliente {
   usuario    Usuario  @relation(fields: [usuarioId], references: [id])
   pedidos    Pedido[]
   historicoP HistoricoPontos[]
+  @@index([lojaId, createdAt])
 }
 
 model Produto {
@@ -113,6 +115,7 @@ model Produto {
   loja          Loja     @relation(fields: [lojaId], references: [id])
   itensPedido   ItemPedido[]
   promocoes     Promocao[]
+  @@index([lojaId, ativo, destaque])
 }
 
 model Pedido {
@@ -132,6 +135,8 @@ model Pedido {
   timeline   TimelinePedido[]
 
   @@unique([lojaId, codigo])
+  @@index([lojaId, createdAt])
+  @@index([clienteId, createdAt])
 }
 
 enum StatusPedido {
@@ -151,6 +156,7 @@ model ItemPedido {
 
   pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   produto   Produto  @relation(fields: [produtoId], references: [id])
+  @@index([pedidoId])
 }
 
 model TimelinePedido {
@@ -162,6 +168,7 @@ model TimelinePedido {
   ordem     Int
 
   pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  @@index([pedidoId, ordem])
 }
 
 model Promocao {
@@ -178,6 +185,7 @@ model Promocao {
 
   loja    Loja    @relation(fields: [lojaId], references: [id])
   produto Produto @relation(fields: [produtoId], references: [id])
+  @@index([lojaId, ativa, validade])
 }
 
 model RecompensaCatalogo {
@@ -189,6 +197,7 @@ model RecompensaCatalogo {
 
   loja     Loja    @relation(fields: [lojaId], references: [id])
   resgates ResgateRecompensa[]
+  @@index([lojaId, ativo])
 }
 
 model ResgateRecompensa {
@@ -211,6 +220,7 @@ model HistoricoPontos {
   createdAt DateTime @default(now())
 
   cliente   Cliente  @relation(fields: [clienteId], references: [id])
+  @@index([clienteId, createdAt])
 }
 
 enum TipoPontos {

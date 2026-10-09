@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
+import { prisma } from './lib/prisma.js';
 import { authRouter } from './routes/auth.js';
 import { produtosRouter } from './routes/produtos.js';
 import { pedidosRouter } from './routes/pedidos.js';
@@ -22,6 +23,14 @@ app.use('/uploads', express.static(uploadsDir));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.get('/api/ready', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true });
+  } catch {
+    res.status(503).json({ ok: false });
+  }
+});
 
 app.use('/api/auth', authRouter);
 app.use('/api/produtos', produtosRouter);
@@ -33,4 +42,19 @@ app.use('/api/config', configRouter);
 app.use('/api/promocoes', promocoesRouter);
 app.use('/api/loja', lojaRouter);
 
-app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+let shuttingDown = false;
+async function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  const timeout = setTimeout(() => process.exit(1), 25000);
+  timeout.unref();
+  server.close(async () => {
+    await prisma.$disconnect();
+    clearTimeout(timeout);
+    process.exit(0);
+  });
+  server.closeIdleConnections();
+}
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

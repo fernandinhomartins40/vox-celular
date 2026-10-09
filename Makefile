@@ -1,16 +1,19 @@
 .PHONY: up down build seed logs restart dev-api dev-web migrate
 
+# Local use only. Production deployment must go through GitHub Actions.
 up:
-	docker compose up -d
+	docker compose up -d --no-build
 
 down:
 	docker compose down
 
 build:
-	docker compose build --no-cache
+	docker build -f apps/api/Dockerfile --target runner -t vox-api:local .
+	docker build -f apps/api/Dockerfile --target migrate -t vox-migration:local .
+	docker build -f apps/web/Dockerfile -t vox-web:local .
 
 seed:
-	docker compose exec api node -e "import('./dist/seed.js').then(m => m.default ? m.default() : m.main())"
+	npm run db:seed --workspace=@vox/api
 
 logs:
 	docker compose logs -f
@@ -18,12 +21,11 @@ logs:
 restart:
 	docker compose restart
 
-# Run locally without Docker (dev mode)
 dev-api:
-	cd apps/api && npm run dev
+	npm run dev --workspace=@vox/api
 
 dev-web:
-	cd apps/web && npm run dev
+	npm run dev --workspace=@vox/web
 
 migrate:
-	cd apps/api && npx prisma migrate dev
+	docker compose --profile tools run --rm migrate

@@ -196,7 +196,7 @@ export default function ClienteFidelidade() {
               Apresente o código ao atendente na loja ou envie via WhatsApp para usar sua recompensa.
             </p>
             <div className="bg-[var(--royal-50)] rounded-xl px-6 py-3 mb-6 font-display font-bold text-[22px] text-[var(--royal-700)] tracking-widest">
-              {resgatado.codigo ?? `VOX-${Math.random().toString(36).toUpperCase().slice(2, 8)}`}
+              {resgatado.codigo ?? 'Código indisponível'}
             </div>
             <div className="flex gap-3">
               <button onClick={() => setResgatado(null)} className="flex-1 h-10 border border-[var(--line)] rounded-xl text-[13px] font-medium text-zinc-600 hover:bg-zinc-50">Fechar</button>

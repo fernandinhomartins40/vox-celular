@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+.git
+.claude
+.codex
+.turbo
+app
+docs
+AGENTS.md
+PROTOCOLO_*.md
+**/*.log
+**/uploads
+**/coverage
+**/*.pem
+**/*.key

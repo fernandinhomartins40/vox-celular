@@ -1,33 +1,30 @@
-FROM node:22-alpine AS base
+# syntax=docker/dockerfile:1
+FROM node:22-alpine AS build
+RUN apk add --no-cache openssl
 WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/package.json
+RUN --mount=type=cache,target=/root/.npm npm ci --workspace=@vox/api --include-workspace-root=false --ignore-scripts --no-audit --no-fund
+COPY apps/api apps/api
+RUN npm exec --workspace=@vox/api -- prisma generate && npm run build --workspace=@vox/api
 
-# Install production dependencies only
-FROM base AS deps
-COPY package.json ./
-RUN npm install --omit=dev --ignore-scripts
+# CLI exists only in the temporary migration image.
+FROM build AS migrate
+ENV NODE_ENV=production
+WORKDIR /app/apps/api
+USER node
+CMD ["node", "../../node_modules/prisma/build/index.js", "migrate", "deploy"]
 
-# Install all dependencies (including devDeps) for building
-FROM base AS build-deps
-COPY package.json ./
-RUN npm install --ignore-scripts
+FROM build AS production-deps
+RUN npm prune --omit=dev --workspace=@vox/api --include-workspace-root=false --ignore-scripts --no-audit --no-fund
 
-# Build stage
-FROM build-deps AS build
-COPY . .
-RUN npx prisma generate
-RUN npm run build
-
-# Production runner
-FROM base AS runner
-WORKDIR /app
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY prisma ./prisma
-COPY package.json .
-
+FROM node:22-alpine AS runner
+RUN apk add --no-cache openssl && mkdir -p /app/uploads && chown node:node /app/uploads
+ENV NODE_ENV=production
+WORKDIR /app/apps/api
+COPY --from=production-deps /app/node_modules /app/node_modules
+COPY --from=build /app/apps/api/dist ./dist
+COPY apps/api/package.json ./package.json
+USER node
 EXPOSE 3001
-
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["node", "dist/index.js"]
