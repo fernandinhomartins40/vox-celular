@@ -62,3 +62,12 @@ Seed destrutivo substituído por criação exclusiva de lojista de teste. Preser
 Builds locais, lint, actionlint e testes reais PostgreSQL/Chromium aprovados. Integração cobre seed repetido, preservação da loja, login, senha atual incorreta e invalidação da senha antiga após troca. Navegador verifica link e troca de senha. Docker Hub apresentou 429/timeout; runners passaram a usar mirror público documentado em https://docs.docker.com/build/buildkit/configure/ para builds, sem alterar daemon da VPS.
 
 Workflow main 37993078097 aprovado com deploy e criação de acesso. Login HTTPS do usuário de teste confirmado com role LOJISTA e dashboard autorizado; API ready e três contêineres saudáveis. Nenhuma credencial foi versionada nos documentos.
+
+## Redesign desktop e mobile
+Implementadas as duas pranchetas fornecidas pelo usuário como componentes responsivos: hero azul/vermelho, cabeçalho com busca compartilhada, benefícios, categorias com assets locais, cartões de produtos reais, faixa de portabilidade, três passos, serviços, depoimentos, contato e navegação inferior mobile. Menu do lojista e fluxos existentes preservados. CSS restrito a `.vox-store`, sem redesign do painel administrativo.
+
+Seis PNGs fornecidos organizados em `apps/web/src/assets/redesign`; originais preservados e versões WebP importadas pelo Vite, com aproximadamente 456 KB servidos em vez de 8,6 MB. As fotos, preços e estoque dos produtos continuam vindo da API. Catálogo vazio em produção permanece vazio: nenhum produto fictício criado para preencher as pranchetas.
+
+Build, lint e três testes de catálogo aprovados. Conferência visual local em 390/1440 px realizada com Edge e API real. Chromium no CI cobre busca sincronizada do cabeçalho, menu mobile, filtros, ordenação, estoque, detalhes, cadastro e administração. Ajustado título dos três passos para quebra durante carregamento da fonte.
+
+Workflow final main 37998597330 aprovado com deploy. Domínio conferido novamente em 390/1440 px: HTTPS 200, seis assets carregados, busca sincronizada, sem rolagem horizontal ou erros de execução. Layout mobile também verificado com fonte externa bloqueada. API ready e três contêineres saudáveis. Mapas continuam incorporados pelo provedor externo com link de direções disponível quando a incorporação não carregar.
