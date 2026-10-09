@@ -2,7 +2,9 @@ import { Link } from 'react-router-dom';
 import { Icon } from '../icons';
 import { PHONE_DIGITS, ADDRESS, MAPS_URL } from '../data';
 
-export default function Footer() {
+const safeUrl = value => /^https?:\/\//i.test(value ?? '') ? value : '#contato';
+
+export default function Footer({ config }) {
   return (
     <footer className="mt-24 ink-radiant text-zinc-300">
       <div className="max-w-7xl mx-auto px-4 lg:px-8 py-14 grid md:grid-cols-12 gap-8">
@@ -16,10 +18,10 @@ export default function Footer() {
             Loja de celulares, acessórios e serviços de telefonia em Palmital–PR. Atendimento humano, preços honestos, soluções rápidas.
           </p>
           <div className="flex items-center gap-2">
-            <a href="#" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center transition">
+            <a href={safeUrl(config?.instagramUrl)} aria-label="Instagram" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center transition">
               <Icon.instagram className="w-4 h-4" />
             </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center transition">
+            <a href={safeUrl(config?.facebookUrl)} aria-label="Facebook" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center transition">
               <Icon.facebook className="w-4 h-4" />
             </a>
             <a href={`https://wa.me/${PHONE_DIGITS}`} target="_blank" rel="noopener"
@@ -50,7 +52,7 @@ export default function Footer() {
           <ul className="space-y-3 text-[14px]">
             <li className="flex items-start gap-2.5"><Icon.pin className="w-4 h-4 mt-0.5 shrink-0 text-[var(--red-500)]" /> <span>{ADDRESS}</span></li>
             <li className="flex items-start gap-2.5"><Icon.whatsapp className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" /> <span>(42) 99103-1420</span></li>
-            <li className="flex items-start gap-2.5"><Icon.clock className="w-4 h-4 mt-0.5 shrink-0 text-[var(--royal-400)]" /> <span>Seg–Sex 8h–19h · Sáb 8h–13h</span></li>
+            <li className="flex items-start gap-2.5"><Icon.clock className="w-4 h-4 mt-0.5 shrink-0 text-[var(--royal-400)]" /> <span>{config?.horarioSemana || 'Seg–Sex 8h–19h'} · {config?.horarioSabado || 'Sáb 8h–13h'}</span></li>
           </ul>
         </div>
       </div>

@@ -1,6 +1,7 @@
 {
   "name": "vox-celular",
   "private": true,
+  "packageManager": "npm@10.9.2",
   "workspaces": ["apps/*"],
   "scripts": {
     "dev": "turbo run dev",

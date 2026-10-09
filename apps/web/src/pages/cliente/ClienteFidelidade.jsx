@@ -28,6 +28,8 @@ export default function ClienteFidelidade() {
   const [resgatado, setResgatado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [resgatando, setResgatando] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     api.get('/fidelidade/pontos')
@@ -37,12 +39,18 @@ export default function ClienteFidelidade() {
   }, []);
 
   const resgatar = async (recompensa) => {
+    if (resgatando) return;
     if ((recompensa.pontos ?? recompensa.custo) > (fidelidade?.saldo ?? 0)) return;
+    setResgatando(true);
+    setActionError('');
     try {
       const r = await api.post(`/fidelidade/resgatar/${recompensa.id}`, {});
       setResgatado({ ...recompensa, codigo: r.codigo });
+      setFidelidade(await api.get('/fidelidade/pontos'));
     } catch (e) {
-      console.error('Erro ao resgatar:', e.message);
+      setActionError(e.message);
+    } finally {
+      setResgatando(false);
     }
   };
 
@@ -119,6 +127,7 @@ export default function ClienteFidelidade() {
         {/* Recompensas */}
         <div className="bg-white border border-[var(--line)] rounded-2xl p-6">
           <div className="font-display font-bold text-[18px] mb-4">Resgatar recompensas</div>
+          {actionError && <p role="alert" className="text-red-600 mb-3">{actionError}</p>}
           <div className="space-y-3">
             {(p.recompensas ?? []).map((r, i) => {
               const custo = r.pontos ?? r.custo ?? 0;
@@ -135,7 +144,7 @@ export default function ClienteFidelidade() {
                     </div>
                   </div>
                   <button
-                    disabled={!pode}
+                    disabled={!pode || resgatando}
                     onClick={() => resgatar(r)}
                     className={`px-3.5 h-8 rounded-full text-[12px] font-semibold transition ${pode ? 'bg-[var(--royal-700)] text-white hover:bg-[var(--royal-800)]' : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'}`}>
                     {pode ? 'Resgatar' : `Faltam ${custo - p.saldo}`}
@@ -154,7 +163,7 @@ export default function ClienteFidelidade() {
           <div className="font-display font-bold text-[18px] mb-4">Histórico de pontos</div>
           <div className="space-y-3">
             {(p.historico ?? []).map((h, i) => {
-              const tipo = h.tipo ?? (h.pontos > 0 ? 'ganho' : 'resgate');
+              const tipo = h.tipo?.toLowerCase() ?? (h.pontos > 0 ? 'ganho' : 'resgate');
               const t = TIPO_STYLE[tipo] ?? TIPO_STYLE.ganho;
               return (
                 <div key={i} className="flex items-center justify-between">
@@ -166,7 +175,7 @@ export default function ClienteFidelidade() {
                     </div>
                     <div>
                       <div className="text-[13px] font-medium text-zinc-700">{h.descricao}</div>
-                      <div className="text-[11px] text-zinc-400">{h.data}</div>
+                      <div className="text-[11px] text-zinc-400">{h.createdAt ? new Date(h.createdAt).toLocaleDateString('pt-BR') : h.data}</div>
                     </div>
                   </div>
                   <div className={`font-display font-bold text-[16px] ${t.cor}`}>

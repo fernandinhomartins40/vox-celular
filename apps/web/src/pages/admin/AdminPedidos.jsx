@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
-import { PHONE_DIGITS } from '../../data';
+import { brazilPhone } from '../../lib/catalog';
 
 const STATUS_LIST_API  = ['TODOS', 'NOVO', 'EM_PREPARO', 'PRONTO', 'ENTREGUE'];
 const STATUS_LABEL     = { NOVO: 'Novo', EM_PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Entregue', TODOS: 'Todos' };
@@ -21,6 +21,8 @@ export default function AdminPedidos() {
   const [detalhe, setDetalhe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pending, setPending] = useState(false);
+  const [actionError, setActionError] = useState('');
 
   useEffect(() => {
     api.get('/pedidos')
@@ -33,21 +35,26 @@ export default function AdminPedidos() {
     const matchFiltro = filtro === 'TODOS' || p.status === filtro;
     const clienteNome = p.clienteNome ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.nome : p.cliente) ?? '';
     const matchBusca  = busca === '' ||
-      String(p.id).includes(busca) ||
+      `${p.codigo ?? ''} ${p.id}`.toLowerCase().includes(busca.toLowerCase()) ||
       clienteNome.toLowerCase().includes(busca.toLowerCase());
     return matchFiltro && matchBusca;
   });
 
   const avancarStatus = async (id) => {
+    if (pending) return;
     const pedido = pedidos.find(p => p.id === id);
     if (!pedido || !NEXT_STATUS[pedido.status]) return;
     const novoStatus = NEXT_STATUS[pedido.status];
+    setPending(true);
+    setActionError('');
     try {
-      await api.patch(`/pedidos/${id}/status`, { status: novoStatus });
-      setPedidos(prev => prev.map(p => p.id === id ? { ...p, status: novoStatus } : p));
-      if (detalhe?.id === id) setDetalhe(prev => ({ ...prev, status: novoStatus }));
+      const updated = await api.patch(`/pedidos/${id}/status`, { status: novoStatus });
+      setPedidos(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+      if (detalhe?.id === id) setDetalhe(prev => ({ ...prev, ...updated }));
     } catch (e) {
-      console.error('Erro ao avançar status:', e.message);
+      setActionError(e.message);
+    } finally {
+      setPending(false);
     }
   };
 
@@ -68,6 +75,7 @@ export default function AdminPedidos() {
         <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Pedidos</h1>
       </div>
 
+      {actionError && <p role="alert" className="text-red-600 mb-4">{actionError}</p>}
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative flex-1 min-w-[200px]">
@@ -103,11 +111,11 @@ export default function AdminPedidos() {
             <tbody>
               {filtrados.map((p, i) => {
                 const clienteNome = p.clienteNome ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.nome : p.cliente) ?? '';
-                const clienteEmail = p.clienteEmail ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.email : p.email) ?? '';
+                const telefone = brazilPhone(p.clienteTelefone ?? p.cliente?.telefone);
                 const itensList = (p.produtos ?? p.itens ?? []).map(x => x.nome ?? x.produto?.nome).filter(Boolean).join(', ');
                 return (
                   <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
-                    <td className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)] whitespace-nowrap">{p.id}</td>
+                    <td className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)] whitespace-nowrap">{p.codigo ?? p.id}</td>
                     <td className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{p.data ?? p.createdAt?.slice(0, 10)}</td>
                     <td className="px-5 py-3.5 font-medium text-zinc-800 whitespace-nowrap">{clienteNome}</td>
                     <td className="px-5 py-3.5 text-zinc-500 max-w-[180px] truncate">{itensList}</td>
@@ -125,16 +133,14 @@ export default function AdminPedidos() {
                           <Icon.eye className="w-3.5 h-3.5" />
                         </button>
                         {NEXT_STATUS[p.status] && (
-                          <button onClick={() => avancarStatus(p.id)}
+                          <button disabled={pending} onClick={() => avancarStatus(p.id)}
                             className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 grid place-items-center hover:bg-emerald-100 transition" title={`Avançar para ${STATUS_LABEL[NEXT_STATUS[p.status]]}`}>
                             <Icon.check className="w-3.5 h-3.5" />
                           </button>
                         )}
-                        <a href={`https://wa.me/55${(clienteEmail ? '' : PHONE_DIGITS)}?text=${encodeURIComponent(`Olá ${clienteNome ?? ''}! Sobre seu pedido ${p.id}: `)}`}
-                          target="_blank" rel="noopener"
-                          className="w-8 h-8 rounded-lg bg-emerald-600 text-white grid place-items-center hover:bg-emerald-700 transition" title="WhatsApp">
-                          <Icon.whatsapp className="w-3.5 h-3.5" />
-                        </a>
+                        {telefone && <a href={`https://wa.me/${telefone}?text=${encodeURIComponent(`Olá ${clienteNome}! Sobre seu pedido ${p.codigo ?? p.id}: `)}`}
+                          target="_blank" rel="noopener noreferrer" title="WhatsApp do cliente"
+                          className="w-8 h-8 rounded-lg bg-emerald-600 text-white grid place-items-center"><Icon.whatsapp className="w-3.5 h-3.5" /></a>}
                       </div>
                     </td>
                   </tr>
@@ -155,7 +161,7 @@ export default function AdminPedidos() {
           <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-[var(--line)]">
               <div>
-                <div className="font-display font-bold text-[22px]">{detalhe.id}</div>
+                <div className="font-display font-bold text-[22px]">{detalhe.codigo ?? detalhe.id}</div>
                 <div className="text-[13px] text-zinc-500">{detalhe.data ?? detalhe.createdAt?.slice(0, 10)} · {detalhe.pagamento}</div>
               </div>
               <button onClick={() => setDetalhe(null)} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
@@ -193,7 +199,7 @@ export default function AdminPedidos() {
                 </div>
               </div>
               {NEXT_STATUS[detalhe.status] && (
-                <button onClick={() => avancarStatus(detalhe.id)}
+                <button disabled={pending} onClick={() => avancarStatus(detalhe.id)}
                   className="w-full inline-flex items-center justify-center gap-2 h-11 bg-[var(--royal-700)] hover:bg-[var(--royal-800)] text-white rounded-xl font-semibold text-[13px] transition">
                   <Icon.check className="w-4 h-4" /> Avançar para "{STATUS_LABEL[NEXT_STATUS[detalhe.status]]}"
                 </button>

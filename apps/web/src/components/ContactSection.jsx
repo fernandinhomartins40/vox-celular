@@ -3,14 +3,14 @@ import { Icon } from '../icons';
 import { PHONE_DIGITS, ADDRESS, MAPS_URL, MAPS_EMBED } from '../data';
 import SectionHeader from './SectionHeader';
 
-export default function ContactSection() {
+export default function ContactSection({ config }) {
   const [form, setForm] = useState({ nome: '', telefone: '', mensagem: '' });
   const [sent, setSent] = useState(false);
 
   const submit = (e) => {
     e.preventDefault();
-    const text = `Olá Vox Celular!%0A%0ANome: ${form.nome}%0ATelefone: ${form.telefone}%0A%0AMensagem: ${form.mensagem}`;
-    window.open(`https://wa.me/${PHONE_DIGITS}?text=${text}`, '_blank');
+    const text = `Olá Vox Celular!\n\nNome: ${form.nome}\nTelefone: ${form.telefone}\n\nMensagem: ${form.mensagem}`;
+    window.open(`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
     setSent(true);
     setTimeout(() => setSent(false), 2500);
   };
@@ -64,7 +64,7 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <div className="font-display font-bold text-[14px]">Horário</div>
-                    <div className="text-[14px] text-white/85">Seg–Sex 8h–19h · Sáb 8h–13h</div>
+                    <div className="text-[14px] text-white/85">{config?.horarioSemana || 'Seg–Sex 8h–19h'} · {config?.horarioSabado || 'Sáb 8h–13h'}</div>
                   </div>
                 </div>
               </div>
@@ -85,7 +85,7 @@ export default function ContactSection() {
               className={`w-full inline-flex items-center justify-center gap-2 px-4 h-12 rounded-full font-semibold text-[14px] tracking-wide transition ${
                 sent ? 'bg-emerald-600 text-white' : 'bg-[var(--red-500)] hover:bg-[var(--red-600)] text-white'
               }`}>
-              {sent ? <><Icon.check className="w-4 h-4" /> Enviado!</> : <><Icon.send className="w-4 h-4" /> Enviar via WhatsApp</>}
+              {sent ? <><Icon.check className="w-4 h-4" /> Continue no WhatsApp</> : <><Icon.send className="w-4 h-4" /> Enviar via WhatsApp</>}
             </button>
           </form>
         </div>

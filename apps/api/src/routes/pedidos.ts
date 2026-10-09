@@ -84,21 +84,23 @@ pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res)
     ENTREGUE: 'Entregue',
   };
 
-  await prisma.pedido.update({
+  const updated = await prisma.$transaction(async (tx) => {
+  await tx.pedido.update({
     where: { id: pedidoId },
     data: { status: status as 'NOVO' | 'EM_PREPARO' | 'PRONTO' | 'ENTREGUE' },
   });
 
   for (const s of statusOrder.slice(0, novoIdx + 1)) {
-    await prisma.timelinePedido.updateMany({
-      where: { pedidoId, status: statusToLabel[s] },
+    await tx.timelinePedido.updateMany({
+      where: { pedidoId, status: statusToLabel[s], ok: false },
       data: { ok: true, data: new Date() },
     });
   }
 
-  const updated = await prisma.pedido.findUnique({
+  return tx.pedido.findUnique({
     where: { id: pedidoId },
     include: { itens: true, timeline: { orderBy: { ordem: 'asc' } } },
+  });
   });
   res.json(updated);
 });

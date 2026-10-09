@@ -17,6 +17,7 @@ function ProductModalContent({ product, onClose, onAdd }) {
   const discount = product.precoOriginal ? Math.round((1 - product.preco / product.precoOriginal) * 100) : 0;
 
   const handleAdd = () => {
+    if (product.estoque <= 0) return;
     onAdd(product, qty);
     setAdded(true);
     clearTimeout(closeTimer.current);
@@ -28,7 +29,7 @@ function ProductModalContent({ product, onClose, onAdd }) {
       <div onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden grid sm:grid-cols-2">
         <div className="relative aspect-square sm:aspect-auto bg-[var(--paper)]">
-          <img src={product.img} alt={product.nome} className="absolute inset-0 w-full h-full object-cover"/>
+          <img src={product.img || '/favicon.svg'} alt={product.nome} className="absolute inset-0 w-full h-full object-cover"/>
           {product.badge && (
             <div className={`absolute top-4 left-4 inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-display font-bold tracking-[0.18em] ${badgeStyle(product.badge)}`}>
               {product.badge}
@@ -54,7 +55,7 @@ function ProductModalContent({ product, onClose, onAdd }) {
           <p className="text-[14px] text-zinc-600 leading-relaxed mb-5 mt-3">{product.descricao}</p>
 
           <div className="grid grid-cols-2 gap-2 mb-6">
-            {product.specs.map((s, i) => (
+            {(product.specs ?? []).map((s, i) => (
               <div key={i} className="flex items-center gap-2 px-3 py-2 bg-[var(--paper)] border border-[var(--line)] rounded-lg text-[12px] font-medium text-zinc-700">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--royal-700)] shrink-0"></span>
                 {s}
@@ -82,7 +83,7 @@ function ProductModalContent({ product, onClose, onAdd }) {
                   <Icon.plus className="w-4 h-4" />
                 </button>
               </div>
-              <button onClick={handleAdd}
+              <button onClick={handleAdd} disabled={product.estoque <= 0}
                 className={`flex-1 inline-flex items-center justify-center gap-2 px-4 rounded-full font-semibold tracking-wide transition text-[14px] ${
                   added ? 'bg-emerald-600 text-white' : 'bg-[var(--royal-700)] hover:bg-[var(--royal-800)] text-white'
                 }`}>

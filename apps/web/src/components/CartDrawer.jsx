@@ -8,7 +8,7 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
 
   const updateQty = (id, delta) => {
     setItems(prev => prev
-      .map(it => it.id === id ? { ...it, qty: Math.max(0, it.qty + delta) } : it)
+      .map(it => it.id === id ? { ...it, qty: Math.min(it.estoque, Math.max(0, it.qty + delta)) } : it)
       .filter(it => it.qty > 0));
   };
 
@@ -16,9 +16,9 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
 
   const checkoutUrl = useMemo(() => {
     if (items.length === 0) return '#';
-    const lines = items.map(it => `• ${it.qty}x ${it.nome} — ${formatBRL(it.preco * it.qty)}`).join('%0A');
-    const text = `Olá Vox Celular! Quero finalizar o pedido:%0A%0A${lines}%0A%0A*Total: ${formatBRL(total)}*%0A%0APago via:`;
-    return `https://wa.me/${PHONE_DIGITS}?text=${text}`;
+    const lines = items.map(it => `• ${it.qty}x ${it.nome} — ${formatBRL(it.preco * it.qty)}`).join('\n');
+    const text = `Olá Vox Celular! Quero finalizar o pedido:\n\n${lines}\n\n*Total: ${formatBRL(total)}*\n\nPago via:`;
+    return `https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(text)}`;
   }, [items, total]);
 
   if (!open) return null;

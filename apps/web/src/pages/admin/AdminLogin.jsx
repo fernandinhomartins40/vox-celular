@@ -26,7 +26,6 @@ export default function AdminLogin() {
     else { setErro(result.error || 'E-mail ou senha incorretos.'); }
   };
 
-  const fillDemo = () => setForm({ email: 'lojista@vox.com', senha: '123456' });
 
   return (
     <div className="min-h-screen flex">
@@ -53,19 +52,7 @@ export default function AdminLogin() {
           <p className="text-white/70 text-[16px] max-w-sm leading-relaxed">
             Gerencie produtos, pedidos, clientes e a personalização da sua loja em um único lugar.
           </p>
-          <div className="mt-10 grid grid-cols-2 gap-4">
-            {[
-              { label: 'Pedidos hoje', valor: '3' },
-              { label: 'Faturamento mês', valor: 'R$ 14.250' },
-              { label: 'Clientes ativos', valor: '5' },
-              { label: 'Produtos', valor: '12' },
-            ].map((s, i) => (
-              <div key={i} className="chip-glass rounded-xl p-4">
-                <div className="font-display text-[10px] tracking-[0.2em] text-white/55 mb-1">{s.label}</div>
-                <div className="font-display font-bold text-[22px]">{s.valor}</div>
-              </div>
-            ))}
-          </div>
+
         </div>
         <div className="relative text-[12px] text-white/40">© 2026 Vox Celular</div>
       </div>
@@ -128,19 +115,6 @@ export default function AdminLogin() {
               {loading ? 'Entrando…' : 'Entrar no painel'}
             </button>
           </form>
-
-          {/* Demo hint */}
-          <div className="mt-6 p-4 bg-[var(--royal-50)] border border-[var(--royal-100)] rounded-xl">
-            <div className="font-display font-bold text-[12px] text-[var(--royal-700)] tracking-wider mb-2">DEMONSTRAÇÃO</div>
-            <div className="text-[12px] text-zinc-600 space-y-0.5">
-              <div><span className="text-zinc-400">E-mail:</span> lojista@vox.com</div>
-              <div><span className="text-zinc-400">Senha:</span> 123456</div>
-            </div>
-            <button onClick={fillDemo}
-              className="mt-3 text-[12px] font-medium text-[var(--royal-700)] hover:underline">
-              Preencher automaticamente →
-            </button>
-          </div>
 
           <div className="mt-8 text-center">
             <Link to="/" className="text-[13px] text-zinc-500 hover:text-[var(--royal-700)] transition">

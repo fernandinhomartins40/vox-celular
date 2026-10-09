@@ -2,22 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 
-const FALLBACK = {
-  nomeLoja: 'Vox Celular',
-  slogan: 'Representante TIM em Palmital-PR',
-  telefone: '(42) 99103-1420',
-  whatsapp: '5542991031420',
-  endereco: 'Av. Maximiliano Vicentin, 710, Palmital–PR',
-  horarioSemana: 'Seg–Sex 8h–19h',
-  horarioSabado: 'Sáb 8h–13h',
-  heroTitulo1: 'Plano TIM Controle',
-  heroTitulo2: 'com 20 GB + apps',
-  heroSub: 'Portabilidade grátis, ativação na hora. Leve um chip novo de bônus.',
-  instagram: '',
-  facebook: '',
-  freteMinimoGratis: '200',
-  parcelasMaxSemJuros: '12',
-};
+const FALLBACK = { horarioSemana: '', horarioSabado: '', heroSlide1Titulo: '', heroSlide1Sub: '', heroSlide1Preco: '', instagramUrl: '', facebookUrl: '' };
 
 function Field({ label, name, value, onChange, textarea, hint }) {
   return (
@@ -40,11 +25,12 @@ export default function AdminConfiguracoes() {
   const [salvo, setSalvo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/config')
       .then(data => setConfig({ ...FALLBACK, ...data }))
-      .catch(() => { /* use fallback */ })
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -54,61 +40,21 @@ export default function AdminConfiguracoes() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.put('/config', config);
+      setError('');
+      await api.put('/config', Object.fromEntries(Object.keys(FALLBACK).map(key => [key, config[key]])));
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2500);
     } catch (err) {
-      console.error('Erro ao salvar configurações:', err.message);
+      setError(err.message);
     } finally {
       setSaving(false);
     }
   };
 
   const sections = [
-    {
-      titulo: 'Identidade da loja',
-      icon: 'tag',
-      campos: [
-        { label: 'Nome da loja', name: 'nomeLoja' },
-        { label: 'Slogan / subtítulo', name: 'slogan' },
-      ],
-    },
-    {
-      titulo: 'Contato e localização',
-      icon: 'pin',
-      campos: [
-        { label: 'Telefone exibido', name: 'telefone' },
-        { label: 'Número WhatsApp (com DDI, sem +)', name: 'whatsapp', hint: 'Ex: 5542991031420' },
-        { label: 'Endereço completo', name: 'endereco' },
-        { label: 'Horário seg–sex', name: 'horarioSemana' },
-        { label: 'Horário sábado', name: 'horarioSabado' },
-      ],
-    },
-    {
-      titulo: 'Banner principal (Hero)',
-      icon: 'layoutDashboard',
-      campos: [
-        { label: 'Título linha 1', name: 'heroTitulo1' },
-        { label: 'Título linha 2', name: 'heroTitulo2' },
-        { label: 'Subtítulo / descrição', name: 'heroSub', textarea: true },
-      ],
-    },
-    {
-      titulo: 'Redes sociais',
-      icon: 'users',
-      campos: [
-        { label: 'Instagram (URL)', name: 'instagram', hint: 'Ex: https://instagram.com/voxcelular' },
-        { label: 'Facebook (URL)', name: 'facebook' },
-      ],
-    },
-    {
-      titulo: 'Condições comerciais',
-      icon: 'card',
-      campos: [
-        { label: 'Valor mínimo frete grátis (R$)', name: 'freteMinimoGratis' },
-        { label: 'Parcelas máximas sem juros', name: 'parcelasMaxSemJuros' },
-      ],
-    },
+    { titulo: 'Horários', icon: 'pin', campos: [{ label: 'Segunda a sexta', name: 'horarioSemana' }, { label: 'Sábado', name: 'horarioSabado' }] },
+    { titulo: 'Banner principal', icon: 'layoutDashboard', campos: [{ label: 'Título', name: 'heroSlide1Titulo' }, { label: 'Preço', name: 'heroSlide1Preco' }, { label: 'Descrição', name: 'heroSlide1Sub', textarea: true }] },
+    { titulo: 'Redes sociais', icon: 'users', campos: [{ label: 'Instagram (URL)', name: 'instagramUrl' }, { label: 'Facebook (URL)', name: 'facebookUrl' }] },
   ];
 
   if (loading) return (
@@ -128,6 +74,7 @@ export default function AdminConfiguracoes() {
         <p className="text-zinc-500 text-[14px] mt-1">Personalize os textos e informações exibidos na landing page pública.</p>
       </div>
 
+      {error && <p role="alert" className="text-red-600 mb-4">{error}</p>}
       <form onSubmit={salvar} className="space-y-5 max-w-2xl">
         {sections.map((s, si) => {
           const I = Icon[s.icon] ?? Icon.settings;
@@ -151,7 +98,7 @@ export default function AdminConfiguracoes() {
         })}
 
         <div className="flex items-center justify-between pt-2">
-          <p className="text-[12px] text-zinc-400">As alterações serão salvas no servidor e aplicadas imediatamente.</p>
+          <p className="text-[12px] text-zinc-400">As alterações serão salvas no servidor.</p>
           <button type="submit" disabled={saving}
             className={`inline-flex items-center gap-2 px-7 h-11 rounded-xl font-semibold text-[14px] transition ${
               salvo ? 'bg-emerald-600 text-white' : 'bg-[var(--royal-700)] hover:bg-[var(--royal-800)] disabled:opacity-60 text-white'

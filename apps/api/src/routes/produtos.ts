@@ -147,10 +147,10 @@ produtosRouter.patch('/:id', requireLojista, async (req: AuthRequest, res) => {
   });
   if (!produto) { res.status(404).json({ error: 'Produto nao encontrado' }); return; }
 
+  let imgUrl: string | null = null;
   try {
     const { image, specs, badge, ...data } = parse.data;
-    const imgUrl = await saveProductImage(req.user!.lojaId, produto.id, image?.dataUrl);
-    if (imgUrl) await removeLocalImage(produto.imgUrl);
+    imgUrl = await saveProductImage(req.user!.lojaId, produto.id, image?.dataUrl);
 
     const updated = await prisma.produto.update({
       where: { id: produtoId },
@@ -161,8 +161,10 @@ produtosRouter.patch('/:id', requireLojista, async (req: AuthRequest, res) => {
         ...(imgUrl ? { imgUrl } : {}),
       },
     });
+    if (imgUrl) await removeLocalImage(produto.imgUrl);
     res.json(serializeProduto(updated));
   } catch (error) {
+    if (imgUrl) await removeLocalImage(imgUrl);
     res.status(400).json({ error: error instanceof Error ? error.message : 'Erro ao salvar produto' });
   }
 });

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Icon } from '../icons';
 import { HERO_SLIDES } from '../data';
 
-export default function Hero() {
+export default function Hero({ config }) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -12,7 +12,12 @@ export default function Hero() {
     return () => clearInterval(t);
   }, [paused]);
 
-  const s = HERO_SLIDES[idx];
+  const original = HERO_SLIDES[idx];
+  const s = idx === 0 && config ? { ...original,
+    title: config.heroSlide1Titulo ? [config.heroSlide1Titulo] : original.title,
+    sub: config.heroSlide1Sub || original.sub,
+    priceMain: config.heroSlide1Preco || original.priceMain,
+  } : original;
 
   return (
     <section id="home" className="relative">

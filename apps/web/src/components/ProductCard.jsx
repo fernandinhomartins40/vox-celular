@@ -18,7 +18,7 @@ export default function ProductCard({ p, onAdd, onOpen }) {
     <div onClick={() => onOpen(p)}
       className="product-card group cursor-pointer bg-white border border-[var(--line)] rounded-2xl overflow-hidden flex flex-col">
       <div className="relative aspect-square bg-[var(--paper)] overflow-hidden">
-        <img src={p.img} alt={p.nome} className="product-img w-full h-full object-cover" />
+        <img src={p.img || '/favicon.svg'} loading="lazy" alt={p.nome} className="product-img w-full h-full object-cover" />
         <div className="absolute top-3 left-3 flex items-center gap-2">
           {p.badge && (
             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-display font-bold tracking-[0.15em] ${badgeStyle(p.badge)}`}>
@@ -62,13 +62,13 @@ export default function ProductCard({ p, onAdd, onOpen }) {
             ou <span className="font-semibold text-[var(--royal-700)]">12x de {formatBRL(p.preco / 12)}</span> sem juros
           </div>
 
-          <button onClick={handleAdd}
+          <button onClick={handleAdd} disabled={p.estoque <= 0}
             className={`w-full inline-flex items-center justify-center gap-2 px-3 h-11 rounded-full font-medium text-[13px] tracking-wide transition ${
               added
                 ? 'bg-emerald-600 text-white'
                 : 'bg-[var(--royal-700)] hover:bg-[var(--royal-800)] text-white'
             }`}>
-            {added ? (<><Icon.check className="w-4 h-4" /> Adicionado</>) : (<>Adicionar ao carrinho</>)}
+            {p.estoque <= 0 ? 'Indisponível' : added ? (<><Icon.check className="w-4 h-4" /> Adicionado</>) : (<>Adicionar ao carrinho</>)}
           </button>
         </div>
       </div>

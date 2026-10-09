@@ -58,10 +58,44 @@ const product = await json('/api/produtos', { method: 'POST', token: admin.token
 assert.equal((await fetch(base + product.imgUrl)).status, 200);
 assert.equal((await json(`/api/produtos?lojaId=${loja.id}`))[0].id, product.id);
 
+// Product improvements use the same real, isolated database as deployment verification.
+const config = await json('/api/config', { method: 'PUT', token: admin.token, body: {
+  lojaId: 'attempted-other-store', id: 'attempted-id', horarioSemana: 'CI hours',
+} });
+assert.equal(config.lojaId, loja.id, 'Config cannot change store ownership');
+assert.notEqual(config.id, 'attempted-id');
+assert.equal((await json('/api/loja')).config.horarioSemana, 'CI hours');
+sql(`UPDATE "Cliente" SET pontos=100 WHERE id='${me.cliente.id}';
+ INSERT INTO "RecompensaCatalogo" (id,"lojaId",titulo,pontos,ativo) VALUES
+ ('ci-reward','${loja.id}','CI reward',100,true),
+ ('ci-inactive','${loja.id}','CI inactive',1,false);
+ INSERT INTO "Loja" (id,nome,telefone,endereco,cidade,"mapsUrl") VALUES ('ci-other-store','CI other','','','','');
+ INSERT INTO "RecompensaCatalogo" (id,"lojaId",titulo,pontos,ativo) VALUES ('ci-foreign','ci-other-store','Other',1,true);`);
+await json('/api/fidelidade/resgatar/ci-inactive', { method: 'POST', token: customer.token, body: {}, status: 404 });
+await json('/api/fidelidade/resgatar/ci-foreign', { method: 'POST', token: customer.token, body: {}, status: 404 });
+const redemptions = await Promise.all(Array.from({ length: 6 }, () => fetch(base + '/api/fidelidade/resgatar/ci-reward', {
+  method: 'POST', headers: { Authorization: `Bearer ${customer.token}`, 'Content-Type': 'application/json' }, body: '{}',
+})));
+assert.deepEqual(redemptions.map(r => r.status).sort(), [200, 400, 400, 400, 400, 400]);
+assert.equal((await json('/api/fidelidade/pontos', { token: customer.token })).saldo, 0);
+assert.equal(sql(`SELECT count(*) FROM "ResgateRecompensa" WHERE "clienteId"='${me.cliente.id}';`), '1');
+const invalidImage = await json(`/api/produtos/${product.id}`, { method: 'PATCH', token: admin.token, status: 400,
+  body: { image: { dataUrl: 'data:image/gif;base64,AAAA' } } });
+assert.ok(invalidImage.error);
+assert.equal((await fetch(base + product.imgUrl)).status, 200, 'Invalid replacement must preserve previous photo');
+
 // Known fixture, equivalent sums, no mocks. Exercise dashboard bounded aggregation.
 sql(`INSERT INTO "Pedido" (id,"lojaId","clienteId",codigo,pagamento,total,"updatedAt")
  SELECT 'ci-order-' || n, '${loja.id}', '${me.cliente.id}', 'CI-' || n, 'PIX', 10.25, NOW()
  FROM generate_series(1,2000) AS n;`);
+sql(`INSERT INTO "TimelinePedido" (id,"pedidoId",status,data,ok,ordem) VALUES
+ ('ci-timeline-1','ci-order-1','Pedido recebido','2020-01-01',true,0),
+ ('ci-timeline-2','ci-order-1','Em preparo',NULL,false,1);`);
+const progressed = await json('/api/pedidos/ci-order-1/status', { method: 'PATCH', token: admin.token, body: { status: 'EM_PREPARO' } });
+assert.equal(progressed.timeline[0].data, '2020-01-01T00:00:00.000Z');
+assert.equal(progressed.timeline[1].ok, true);
+const repeated = await json('/api/pedidos/ci-order-1/status', { method: 'PATCH', token: admin.token, body: { status: 'EM_PREPARO' } });
+assert.equal(repeated.timeline[1].data, progressed.timeline[1].data);
 const before = performance.now();
 const results = await Promise.all(Array.from({ length: 12 }, () => json('/api/dashboard', { token: admin.token })));
 for (const result of results) {
