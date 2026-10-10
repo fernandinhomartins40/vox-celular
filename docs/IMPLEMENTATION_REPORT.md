@@ -96,7 +96,7 @@ Builds web/API, lint, actionlint e seis testes unitários aprovados. Chromium/Ed
 
 Antes: procurar novamente o pedido, trocar destinos para benefícios, recortar foto obrigatoriamente e perder acesso ao código ao fechar. Depois: contexto abre automaticamente, benefícios no mesmo destino, imagem pronta com ajuste opcional e código recuperável sem novo débito.
 
-Testes com API/PostgreSQL real foram ampliados para criação/edição pelo formulário, foto persistida, estoque, senha dos dois perfis, contato opcional, códigos recuperáveis, concorrência e isolamento. Executam no workflow antes do deploy; validação desta publicação ainda em andamento.
+Testes com API/PostgreSQL real foram ampliados para criação/edição pelo formulário, foto persistida, estoque, senha dos dois perfis, contato opcional, códigos recuperáveis, concorrência e isolamento. Aprovados no workflow 38077773215 antes do deploy. Corrigida a espera dos testes para verificar a foto somente após a resposta de cadastro/edição; nenhuma regra de teste foi desativada.
 
 ## Limites e riscos restantes
 
