@@ -27,7 +27,6 @@ try {
     await page.getByRole('tab', { name: 'Banner principal', exact: true }).click();
     const title = page.getByLabel('Título', { exact: true });
     await title.fill('Banner editado em tempo real');
-    await preview.getByRole('heading', { name: 'Banner editado em tempo real' }).waitFor();
     await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWNgMDlJGmIY1XByNJRMhmnSAAC4rv0BDv2fxwAAAABJRU5ErkJggg==', 'base64') });
     await page.waitForFunction(() => document.querySelector('#editor-hero-image')?.value === '/uploads/landing/fixture.webp');
     await preview.getByRole('heading', { name: 'Banner editado em tempo real' }).waitFor();
