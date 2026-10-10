@@ -16,16 +16,16 @@ try {
       if (path === '/api/config' && route.request().method() === 'PUT') config = route.request().postDataJSON();
       await route.fulfill({ json: path === '/api/config/image' ? { url: '/uploads/landing/fixture.webp' } : path === '/api/config' ? config : path === '/api/loja' ? { id: 'fixture-store', config } : [] });
     });
-    await page.goto(base + '/admin/configuracoes');
+    await page.goto(base + '/admin/configuracoes?secao=contact');
     const preview = page.frameLocator('iframe[title="Prévia real da landing page"]');
-    await preview.locator('.store-hero').waitFor();
+    await preview.getByText('Estamos no centro de Palmital', { exact: true }).waitFor();
     assert.equal(await page.getByRole('tab').count(), 13);
     await page.getByRole('tab', { name: 'Contato e horários', exact: true }).click();
     await page.getByLabel('Segunda a sexta', { exact: true }).fill('Initial saved hours');
     await page.getByRole('button', { name: 'Salvar configurações', exact: true }).click();
     await page.getByRole('button', { name: 'Salvo!', exact: true }).waitFor();
     await page.getByRole('tab', { name: 'Banner principal', exact: true }).click();
-    const title = page.getByLabel('Título', { exact: true });
+    const title = page.locator('#editor-hero-title'); // Wait for the banner tab to finish rendering.
     await title.fill('Banner editado em tempo real');
     await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWNgMDlJGmIY1XByNJRMhmnSAAC4rv0BDv2fxwAAAABJRU5ErkJggg==', 'base64') });
     await page.waitForFunction(() => document.querySelector('#editor-hero-image')?.value === '/uploads/landing/fixture.webp');

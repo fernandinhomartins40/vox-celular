@@ -81,19 +81,10 @@ try {
   await page.getByRole('button', { name: 'Salvar configurações' }).click();
   await page.getByRole('button', { name: 'Salvo!' }).waitFor();
   await page.getByRole('tab', { name: 'Banner principal', exact: true }).click();
-  await page.evaluate(() => {
-    window.editorTrace = [];
-    document.addEventListener('input', event => window.editorTrace.push({ event: 'input', id: event.target.id, value: event.target.value }), true);
-    const target = document.querySelector('iframe').contentWindow;
-    const send = target.postMessage.bind(target);
-    target.postMessage = (...args) => { window.editorTrace.push({ event: 'preview', section: args[0]?.payload?.section, title: args[0]?.payload?.config?.landingPage?.hero?.title }); return send(...args); };
-  });
-  await page.getByLabel('Título', { exact: true }).fill('CI landing editor real');
-  console.log('EDITOR AFTER FILL', JSON.stringify(await page.evaluate(() => ({ title: document.querySelector('#editor-hero-title').value, trace: window.editorTrace }))));
+  await page.locator('#editor-hero-title').fill('CI landing editor real');
   await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'ci-hero.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWNgMDlJGmIY1XByNJRMhmnSAAC4rv0BDv2fxwAAAABJRU5ErkJggg==', 'base64') });
   await page.waitForFunction(() => document.querySelector('#editor-hero-image')?.value.startsWith('/uploads/landing/'));
   const livePreview = page.frameLocator('iframe[title="Prévia real da landing page"]');
-  console.log('EDITOR AFTER UPLOAD', JSON.stringify(await page.evaluate(() => ({ title: document.querySelector('#editor-hero-title').value, trace: window.editorTrace }))));
   assert.equal(await page.locator('#editor-hero-title').inputValue(), 'CI landing editor real', 'Upload preserves the edited title');
   await livePreview.getByRole('heading', { name: 'CI landing editor real', exact: true }).waitFor();
   const beforeEditorSave = await (await page.request.get(`${base}/api/loja`)).json();
