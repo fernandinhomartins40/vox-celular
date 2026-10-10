@@ -20,7 +20,7 @@ export default function AdminConfiguracoes() {
   const [uploading, setUploading] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [viewport, setViewport] = useState('desktop');
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(0);
   const frame = useRef(null);
   const editorRoot = useRef(null);
   const previewContainer = useRef(null);
@@ -37,7 +37,7 @@ export default function AdminConfiguracoes() {
       setConfig({ ...data, landingPage: resolveStoreContent(data) });
       setProducts(items.filter(p => p.ativo !== false).map(p => ({ ...p, img: assetUrl(p.imgUrl) })));
     }).catch(e => setLoadError(e.message)).finally(() => setLoading(false));
-    const receive = event => { if (event.origin === location.origin && event.source === frame.current?.contentWindow && event.data?.type === 'vox-preview-ready') setReady(true); };
+    const receive = event => { if (event.origin === location.origin && event.source === frame.current?.contentWindow && event.data?.type === 'vox-preview-ready') setReady(value => value + 1); };
     window.addEventListener('message', receive);
     return () => window.removeEventListener('message', receive);
   }, []);

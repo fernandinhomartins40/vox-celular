@@ -8,22 +8,30 @@ try {
   for (const width of [390, 768, 1440, 1920]) {
     const page = await browser.newPage({ viewport: { width, height: 1000 } });
     const errors = [];
-    let config = {};
+    let config = { landingPage: { hero: { title: 'CI persisted hero' } } };
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript(() => localStorage.setItem('vox_user', JSON.stringify({ nome: 'CI Editor', role: 'LOJISTA', token: 'fixture-token' })));
     await page.route('**/api/**', async route => {
       const path = new URL(route.request().url()).pathname;
       if (path === '/api/config' && route.request().method() === 'PUT') config = route.request().postDataJSON();
-      await route.fulfill({ json: path === '/api/config' ? config : path === '/api/loja' ? { id: 'fixture-store', config } : [] });
+      await route.fulfill({ json: path === '/api/config/image' ? { url: '/uploads/landing/fixture.webp' } : path === '/api/config' ? config : path === '/api/loja' ? { id: 'fixture-store', config } : [] });
     });
     await page.goto(base + '/admin/configuracoes');
     const preview = page.frameLocator('iframe[title="Prévia real da landing page"]');
     await preview.locator('.store-hero').waitFor();
     assert.equal(await page.getByRole('tab').count(), 13);
+    await page.getByRole('tab', { name: 'Contato e horários', exact: true }).click();
+    await page.getByLabel('Segunda a sexta', { exact: true }).fill('Initial saved hours');
+    await page.getByRole('button', { name: 'Salvar configurações', exact: true }).click();
+    await page.getByRole('button', { name: 'Salvo!', exact: true }).waitFor();
+    await page.getByRole('tab', { name: 'Banner principal', exact: true }).click();
     const title = page.getByLabel('Título', { exact: true });
     await title.fill('Banner editado em tempo real');
     await preview.getByRole('heading', { name: 'Banner editado em tempo real' }).waitFor();
-    assert.equal(config.landingPage, undefined, 'Draft does not mutate saved data');
+    await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWNgMDlJGmIY1XByNJRMhmnSAAC4rv0BDv2fxwAAAABJRU5ErkJggg==', 'base64') });
+    await page.waitForFunction(() => document.querySelector('#editor-hero-image')?.value === '/uploads/landing/fixture.webp');
+    await preview.getByRole('heading', { name: 'Banner editado em tempo real' }).waitFor();
+    assert.equal(config.landingPage.hero.title, 'CI persisted hero', 'Draft does not mutate saved data');
     await page.getByRole('button', { name: 'Celular', exact: true }).click();
     assert.equal(await page.locator('iframe').evaluate(el => el.contentWindow.innerWidth), 390);
     for (const tab of await page.getByRole('tab').all()) {

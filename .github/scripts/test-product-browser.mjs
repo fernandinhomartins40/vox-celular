@@ -85,7 +85,7 @@ try {
   await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'ci-hero.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWNgMDlJGmIY1XByNJRMhmnSAAC4rv0BDv2fxwAAAABJRU5ErkJggg==', 'base64') });
   await page.waitForFunction(() => document.querySelector('#editor-hero-image')?.value.startsWith('/uploads/landing/'));
   const livePreview = page.frameLocator('iframe[title="Prévia real da landing page"]');
-  console.log('EDITOR PREVIEW DIAGNOSTIC', JSON.stringify(await page.locator('iframe').evaluate(el => ({ src: el.src, width: el.contentWindow.innerWidth, text: el.contentDocument.body.innerText.slice(0, 300) }))));
+  assert.equal(await page.locator('#editor-hero-title').inputValue(), 'CI landing editor real', 'Upload preserves the edited title');
   await livePreview.getByRole('heading', { name: 'CI landing editor real', exact: true }).waitFor();
   const beforeEditorSave = await (await page.request.get(`${base}/api/loja`)).json();
   assert.notEqual(beforeEditorSave.config.landingPage.hero.title, 'CI landing editor real', 'Live preview cannot publish unsaved edits');
