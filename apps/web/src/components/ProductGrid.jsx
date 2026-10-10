@@ -1,9 +1,11 @@
+import { useStoreContent } from './storeContent';
 import { useMemo, useState } from 'react';
 import { filterCatalog } from '../lib/catalog';
 import SectionHeader from './SectionHeader';
 import ProductCard from './ProductCard';
 
 export default function ProductGrid({ products, filter, setFilter, onAdd, onOpen, loading = false, error = '', onRetry, search = '', setSearch = () => {} }) {
+  const content = useStoreContent('products');
   const [sort, setSort] = useState('destaque');
   const [available, setAvailable] = useState(false);
   const categories = ['Todos', ...new Set(products.map(p => p.categoria)), ...(filter !== 'Todos' ? [filter] : [])].filter((c, i, all) => all.indexOf(c) === i);
@@ -11,7 +13,7 @@ export default function ProductGrid({ products, filter, setFilter, onAdd, onOpen
 
   return (
     <section id="produtos" className="max-w-7xl mx-auto px-4 lg:px-8 mt-20 reveal">
-      <SectionHeader eyebrow="Catálogo" title="Em destaque" sub="Os mais procurados da loja, com preço de tabela e parcelamento sem juros." />
+      <SectionHeader eyebrow="Catálogo" title={content.title} sub={content.subtitle} />
 
       <div className="flex flex-wrap items-center gap-2 mb-7 -mx-1 px-1 overflow-x-auto scroll-thin">
         {categories.map(c => {

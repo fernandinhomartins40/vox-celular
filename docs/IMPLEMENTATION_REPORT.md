@@ -101,3 +101,12 @@ Testes com API/PostgreSQL real foram ampliados para criação/edição pelo form
 ## Limites e riscos restantes
 
 Sem bloqueio para implementação. Listas existentes de pedidos/clientes/produtos continuam sem paginação; volume maior poderá justificar paginação e índice de consulta por cliente nos resgates. Pagamento, entrega, criação automática de pedidos e crédito de pontos não são automatizados sem comprovação do evento/regra comercial. Três etapas representam decisões da tarefa, não três cliques para preencher qualquer formulário. Produção recebe somente o deploy automático autorizado pelo GitHub Actions; testes com escrita usam banco isolado.
+# Editor completo da landing page (10/10/2026)
+
+Editor ocupa a largura disponível do painel, com 13 abas: design geral, cabeçalho, banner, benefícios, categorias, catálogo, portabilidade, como comprar, serviços, depoimentos, contato/horários, rodapé e navegação mobile. Campos de texto/listas, links, imagens, cores, fonte e arredondamento usam configuração por loja; catálogo mantém preços/estoque/fotos nos produtos existentes.
+
+Prévia renderiza os mesmos componentes públicos em iframe isolado de estilos, com viewport desktop de 1440 px e mobile de 390 px ajustado visualmente ao espaço disponível. Mensagens aceitas apenas da janela pai e origem local; links e formulários não navegam/enviam na prévia. Rascunhos não alteram a página pública até salvar. Alterações entre abas são preservadas; aviso de saída com rascunho e feedback de erro/envio/sucesso.
+
+Backend recebe JSON validado, escopo da loja autenticada e limites para texto/listas/tamanho. Migration aditiva mantém configurações anteriores e defaults do redesign. Upload converte imagens para WebP, reduz dimensão máxima a 1920 px, valida assinatura/tamanho no servidor e grava em volume persistente por loja; clientes não podem alterar configuração ou enviar imagens. Imagens enviadas em rascunhos abandonados são preservadas, sem remoção automática destrutiva.
+
+Lint e builds aprovados; teste local de 13 abas, prévia fiel, viewport, rascunho, salvamento/recarga e publicação em quatro larguras aprovado. CI ampliado para upload real/persistência, permissão, conteúdo inválido e página pública com PostgreSQL. Publicação final desta rodada em validação.

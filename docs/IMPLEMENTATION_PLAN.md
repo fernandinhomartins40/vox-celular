@@ -85,3 +85,13 @@ Três passos são decisões principais, não uma promessa de três cliques para 
 Helpers/contratos e dados recuperáveis → ligações contextuais e filtros → formulário guiado → central de benefícios/conta → prévia/feedback → testes locais e CI com PostgreSQL → deploy automático na main e leitura de saúde da aplicação.
 
 Não automatizar pagamentos, entregas, cancelamento, crédito de pontos, frete nem criação de pedidos a partir de WhatsApp: não há integração/regra comercial que comprove esses eventos. Não criar gestão comercial de campanhas/recompensas nesta rodada. Nenhum bloqueio impede as melhorias seguras acima. Produção só recebe o deploy autorizado por GitHub Actions; testes que gravam usam ambientes isolados.
+# Editor completo da landing page — rodada atual
+
+| ID | Prioridade | Evidência | Implementação | Validação | Status |
+|---|---|---|---|---|---|
+| LP-01 | P1 | Formulário estreito com apenas banner/horários/redes | Usar toda a área do painel, 13 abas por seção e design geral | Navegador 390/768/1440/1920, teclado | IN_PROGRESS |
+| LP-02 | P1 | Prévia anterior era um cartão genérico | Componentes públicos compartilhados em iframe isolado; largura real 1440/390, atualizações por mensagem com origem verificada | Edição sem publicar, recarga e comparação pública | IN_PROGRESS |
+| LP-03 | P1 | Conteúdo fixo das demais seções | Configuração JSON por loja com defaults compatíveis; textos/listas/links/imagens e design; produtos mantêm fonte única | PostgreSQL, permissões e conteúdo inválido | IN_PROGRESS |
+| LP-04 | P1 | Imagens sem gerenciamento no editor | Upload WebP limitado, validado e armazenado no volume persistente da loja | Upload real, acesso público e recarga | IN_PROGRESS |
+
+Implementar → lint/build → testes locais e CI reais → corrigir → deploy automático main → saúde HTTPS. Migration aditiva, sem substituir conteúdo existente. Prévia desativa navegação/envios; salvar publica todas as abas juntas. Arquivos enviados são preservados, inclusive se um rascunho for abandonado; não apagar imagens existentes automaticamente.

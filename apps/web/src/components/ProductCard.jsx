@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Icon } from '../icons';
 import { formatBRL } from '../utils';
 export default function ProductCard({ p, onAdd, onOpen }) {

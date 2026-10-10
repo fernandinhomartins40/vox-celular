@@ -36,6 +36,7 @@ model LojaConfig {
   facebookUrl         String @default("")
   horarioSemana       String @default("Seg–Sex 8h–19h")
   horarioSabado       String @default("Sáb 8h–13h")
+  landingPage         Json @default("{}")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

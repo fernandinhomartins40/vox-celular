@@ -1,3 +1,4 @@
+import { StoreContentContext, resolveStoreContent, storeStyle } from './components/storeContent';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { api, assetUrl } from './lib/api';
 import { useReveal } from './hooks/useReveal';
@@ -67,8 +68,9 @@ export default function LandingPage() {
     }, 50);
   };
 
+  const content = resolveStoreContent(storeConfig);
   return (
-    <div className="vox-store">
+    <StoreContentContext.Provider value={content}><div className="vox-store" style={storeStyle(content)}>
       <Header cartCount={cartCount} onOpenCart={() => setCartOpen(true)} search={search} onSearch={setSearch} />
       <main>
         <Hero config={storeConfig} />
@@ -88,6 +90,6 @@ export default function LandingPage() {
       <MobileNav />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cart} setItems={setCart} />
       <ProductModal product={modalProduct} onClose={() => setModalProduct(null)} onAdd={addToCart} />
-    </div>
+    </div></StoreContentContext.Provider>
   );
 }

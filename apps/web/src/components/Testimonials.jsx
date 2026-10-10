@@ -1,13 +1,15 @@
+import { useStoreContent } from './storeContent';
 import { Icon } from '../icons';
-import { TESTIMONIALS } from '../data';
+
 import SectionHeader from './SectionHeader';
 
 export default function Testimonials() {
+ const content = useStoreContent('testimonials');
   return (
     <section className="store-testimonials max-w-7xl mx-auto px-4 lg:px-8 mt-24 reveal">
-      <SectionHeader eyebrow="Avaliações reais" title="O que dizem nossos clientes" />
+      <SectionHeader eyebrow="Avaliações reais" title={content.title} />
       <div className="grid md:grid-cols-3 gap-4">
-        {TESTIMONIALS.map((t, i) => (
+        {content.items.map((t, i) => (
           <div key={i} className="bg-white border border-[var(--line)] rounded-2xl p-7 flex flex-col">
             <div className="flex items-center gap-1 mb-4">
               {Array.from({ length: 5 }).map((_, j) => (

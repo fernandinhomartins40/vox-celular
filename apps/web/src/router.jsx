@@ -1,3 +1,4 @@
+import LandingPreview from './pages/admin/LandingPreview';
 import { createBrowserRouter } from 'react-router-dom';
 import { ProtectedAdmin, ProtectedCliente } from './auth/RouteGuards.jsx';
 
@@ -20,6 +21,7 @@ import ClienteBeneficios from './pages/cliente/ClienteBeneficios';
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
 
+  { path: '/admin/landing-preview', element: <ProtectedAdmin><LandingPreview /></ProtectedAdmin> },
   { path: '/admin/login', element: <AdminLogin /> },
   {
     path: '/admin',

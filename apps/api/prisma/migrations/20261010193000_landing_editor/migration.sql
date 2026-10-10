@@ -1,0 +1,1 @@
+ALTER TABLE "LojaConfig" ADD COLUMN "landingPage" JSONB NOT NULL DEFAULT '{}';

@@ -78,6 +78,14 @@ const config = await json('/api/config', { method: 'PUT', token: admin.token, bo
 assert.equal(config.lojaId, loja.id, 'Config cannot change store ownership');
 assert.notEqual(config.id, 'attempted-id');
 assert.equal((await json('/api/loja')).config.horarioSemana, 'CI hours');
+await json('/api/config', { method: 'PUT', token: customer.token, status: 403, body: { landingPage: { hero: { title: 'Forbidden' } } } });
+await json('/api/config', { method: 'PUT', token: admin.token, status: 400, body: { landingPage: { hero: { image: 'javascript:alert(1)' } } } });
+await json('/api/config', { method: 'PUT', token: admin.token, status: 400, body: { landingPage: { testimonials: { items: [{ nome: 'Broken' }] } } } });
+await json('/api/config/image', { method: 'POST', token: customer.token, status: 403, body: { dataUrl: 'data:image/webp;base64,AAAA' } });
+await json('/api/config/image', { method: 'POST', token: admin.token, status: 400, body: { dataUrl: 'data:image/webp;base64,AAAA' } });
+const editorContent = { hero: { title: 'CI persisted hero' }, footer: { description: 'CI persisted footer' } };
+await json('/api/config', { method: 'PUT', token: admin.token, body: { landingPage: editorContent } });
+assert.deepEqual((await json('/api/loja')).config.landingPage, editorContent);
 sql(`UPDATE "Cliente" SET pontos=100 WHERE id='${me.cliente.id}';
  INSERT INTO "RecompensaCatalogo" (id,"lojaId",titulo,pontos,ativo) VALUES
  ('ci-reward','${loja.id}','CI reward',100,true),

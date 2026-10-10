@@ -1,34 +1,35 @@
+import { useStoreContent } from './storeContent';
 import { useState } from 'react';
 import { Icon } from '../icons';
-import { PHONE_DIGITS, ADDRESS, MAPS_URL, MAPS_EMBED } from '../data';
 import SectionHeader from './SectionHeader';
 
 export default function ContactSection({ config }) {
+ const c = useStoreContent('contact');
   const [form, setForm] = useState({ nome: '', telefone: '', mensagem: '' });
   const [sent, setSent] = useState(false);
 
   const submit = (e) => {
     e.preventDefault();
     const text = `Olá Vox Celular!\n\nNome: ${form.nome}\nTelefone: ${form.telefone}\n\nMensagem: ${form.mensagem}`;
-    window.open(`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+    window.open(`https://wa.me/${c.phone}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
     setSent(true);
     setTimeout(() => setSent(false), 2500);
   };
 
   return (
     <section id="contato" className="max-w-7xl mx-auto px-4 lg:px-8 mt-24 reveal">
-      <SectionHeader eyebrow="Visite a loja" title="Estamos no centro de Palmital" sub="Atendimento humano, café na espera e estacionamento na porta." />
+      <SectionHeader eyebrow="Visite a loja" title={c.title} sub={c.subtitle} />
 
       <div className="contact-grid">
         <div className="contact-map rounded-2xl overflow-hidden border border-[var(--line)] bg-white">
           <iframe
-            src={MAPS_EMBED}
+            src={c.mapsEmbed}
             className="w-full h-[460px] border-0"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
             title="Localização Vox Celular"
           />
-          <a className="map-directions" href={MAPS_URL} target="_blank" rel="noopener noreferrer"><Icon.pin className="w-4 h-4" /> Como chegar à Vox Celular</a>
+          <a className="map-directions" href={c.mapsUrl} target="_blank" rel="noopener noreferrer"><Icon.pin className="w-4 h-4" /> Como chegar à Vox Celular</a>
         </div>
 
           <div className="contact-card royal-radiant text-white relative overflow-hidden">
@@ -42,8 +43,8 @@ export default function ContactSection({ config }) {
                   </div>
                   <div>
                     <div className="font-display font-bold text-[14px]">Endereço</div>
-                    <a href={MAPS_URL} target="_blank" rel="noopener" className="text-[14px] text-white/85 hover:underline">
-                      {ADDRESS}
+                    <a href={c.mapsUrl} target="_blank" rel="noopener" className="text-[14px] text-white/85 hover:underline">
+                      {c.address}
                     </a>
                   </div>
                 </div>
@@ -53,8 +54,8 @@ export default function ContactSection({ config }) {
                   </div>
                   <div>
                     <div className="font-display font-bold text-[14px]">WhatsApp</div>
-                    <a href={`https://wa.me/${PHONE_DIGITS}`} target="_blank" rel="noopener" className="text-[14px] text-white/85 hover:underline">
-                      (42) 99103-1420
+                    <a href={`https://wa.me/${c.phone}`} target="_blank" rel="noopener" className="text-[14px] text-white/85 hover:underline">
+                      {c.phoneDisplay}
                     </a>
                   </div>
                 </div>
@@ -72,8 +73,8 @@ export default function ContactSection({ config }) {
           </div>
 
           <form onSubmit={submit} className="contact-form bg-white border border-[var(--line)] space-y-3">
-            <div className="font-display font-bold text-[18px]">Mande uma mensagem</div>
-            <div className="text-[12px] text-zinc-500 mb-2">Vamos responder pelo WhatsApp.</div>
+            <div className="font-display font-bold text-[18px]">{c.formTitle}</div>
+            <div className="text-[12px] text-zinc-500 mb-2">{c.formSubtitle}</div>
             <input required value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })}
               aria-label="Seu nome" placeholder="Seu nome" className="w-full px-4 py-3 bg-[var(--paper)] border border-[var(--line)] rounded-lg focus:outline-none focus:border-[var(--royal-700)] text-[14px]" />
             <input required value={form.telefone} onChange={e => setForm({ ...form, telefone: e.target.value })}
@@ -85,7 +86,7 @@ export default function ContactSection({ config }) {
               className={`w-full inline-flex items-center justify-center gap-2 px-4 h-12 rounded-full font-semibold text-[14px] tracking-wide transition ${
                 sent ? 'bg-emerald-600 text-white' : 'bg-[var(--red-500)] hover:bg-[var(--red-600)] text-white'
               }`}>
-              {sent ? <><Icon.check className="w-4 h-4" /> Continue no WhatsApp</> : <><Icon.send className="w-4 h-4" /> Enviar via WhatsApp</>}
+              {sent ? <><Icon.check className="w-4 h-4" /> Continue no WhatsApp</> : <><Icon.send className="w-4 h-4" /> {c.button}</>}
             </button>
           </form>
       </div>

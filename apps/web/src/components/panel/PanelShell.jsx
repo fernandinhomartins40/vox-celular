@@ -43,7 +43,7 @@ export default function PanelShell({ title, groups, loginPath }) {
       <button className="panel-nav-link" onClick={() => { logout(); navigate(loginPath); }}><Icon.logOut /><span>Sair da conta</span></button>
     </div>
   </>;
-  return <div className="vox-panel">
+  return <div className={`vox-panel ${pathname === '/admin/configuracoes' ? 'panel-editor-layout' : ''}`}>
     <a className="panel-skip" href="#panel-content">Ir para o conteúdo</a>
     <aside className="panel-sidebar" inert={open ? true : undefined}>{navigation(false)}</aside>
     {open && <div className="panel-menu-overlay"><div className="panel-backdrop" onClick={() => setOpen(false)} /><aside role="dialog" aria-modal="true" aria-label="Menu de navegação" className="panel-drawer" ref={drawer}>{navigation(true)}</aside></div>}
