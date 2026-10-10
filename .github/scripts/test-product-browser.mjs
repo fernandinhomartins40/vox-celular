@@ -53,6 +53,7 @@ try {
   await page.getByLabel('Estoque disponível', { exact: true }).fill('3');
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByRole('button', { name: 'Cadastrar produto', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Produto', exact: true }).waitFor({ state: 'hidden' });
   await page.getByText('CI Guided Product', { exact: true }).waitFor();
   const products = await (await page.request.get(`${base}/api/produtos/admin`, { headers: { Authorization: `Bearer ${admin.token}` } })).json();
   const guidedProduct = products.find(p => p.nome === 'CI Guided Product');
@@ -66,6 +67,7 @@ try {
   await page.getByLabel('Estoque disponível', { exact: true }).fill('12');
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Produto', exact: true }).waitFor({ state: 'hidden' });
   await page.getByRole('button', { name: 'Limpar filtros', exact: true }).waitFor();
   const updatedProduct = await (await page.request.get(`${base}/api/produtos/admin`, { headers: { Authorization: `Bearer ${admin.token}` } })).json();
   assert.equal(updatedProduct.find(p => p.id === guidedProduct.id).estoque, 12);

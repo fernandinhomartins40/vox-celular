@@ -105,6 +105,7 @@ try {
         await page.getByRole('heading', { name: 'Confira antes de salvar' }).waitFor();
         if (process.env.PANEL_SCREENSHOTS) await page.screenshot({ path: `${process.env.PANEL_SCREENSHOTS}/product-${width}.png`, fullPage: true });
         await page.getByRole('button', { name: 'Cadastrar produto', exact: true }).click();
+        await page.getByRole('dialog', { name: 'Produto', exact: true }).waitFor({ state: 'hidden' });
         await page.getByText('Produto criado', { exact: true }).waitFor();
         assert.equal(savedProduct.preco, 199);
         assert.equal(savedProduct.estoque, 10);
