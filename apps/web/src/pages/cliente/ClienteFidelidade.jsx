@@ -1,3 +1,6 @@
+import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
+import PanelDialog from '../../components/panel/PanelDialog';
+import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
@@ -54,12 +57,8 @@ export default function ClienteFidelidade() {
     }
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[var(--royal-700)] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+  if (loading) return <PanelLoading />;
+  if (error) return <PanelError message={error} />;
   if (!fidelidade) return null;
 
   const p = fidelidade;
@@ -67,13 +66,7 @@ export default function ClienteFidelidade() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-5 h-[2px] bg-[var(--red-500)]"></span>
-          <span className="font-display text-[var(--red-500)] font-semibold text-[11px] tracking-[0.28em]">RECOMPENSAS</span>
-        </div>
-        <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Programa de Fidelidade</h1>
-      </div>
+      <PanelPageHeader title="Pontos e recompensas" description="Veja seu saldo e escolha uma recompensa." />
 
       {/* Cartão de pontos */}
       <div className="royal-radiant rounded-2xl p-7 text-white relative overflow-hidden">
@@ -193,8 +186,7 @@ export default function ClienteFidelidade() {
 
       {/* Modal resgate */}
       {resgatado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setResgatado(null)} />
+        <PanelDialog label="Resgate confirmado" onClose={() => setResgatado(null)}>
           <div className="relative bg-white rounded-2xl w-full max-w-sm shadow-2xl p-8 text-center">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--royal-50)] text-[var(--royal-700)] grid place-items-center mb-4">
               <Icon.gift className="w-8 h-8" />
@@ -209,14 +201,14 @@ export default function ClienteFidelidade() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setResgatado(null)} className="flex-1 h-10 border border-[var(--line)] rounded-xl text-[13px] font-medium text-zinc-600 hover:bg-zinc-50">Fechar</button>
-              <a href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(`Olá! Quero usar minha recompensa: ${resgatado.titulo ?? resgatado.nome}`)}`}
+              <a href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(`Olá! Quero usar minha recompensa: ${resgatado.titulo ?? resgatado.nome}. Código: ${resgatado.codigo ?? 'indisponível'}`)}`}
                 target="_blank" rel="noopener"
                 className="flex-1 h-10 inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-semibold transition">
                 <Icon.whatsapp className="w-4 h-4" /> WhatsApp
               </a>
             </div>
           </div>
-        </div>
+        </PanelDialog>
       )}
     </div>
   );

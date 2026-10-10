@@ -1,3 +1,6 @@
+import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
+import PanelDialog from '../../components/panel/PanelDialog';
+import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
@@ -58,35 +61,25 @@ export default function AdminPedidos() {
     }
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[var(--royal-700)] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+  if (loading) return <PanelLoading />;
+  if (error) return <PanelError message={error} />;
 
   return (
     <div>
-      <div className="mb-7">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-5 h-[2px] bg-[var(--red-500)]"></span>
-          <span className="font-display text-[var(--red-500)] font-semibold text-[11px] tracking-[0.28em]">GESTÃO</span>
-        </div>
-        <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Pedidos</h1>
-      </div>
+      <PanelPageHeader title="Pedidos" description="Encontre um pedido e atualize o andamento." />
 
       {actionError && <p role="alert" className="text-red-600 mb-4">{actionError}</p>}
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative flex-1 min-w-[200px]">
           <Icon.search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-          <input value={busca} onChange={e => setBusca(e.target.value)}
+          <input aria-label="Buscar pedido ou cliente" value={busca} onChange={e => setBusca(e.target.value)}
             placeholder="Buscar pedido ou cliente…"
             className="w-full pl-9 pr-4 py-2.5 bg-white border border-[var(--line)] rounded-xl text-[13px] focus:outline-none focus:border-[var(--royal-700)]" />
         </div>
         <div className="flex flex-wrap gap-2">
           {STATUS_LIST_API.map(s => (
-            <button key={s} onClick={() => setFiltro(s)}
+            <button key={s} aria-pressed={filtro === s} onClick={() => setFiltro(s)}
               className={`px-3.5 h-9 rounded-full text-[12.5px] font-medium border transition ${filtro === s ? 'bg-[var(--royal-800)] text-white border-[var(--royal-800)]' : 'bg-white text-zinc-600 border-[var(--line)] hover:border-[var(--royal-700)]'}`}>
               {STATUS_LABEL[s]}
               <span className={`ml-1.5 text-[11px] ${filtro === s ? 'text-white/60' : 'text-zinc-400'}`}>
@@ -100,7 +93,7 @@ export default function AdminPedidos() {
       {/* Tabela */}
       <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="panel-data-table w-full text-[13px]">
             <thead className="bg-[var(--paper)] border-b border-[var(--line)]">
               <tr>
                 {['Pedido', 'Data', 'Cliente', 'Produtos', 'Total', 'Pagamento', 'Status', 'Ações'].map(h => (
@@ -115,18 +108,18 @@ export default function AdminPedidos() {
                 const itensList = (p.produtos ?? p.itens ?? []).map(x => x.nome ?? x.produto?.nome).filter(Boolean).join(', ');
                 return (
                   <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
-                    <td className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)] whitespace-nowrap">{p.codigo ?? p.id}</td>
-                    <td className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{p.data ?? p.createdAt?.slice(0, 10)}</td>
-                    <td className="px-5 py-3.5 font-medium text-zinc-800 whitespace-nowrap">{clienteNome}</td>
-                    <td className="px-5 py-3.5 text-zinc-500 max-w-[180px] truncate">{itensList}</td>
-                    <td className="px-5 py-3.5 font-semibold whitespace-nowrap">{formatBRL(p.total)}</td>
-                    <td className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{p.pagamento}</td>
-                    <td className="px-5 py-3.5">
+                    <td data-label="Pedido" className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)] whitespace-nowrap">{p.codigo ?? p.id}</td>
+                    <td data-label="Data" className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{p.data ?? p.createdAt?.slice(0, 10)}</td>
+                    <td data-label="Cliente" className="px-5 py-3.5 font-medium text-zinc-800 whitespace-nowrap">{clienteNome}</td>
+                    <td data-label="Produtos" className="px-5 py-3.5 text-zinc-500 max-w-[180px] truncate">{itensList}</td>
+                    <td data-label="Total" className="px-5 py-3.5 font-semibold whitespace-nowrap">{formatBRL(p.total)}</td>
+                    <td data-label="Pagamento" className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{p.pagamento}</td>
+                    <td data-label="Status" className="px-5 py-3.5">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[p.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
                         {STATUS_LABEL[p.status] ?? p.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td data-label="Ações" className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         <button onClick={() => setDetalhe(p)}
                           className="w-8 h-8 rounded-lg bg-[var(--royal-50)] text-[var(--royal-700)] grid place-items-center hover:bg-[var(--royal-100)] transition" title="Ver detalhes">
@@ -156,15 +149,14 @@ export default function AdminPedidos() {
 
       {/* Modal detalhe */}
       {detalhe && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDetalhe(null)} />
+        <PanelDialog label="Detalhes do pedido" onClose={() => setDetalhe(null)}>
           <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between p-6 border-b border-[var(--line)]">
               <div>
                 <div className="font-display font-bold text-[22px]">{detalhe.codigo ?? detalhe.id}</div>
                 <div className="text-[13px] text-zinc-500">{detalhe.data ?? detalhe.createdAt?.slice(0, 10)} · {detalhe.pagamento}</div>
               </div>
-              <button onClick={() => setDetalhe(null)} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
+              <button aria-label="Fechar detalhes" onClick={() => setDetalhe(null)} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
                 <Icon.close className="w-5 h-5" />
               </button>
             </div>
@@ -206,7 +198,7 @@ export default function AdminPedidos() {
               )}
             </div>
           </div>
-        </div>
+        </PanelDialog>
       )}
     </div>
   );

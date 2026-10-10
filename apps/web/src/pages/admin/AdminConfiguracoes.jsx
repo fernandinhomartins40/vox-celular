@@ -1,3 +1,5 @@
+import { PanelLoading } from '../../components/panel/PanelFeedback';
+import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
@@ -58,22 +60,11 @@ export default function AdminConfiguracoes() {
     { titulo: 'Redes sociais', icon: 'users', campos: [{ label: 'Instagram (URL)', name: 'instagramUrl' }, { label: 'Facebook (URL)', name: 'facebookUrl' }] },
   ];
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[var(--royal-700)] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <PanelLoading />;
 
   return (
     <div>
-      <div className="mb-7">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-5 h-[2px] bg-[var(--red-500)]"></span>
-          <span className="font-display text-[var(--red-500)] font-semibold text-[11px] tracking-[0.28em]">PERSONALIZAÇÃO</span>
-        </div>
-        <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Configurações da loja</h1>
-        <p className="text-zinc-500 text-[14px] mt-1">Personalize os textos e informações exibidos na landing page pública.</p>
-      </div>
+      <PanelPageHeader title="Página da loja" description="Atualize horários, banner e redes sociais." />
 
       {error && <p role="alert" className="text-red-600 mb-4">{error}</p>}
       <form onSubmit={salvar} className="space-y-5 max-w-2xl">
@@ -98,7 +89,7 @@ export default function AdminConfiguracoes() {
           );
         })}
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex flex-wrap gap-3 items-center justify-between pt-2">
           <p className="text-[12px] text-zinc-400">As alterações serão salvas no servidor.</p>
           <button type="submit" disabled={saving || loadFailed}
             className={`inline-flex items-center gap-2 px-7 h-11 rounded-xl font-semibold text-[14px] transition ${

@@ -1,3 +1,6 @@
+import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
+import PanelDialog from '../../components/panel/PanelDialog';
+import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
@@ -38,22 +41,12 @@ export default function ClientePedidos() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[var(--royal-700)] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+  if (loading) return <PanelLoading />;
+  if (error) return <PanelError message={error} />;
 
   return (
     <div>
-      <div className="mb-7">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-5 h-[2px] bg-[var(--red-500)]"></span>
-          <span className="font-display text-[var(--red-500)] font-semibold text-[11px] tracking-[0.28em]">HISTÓRICO</span>
-        </div>
-        <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Meus Pedidos</h1>
-      </div>
+      <PanelPageHeader title="Meus pedidos" description="Acompanhe suas compras e consulte os detalhes." />
 
       {pedidos.length === 0 ? (
         <div className="text-center py-20 bg-white border border-[var(--line)] rounded-2xl">
@@ -72,7 +65,7 @@ export default function ClientePedidos() {
               <div key={i} className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
                   <div className="flex items-center gap-3">
-                    <span className="font-display font-bold text-[var(--royal-700)] text-[16px]">{p.id}</span>
+                    <span className="font-display font-bold text-[var(--royal-700)] text-[16px]">{p.codigo ?? p.id}</span>
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[p.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
                       {STATUS_LABEL[p.status] ?? p.status}
                     </span>
@@ -126,15 +119,14 @@ export default function ClientePedidos() {
 
       {/* Modal detalhe */}
       {detalhe && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDetalhe(null)} />
+        <PanelDialog label="Detalhes do pedido" onClose={() => setDetalhe(null)}>
           <div className="relative bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-[var(--line)]">
               <div>
-                <div className="font-display font-bold text-[22px]">{detalhe.id}</div>
+                <div className="font-display font-bold text-[22px]">{detalhe.codigo ?? detalhe.id}</div>
                 <div className="text-[13px] text-zinc-500">{detalhe.data ?? detalhe.createdAt?.slice(0, 10)} · {detalhe.pagamento}</div>
               </div>
-              <button onClick={() => setDetalhe(null)} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
+              <button aria-label="Fechar detalhes" onClick={() => setDetalhe(null)} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
                 <Icon.close className="w-5 h-5" />
               </button>
             </div>
@@ -179,7 +171,7 @@ export default function ClientePedidos() {
               </a>
             </div>
           </div>
-        </div>
+        </PanelDialog>
       )}
     </div>
   );

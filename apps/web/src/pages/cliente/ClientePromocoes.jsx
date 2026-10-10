@@ -1,3 +1,5 @@
+import { PanelLoading } from '../../components/panel/PanelFeedback';
+import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/useAuth.js';
 import { api } from '../../lib/api.js';
@@ -26,36 +28,23 @@ export default function ClientePromocoes() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[var(--royal-700)] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) return <PanelLoading />;
 
   return (
     <div>
-      <div className="mb-7">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-5 h-[2px] bg-[var(--red-500)]"></span>
-          <span className="font-display text-[var(--red-500)] font-semibold text-[11px] tracking-[0.28em]">SÓ PARA VOCÊ</span>
-        </div>
-        <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Promoções exclusivas</h1>
-        <p className="text-zinc-500 text-[14px] mt-1">Confira as ofertas disponíveis na loja.</p>
-      </div>
+      <PanelPageHeader title="Ofertas" description="Confira as ofertas disponíveis na loja." />
 
-      {/* Banner de urgência */}
-      <div className="bg-[var(--royal-900)] text-white rounded-2xl px-6 py-4 mb-6 flex items-center justify-between gap-4">
+      {promocoes.length > 0 && <div className="bg-[var(--royal-900)] text-white rounded-2xl px-6 py-4 mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-[var(--red-500)] grid place-items-center shrink-0">
             <Icon.bell className="w-4.5 h-4.5" />
           </div>
           <div>
-            <div className="font-display font-bold text-[14px]">Ofertas por tempo limitado!</div>
-            <div className="text-[12px] text-white/60">Aproveite antes que acabem. Exclusivo para clientes cadastrados.</div>
+            <div className="font-display font-bold text-[14px]">Escolha uma oferta</div>
+            <div className="text-[12px] text-white/80">Fale com a loja para combinar sua compra.</div>
           </div>
         </div>
-        <div className="text-[12px] text-white/50 shrink-0">{new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</div>
-      </div>
+      </div>}
 
       {/* Estado vazio */}
       {error ? <p role="alert" className="text-red-600">Não foi possível carregar as ofertas. {error}</p> : promocoes.length === 0 ? (

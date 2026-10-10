@@ -1,3 +1,6 @@
+import PanelMetricCard from '../../components/panel/PanelMetricCard';
+import { PanelLoading } from '../../components/panel/PanelFeedback';
+import { PanelPageHeader, PanelQuickActions } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth.js';
@@ -19,18 +22,25 @@ export default function ClienteHome() {
   const [pedidos, setPedidos] = useState([]);
   const [fidelidade, setFidelidade] = useState(null);
   const [promocoes, setPromocoes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState([]);
 
   useEffect(() => {
-    api.get('/pedidos/meus')
-      .then(data => setPedidos(Array.isArray(data) ? data : (data.pedidos ?? [])))
-      .catch(() => {});
-    api.get('/fidelidade/pontos')
-      .then(setFidelidade)
-      .catch(() => {});
+    let active = true;
     const lojaId = user?.lojaId ?? localStorage.getItem('vox_loja_id') ?? '';
-    api.get(lojaId ? `/promocoes?lojaId=${lojaId}` : '/promocoes')
-      .then(data => setPromocoes(Array.isArray(data) ? data : (data.promocoes ?? [])))
-      .catch(() => {});
+    Promise.allSettled([
+      api.get('/pedidos/meus'),
+      api.get('/fidelidade/pontos'),
+      api.get(lojaId ? `/promocoes?lojaId=${lojaId}` : '/promocoes'),
+    ]).then(([orders, loyalty, offers]) => {
+      if (!active) return;
+      if (orders.status === 'fulfilled') setPedidos(Array.isArray(orders.value) ? orders.value : (orders.value.pedidos ?? []));
+      if (loyalty.status === 'fulfilled') setFidelidade(loyalty.value);
+      if (offers.status === 'fulfilled') setPromocoes(Array.isArray(offers.value) ? offers.value : (offers.value.promocoes ?? []));
+      setFailed([['pedidos', orders], ['pontos', loyalty], ['ofertas', offers]].filter(([, result]) => result.status === 'rejected').map(([name]) => name));
+      setLoading(false);
+    });
+    return () => { active = false; };
   }, [user]);
 
   const ultimoPedido = pedidos[0] ?? null;
@@ -44,49 +54,26 @@ export default function ClienteHome() {
 
   return (
     <div className="space-y-6">
-      {/* Saudação */}
-      <div className="royal-radiant rounded-2xl p-7 text-white relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5"/>
-        <div className="relative">
-          <p className="font-display text-[11px] tracking-[0.25em] text-white/60 mb-1">ÁREA DO CLIENTE</p>
-          <h1 className="font-display font-bold text-[30px] sm:text-[36px] leading-tight">
-            Olá, {user?.nome?.split(' ')[0]}! 👋
-          </h1>
-          <p className="text-white/70 text-[14px] mt-1">Bem-vindo à sua área exclusiva.</p>
-          <div className="flex flex-wrap gap-3 mt-5">
-            <Link to="/area-cliente/pedidos"
-              className="inline-flex items-center gap-2 px-5 h-10 bg-white text-[var(--royal-800)] rounded-full font-semibold text-[13px] hover:bg-zinc-100 transition">
-              <Icon.package className="w-4 h-4" /> Meus pedidos
-            </Link>
-            <a href={`https://wa.me/${PHONE_DIGITS}`} target="_blank" rel="noopener"
-              className="inline-flex items-center gap-2 px-5 h-10 chip-glass text-white rounded-full font-medium text-[13px] hover:bg-white/15 transition">
-              <Icon.whatsapp className="w-4 h-4" /> Falar com a loja
-            </a>
-          </div>
-        </div>
-      </div>
-
+      <PanelPageHeader title={`Olá, ${user?.nome?.split(' ')[0] ?? 'cliente'}!`} description="Seus pedidos e benefícios, em um só lugar.">
+        <a href={`https://wa.me/${PHONE_DIGITS}`} target="_blank" rel="noopener noreferrer" className="panel-help-link"><Icon.whatsapp /> Falar com a loja</a>
+      </PanelPageHeader>
+      <PanelQuickActions items={[
+        { to: '/area-cliente/pedidos', label: 'Acompanhar pedido', description: 'Status e detalhes da compra', icon: 'package' },
+        { to: '/area-cliente/fidelidade', label: 'Usar meus pontos', description: 'Saldo e recompensas juntos', icon: 'award' },
+        { to: '/area-cliente/promocoes', label: 'Ver ofertas', description: 'Oportunidades da loja', icon: 'tag' },
+      ]} />
+      {loading && <PanelLoading />}
+      {failed.length > 0 && <div role="alert" className="panel-inline-notice">Não foi possível consultar {failed.join(', ')}. <button onClick={() => window.location.reload()}>Tentar novamente</button></div>}
       {/* Cards de atalho */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {!loading && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { to: '/area-cliente/pedidos',    label: 'Meus Pedidos',  icon: 'package', val: pedidos.length,              sub: 'no histórico' },
-          { to: '/area-cliente/fidelidade', label: 'Pontos',         icon: 'award',   val: pontos?.saldo ?? '—',        sub: pontos ? `nível ${pontos.nivel}` : 'carregando…' },
-          { to: '/area-cliente/promocoes',  label: 'Promoções',      icon: 'tag',     val: promocoes.length,            sub: 'exclusivas' },
-          { to: '/area-cliente/fidelidade', label: 'Recompensas',    icon: 'gift',    val: recompensasDisponiveis,      sub: 'disponíveis' },
-        ].map((c, i) => {
-          const I = Icon[c.icon];
-          return (
-            <Link key={i} to={c.to} className="bg-white border border-[var(--line)] rounded-2xl p-5 hover:border-[var(--royal-700)] hover:shadow-sm transition group">
-              <div className="w-10 h-10 rounded-xl bg-[var(--royal-50)] text-[var(--royal-700)] grid place-items-center mb-3 group-hover:bg-[var(--royal-700)] group-hover:text-white transition">
-                <I className="w-5 h-5" />
-              </div>
-              <div className="font-display font-bold text-[24px] leading-none text-[var(--ink)]">{c.val}</div>
-              <div className="text-[12px] font-medium text-zinc-700 mt-1">{c.label}</div>
-              <div className="text-[11px] text-zinc-400">{c.sub}</div>
-            </Link>
-          );
-        })}
-      </div>
+          { to: '/area-cliente/pedidos', label: 'Meus pedidos', icon: 'package', val: failed.includes('pedidos') ? '—' : pedidos.length, sub: failed.includes('pedidos') ? 'indisponível' : 'no histórico' },
+          { to: '/area-cliente/fidelidade', label: 'Pontos', icon: 'award', val: pontos?.saldo ?? '—', sub: pontos ? `nível ${pontos.nivel}` : 'indisponível' },
+          { to: '/area-cliente/promocoes', label: 'Ofertas', icon: 'tag', val: failed.includes('ofertas') ? '—' : promocoes.length, sub: failed.includes('ofertas') ? 'indisponível' : 'disponíveis' },
+          { to: '/area-cliente/fidelidade', label: 'Recompensas', icon: 'gift', val: failed.includes('pontos') ? '—' : recompensasDisponiveis, sub: failed.includes('pontos') ? 'indisponível' : 'disponíveis' },
+        ].map(c => <PanelMetricCard key={c.label} to={c.to} label={c.label} value={c.val} description={c.sub} icon={c.icon} />)}
+
+      </div>}
 
       <div className="grid md:grid-cols-2 gap-5">
         {/* Último pedido */}
@@ -97,7 +84,7 @@ export default function ClienteHome() {
               <Link to="/area-cliente/pedidos" className="text-[12px] text-[var(--royal-700)] hover:underline">Ver todos</Link>
             </div>
             <div className="flex items-center justify-between mb-3">
-              <span className="font-display font-bold text-[var(--royal-700)]">{ultimoPedido.id}</span>
+              <span className="font-display font-bold text-[var(--royal-700)]">{ultimoPedido.codigo ?? ultimoPedido.id}</span>
               <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${STATUS_STYLE[ultimoPedido.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
                 {STATUS_LABEL[ultimoPedido.status] ?? ultimoPedido.status}
               </span>
@@ -146,7 +133,7 @@ export default function ClienteHome() {
       {promo && (
         <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
-            <div className="font-display font-bold text-[18px]">Oferta exclusiva para você</div>
+            <div className="font-display font-bold text-[18px]">Oferta da loja</div>
             <Link to="/area-cliente/promocoes" className="text-[12px] text-[var(--royal-700)] hover:underline">Ver todas</Link>
           </div>
           <div className="flex flex-col sm:flex-row">
@@ -154,7 +141,7 @@ export default function ClienteHome() {
             <div className="p-6 flex flex-col justify-between">
               <div>
                 <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-[var(--royal-50)] text-[var(--royal-700)] rounded-full text-[11px] font-semibold mb-3">
-                  <Icon.tag className="w-3 h-3" /> EXCLUSIVO
+                  <Icon.tag className="w-3 h-3" /> OFERTA
                 </div>
                 <h3 className="font-display font-bold text-[20px] mb-1">{promo.titulo}</h3>
                 <p className="text-[13px] text-zinc-600 mb-4">{promo.desc ?? promo.descricao}</p>

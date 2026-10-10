@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
+import PanelDialog from '../../components/panel/PanelDialog';
+import { PanelPageHeader } from '../../components/panel/PanelShell';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { api, assetUrl } from '../../lib/api.js';
 import { CATEGORIES } from '../../data';
 import { Icon } from '../../icons';
@@ -27,12 +30,9 @@ const emptyImage = {
 };
 
 const tabs = [
-  { id: 'basico', label: 'Basico', icon: Icon.package },
-  { id: 'imagens', label: 'Imagens', icon: Icon.eye },
-  { id: 'precos', label: 'Precos', icon: Icon.card },
-  { id: 'estoque', label: 'Estoque', icon: Icon.package },
-  { id: 'ofertas', label: 'Ofertas', icon: Icon.tag },
-  { id: 'detalhes', label: 'Detalhes', icon: Icon.settings },
+  { id: 'basico', label: '1. Produto', icon: Icon.package },
+  { id: 'imagens', label: '2. Imagem', icon: Icon.eye },
+  { id: 'precos', label: '3. Venda', icon: Icon.card },
 ];
 
 function normalizeProduto(produto) {
@@ -259,32 +259,21 @@ export default function AdminProdutos() {
     }
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[var(--royal-700)] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+  if (loading) return <PanelLoading />;
+  if (error) return <PanelError message={error} />;
 
   return (
     <div>
-      <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-5 h-[2px] bg-[var(--red-500)]"></span>
-            <span className="font-display text-[var(--red-500)] font-semibold text-[11px] tracking-[0.28em]">CATALOGO</span>
-          </div>
-          <h1 className="font-display font-bold text-[32px] text-[var(--ink)]">Produtos</h1>
-        </div>
+      <PanelPageHeader title="Produtos" description="Cadastre e ajuste imagem, preço e estoque.">
         <button onClick={abrirNovo}
           className="inline-flex items-center justify-center gap-2 h-10 px-4 bg-[var(--royal-700)] hover:bg-[var(--royal-800)] text-white rounded-lg text-[13px] font-semibold transition">
           <Icon.plus className="w-4 h-4" /> Novo produto
         </button>
-      </div>
+      </PanelPageHeader>
 
       <div className="flex flex-wrap gap-2 mb-6">
         {cats.map(c => (
-          <button key={c} onClick={() => setFiltro(c)}
+          <button key={c} aria-pressed={filtro === c} onClick={() => setFiltro(c)}
             className={`px-3.5 h-9 rounded-full text-[12.5px] font-medium border transition ${filtro === c ? 'bg-[var(--royal-800)] text-white border-[var(--royal-800)]' : 'bg-white text-zinc-600 border-[var(--line)] hover:border-[var(--royal-700)]'}`}>
             {c}
           </button>
@@ -370,8 +359,7 @@ export default function AdminProdutos() {
 
 function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formError, saving, onClose, onSave, onFile, categorias, currentImage, imageState }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <PanelDialog label="Produto" onClose={onClose} className="p-3" layer="z-50">
       <div className="relative bg-white rounded-lg w-full max-w-5xl max-h-[92vh] overflow-hidden shadow-2xl">
         <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--line)]">
           <div>
@@ -379,9 +367,9 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
               <Icon.package className="w-4 h-4 text-blue-600" />
               {mode === 'create' ? 'Cadastrar Produto' : 'Editar Produto'}
             </div>
-            <div className="text-[13px] text-zinc-500 mt-2">Edite as informacoes do produto abaixo</div>
+            <div className="text-[13px] text-zinc-500 mt-2">Preencha o produto, adicione a imagem e ajuste a venda.</div>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
+          <button aria-label="Fechar produto" onClick={onClose} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
             <Icon.close className="w-5 h-5" />
           </button>
         </div>
@@ -389,12 +377,12 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
         <div className="max-h-[calc(92vh-170px)] overflow-y-auto px-6 py-4">
           {formError && <div className="mb-4 rounded-lg bg-red-50 border border-red-100 text-red-600 px-3 py-2 text-[12px]">{formError}</div>}
 
-          <div className="grid grid-cols-3 sm:grid-cols-6 bg-zinc-200 rounded-md p-1 mb-3">
+          <div className="grid grid-cols-3 bg-zinc-100 rounded-md p-1 mb-3">
             {tabs.map(tab => {
               const TabIcon = tab.icon;
               const active = activeTab === tab.id;
               return (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                <button key={tab.id} aria-pressed={active} onClick={() => setActiveTab(tab.id)}
                   className={`h-10 inline-flex items-center justify-center gap-2 rounded text-[13px] font-semibold transition ${active ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'}`}>
                   <TabIcon className="w-4 h-4" /> {tab.label}
                 </button>
@@ -426,8 +414,8 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
                   <Icon.arrowUpRight className="w-8 h-8 -rotate-45" />
                 </span>
                 <span className="font-display font-bold text-[18px] text-zinc-900">Adicionar Imagens do Produto</span>
-                <span className="text-[14px] text-zinc-500 mt-2">Arraste e solte ou clique para selecionar</span>
-                <span className="text-[11px] text-zinc-400 mt-3">JPG, PNG, WebP ate 50MB - 1/10 imagens</span>
+                <span className="text-[14px] text-zinc-500 mt-2">Clique para selecionar a imagem</span>
+                <span className="text-[11px] text-zinc-400 mt-3">Uma imagem por produto. JPG, PNG ou WebP.</span>
                 <span className="mt-5 h-10 px-5 inline-flex items-center justify-center gap-2 rounded-md border border-blue-600 bg-white text-blue-600 text-[13px] font-semibold">
                   <Icon.plus className="w-4 h-4" /> Selecionar Imagens
                 </span>
@@ -461,21 +449,21 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
             </div>
           )}
 
-          {activeTab === 'estoque' && (
+          {activeTab === 'precos' && (
             <div className="grid md:grid-cols-2 gap-4">
               <TextField label="Estoque disponivel" type="number" value={form.estoque} onChange={estoque => setForm(v => ({ ...v, estoque }))} />
               <TextField label="Subtitulo / variacao" value={form.sub} onChange={sub => setForm(v => ({ ...v, sub }))} />
             </div>
           )}
 
-          {activeTab === 'ofertas' && (
+          {activeTab === 'precos' && (
             <div className="space-y-4">
               <TextField label="Badge da oferta" value={form.badge} onChange={badge => setForm(v => ({ ...v, badge }))} placeholder="OFERTA, NOVO, TOP VENDAS..." />
               <ToggleField label="Produto em destaque" checked={form.destaque} onChange={destaque => setForm(v => ({ ...v, destaque }))} />
             </div>
           )}
 
-          {activeTab === 'detalhes' && (
+          {activeTab === 'basico' && (
             <TextAreaField label="Especificacoes (uma por linha)" rows={8} value={form.specsText} onChange={specsText => setForm(v => ({ ...v, specsText }))} />
           )}
         </div>
@@ -488,28 +476,27 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
           </button>
         </div>
       </div>
-    </div>
+    </PanelDialog>
   );
 }
 
 function CropModal({ draft, setDraft, onClose, onApply }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3">
-      <div className="absolute inset-0 bg-black/55" onClick={onClose} />
+    <PanelDialog label="Ajustar imagem" onClose={onClose} className="p-3" layer="z-[60]">
       <div className="relative bg-white rounded-lg w-full max-w-4xl overflow-hidden shadow-2xl">
         <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--line)]">
           <div>
             <div className="font-display font-bold text-[16px] text-zinc-900">Ajustar Imagem do Produto</div>
             <div className="text-[13px] text-zinc-500 mt-2">Recorte e ajuste a imagem antes de adicionar ao produto</div>
           </div>
-          <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
+          <button aria-label="Fechar ajuste de imagem" onClick={onClose} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
             <Icon.close className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6">
-          <div className="h-14 border border-zinc-300 rounded-lg flex items-center justify-between px-5 mb-4">
-            <div className="flex items-center gap-3">
+          <div className="min-h-14 border border-zinc-300 rounded-lg flex flex-wrap items-center justify-between px-4 py-3 gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-3">
               <Icon.plus className="w-4 h-4 rotate-45 text-zinc-600" />
               <span className="font-semibold text-[15px] text-zinc-900">Editor de Imagem</span>
               <span className="rounded-full border border-zinc-300 px-3 py-1 text-[11px] font-bold">Quadrado 1:1</span>
@@ -521,7 +508,7 @@ function CropModal({ draft, setDraft, onClose, onApply }) {
           <CropStage draft={draft} setDraft={setDraft} />
 
           <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-[12px] text-zinc-600">
-            <strong>Dica:</strong> Arraste os cantos da area destacada para ajustar o tamanho e posicao do corte. O recorte e exportado em WebP 900x900 para preservar qualidade e reduzir espaco em disco.
+            Arraste o recorte para posicionar e os cantos para ajustar. No teclado, use as setas para mover e + ou − nos cantos para redimensionar.
           </div>
 
           <div className="flex justify-end gap-3 mt-4">
@@ -534,14 +521,21 @@ function CropModal({ draft, setDraft, onClose, onApply }) {
           </div>
         </div>
       </div>
-    </div>
+    </PanelDialog>
   );
 }
 
 function CropStage({ draft, setDraft }) {
   const stageRef = useRef(null);
+  const containerRef = useRef(null);
   const actionRef = useRef(null);
-  const stageSize = { width: 520, height: 330 };
+  const [stageWidth, setStageWidth] = useState(520);
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) => setStageWidth(Math.max(1, Math.min(520, entry.contentRect.width - 32))));
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+  const stageSize = { width: stageWidth, height: stageWidth * 330 / 520 };
   const imgScale = Math.min(stageSize.width / draft.naturalWidth, stageSize.height / draft.naturalHeight);
   const imgWidth = draft.naturalWidth * imgScale;
   const imgHeight = draft.naturalHeight * imgScale;
@@ -622,16 +616,27 @@ function CropStage({ draft, setDraft }) {
   };
 
   return (
-    <div className="border border-zinc-300 rounded-lg bg-zinc-50 py-4 overflow-x-auto">
+    <div ref={containerRef} className="panel-crop-stage border border-zinc-300 rounded-lg bg-zinc-50 py-4 overflow-hidden">
       <div ref={stageRef} className="relative mx-auto bg-zinc-400 select-none" style={{ width: stageSize.width, height: stageSize.height, maxWidth: '100%' }}>
         <img src={draft.source} alt="" draggable="false" className="absolute object-contain" style={{ left: imgLeft, top: imgTop, width: imgWidth, height: imgHeight }} />
         <div className="absolute bg-black/45 pointer-events-none" style={{ left: imgLeft, top: imgTop, width: imgWidth, height: rect.top - imgTop }} />
         <div className="absolute bg-black/45 pointer-events-none" style={{ left: imgLeft, top: rect.top + rect.height, width: imgWidth, height: imgTop + imgHeight - (rect.top + rect.height) }} />
         <div className="absolute bg-black/45 pointer-events-none" style={{ left: imgLeft, top: rect.top, width: rect.left - imgLeft, height: rect.height }} />
         <div className="absolute bg-black/45 pointer-events-none" style={{ left: rect.left + rect.width, top: rect.top, width: imgLeft + imgWidth - (rect.left + rect.width), height: rect.height }} />
-        <div onPointerDown={event => startPointer(event, 'move')} className="absolute border-2 border-blue-500 cursor-move" style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height }}>
+        <div tabIndex={0} role="group" aria-label="Mover recorte com as setas" onKeyDown={event => {
+          if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+          event.preventDefault();
+          setDraft(prev => ({ ...prev, crop: { ...prev.crop,
+            x: clamp(prev.crop.x + (event.key === 'ArrowRight' ? 2 : event.key === 'ArrowLeft' ? -2 : 0), 0, 100 - prev.crop.size),
+            y: clamp(prev.crop.y + (event.key === 'ArrowDown' ? 2 : event.key === 'ArrowUp' ? -2 : 0), 0, 100 - prev.crop.size * prev.naturalWidth / prev.naturalHeight),
+          } }));
+        }} onPointerDown={event => startPointer(event, 'move')} className="absolute border-2 border-blue-500 cursor-move" style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height, touchAction: 'none' }}>
           {['nw', 'ne', 'sw', 'se'].map(corner => (
-            <button key={corner} type="button" aria-label={`Ajustar ${corner}`} onPointerDown={event => startPointer(event, corner)}
+            <button key={corner} type="button" aria-label={`Redimensionar canto ${corner.includes('n') ? 'superior' : 'inferior'} ${corner.includes('w') ? 'esquerdo' : 'direito'}`} onKeyDown={event => {
+              if (!['+', '=', '-', '−'].includes(event.key)) return;
+              event.preventDefault(); event.stopPropagation();
+              setDraft(prev => ({ ...prev, crop: { ...prev.crop, size: clamp(prev.crop.size + (event.key === '-' || event.key === '−' ? -2 : 2), 10, Math.min(100 - prev.crop.x, (100 - prev.crop.y) * prev.naturalHeight / prev.naturalWidth)) } }));
+            }} onPointerDown={event => { event.stopPropagation(); startPointer(event, corner); }}
               className={`absolute w-3 h-3 bg-white border border-zinc-500 ${corner.includes('n') ? '-top-1.5' : '-bottom-1.5'} ${corner.includes('w') ? '-left-1.5' : '-right-1.5'} ${corner === 'nw' || corner === 'se' ? 'cursor-nwse-resize' : 'cursor-nesw-resize'}`} />
           ))}
         </div>
@@ -649,19 +654,21 @@ function fieldClass() {
 }
 
 function TextField({ label, value, onChange, type = 'text', placeholder = '' }) {
+  const id = useId();
   return (
     <div>
-      <label className="block font-medium text-[13px] text-zinc-800 mb-2">{label}</label>
-      <input type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} className={fieldClass()} />
+      <label htmlFor={id} className="block font-medium text-[13px] text-zinc-800 mb-2">{label}</label>
+      <input id={id} type={type} value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)} className={fieldClass()} />
     </div>
   );
 }
 
 function SelectField({ label, value, onChange, options }) {
+  const id = useId();
   return (
     <div>
-      <label className="block font-medium text-[13px] text-zinc-800 mb-2">{label}</label>
-      <select value={value} onChange={e => onChange(e.target.value)} className={fieldClass()}>
+      <label htmlFor={id} className="block font-medium text-[13px] text-zinc-800 mb-2">{label}</label>
+      <select id={id} value={value} onChange={e => onChange(e.target.value)} className={fieldClass()}>
         {options.map(option => <option key={option} value={option}>{option}</option>)}
       </select>
     </div>
@@ -669,10 +676,11 @@ function SelectField({ label, value, onChange, options }) {
 }
 
 function TextAreaField({ label, value, onChange, rows }) {
+  const id = useId();
   return (
     <div>
-      <label className="block font-medium text-[13px] text-zinc-800 mb-2">{label}</label>
-      <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} className={`${fieldClass()} resize-none`} />
+      <label htmlFor={id} className="block font-medium text-[13px] text-zinc-800 mb-2">{label}</label>
+      <textarea id={id} value={value} onChange={e => onChange(e.target.value)} rows={rows} className={`${fieldClass()} resize-none`} />
     </div>
   );
 }
@@ -688,9 +696,9 @@ function ToggleField({ label, checked, onChange }) {
 
 function SwitchField({ checked, onChange }) {
   return (
-    <button type="button" onClick={() => onChange(!checked)}
-      className={`w-11 h-6 rounded-full p-0.5 transition ${checked ? 'bg-blue-600' : 'bg-zinc-300'}`}>
-      <span className={`block w-5 h-5 bg-white rounded-full shadow transition ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+    <button type="button" role="switch" aria-checked={checked} aria-label="Produto ativo" onClick={() => onChange(!checked)}
+      className="w-11 h-11 grid place-items-center">
+      <span className={`block w-11 h-6 rounded-full p-0.5 transition ${checked ? 'bg-blue-600' : 'bg-zinc-300'}`}><span className={`block w-5 h-5 bg-white rounded-full shadow transition ${checked ? 'translate-x-5' : 'translate-x-0'}`} /></span>
     </button>
   );
 }

@@ -1,3 +1,6 @@
+import PanelMetricCard from '../../components/panel/PanelMetricCard';
+import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
+import { PanelPageHeader, PanelQuickActions } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth.js';
@@ -36,15 +39,11 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-8 h-8 border-2 border-[var(--royal-700)] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
+  if (loading) return <PanelLoading />;
+  if (error) return <PanelError message={error} />;
   if (!metrics) return null;
 
-  const maxVal = metrics.grafico?.length ? Math.max(...metrics.grafico.map(d => d.valor)) : 1;
+  const maxVal = Math.max(1, ...(metrics.grafico ?? []).map(d => d.valor));
   const recentes = pedidos.slice(0, 5);
   const novosCount = pedidos.filter(p => p.status === 'NOVO').length;
 
@@ -58,39 +57,28 @@ export default function AdminDashboard() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-7">
-        <p className="text-zinc-500 text-[13px]">Quarta-feira, 30 de abril de 2026</p>
-        <h1 className="font-display font-bold text-[32px] sm:text-[40px] leading-tight text-[var(--ink)]">
-          Olá, {user?.nome?.split(' ')[0]} 👋
-        </h1>
-      </div>
+      <PanelPageHeader title={`Olá, ${user?.nome?.split(' ')[0] ?? 'lojista'}`} description="Acompanhe sua loja e escolha o que fazer agora." />
+      <PanelQuickActions items={[
+        { to: '/admin/pedidos', label: 'Atender pedidos', description: `${novosCount} novos pedidos`, icon: 'package' },
+        { to: '/admin/produtos', label: 'Gerenciar produtos', description: 'Cadastro, preço e estoque', icon: 'tag' },
+        { to: '/admin/clientes', label: 'Consultar clientes', description: 'Contatos, compras e pontos', icon: 'users' },
+        { to: '/admin/configuracoes', label: 'Editar página da loja', description: 'Horários, banner e redes sociais', icon: 'settings' },
+      ]} />
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {cards.map((c, i) => {
-          const I = Icon[c.icon];
-          return (
-            <div key={i} className="bg-white border border-[var(--line)] rounded-2xl p-5">
-              <div className={`w-10 h-10 rounded-xl ${c.bg} ${c.cor} grid place-items-center mb-4`}>
-                <I className="w-5 h-5" />
-              </div>
-              <div className="font-display font-bold text-[26px] leading-none text-[var(--ink)] mb-1">{c.valor}</div>
-              <div className="text-[12px] font-medium text-zinc-700">{c.label}</div>
-              <div className="text-[11px] text-zinc-400 mt-0.5">{c.sub}</div>
-            </div>
-          );
-        })}
+        {cards.map(c => <PanelMetricCard key={c.label} label={c.label} value={c.valor} description={c.sub} icon={c.icon} />)}
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-5">
+      <div className="grid gap-5">
         {/* Gráfico */}
-        <div className="lg:col-span-7 bg-white border border-[var(--line)] rounded-2xl p-6">
+        <div className="bg-white border border-[var(--line)] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="font-display font-bold text-[20px]">Faturamento</div>
               <div className="text-[12px] text-zinc-500">Últimos 7 dias</div>
             </div>
-            <div className="text-[12px] text-zinc-400">Abr 2026</div>
+            <div className="text-[12px] text-zinc-400">{new Intl.DateTimeFormat('pt-BR', { month: 'short', year: 'numeric', timeZone: 'America/Sao_Paulo' }).format(new Date())}</div>
           </div>
           <div className="flex items-end gap-2 h-40">
             {(metrics.grafico ?? []).map((d, i) => (
@@ -107,31 +95,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Atalhos */}
-        <div className="lg:col-span-5 bg-white border border-[var(--line)] rounded-2xl p-6">
-          <div className="font-display font-bold text-[20px] mb-4">Ações rápidas</div>
-          <div className="space-y-2">
-            {[
-              { to: '/admin/pedidos',       label: 'Ver pedidos pendentes', icon: 'package',    badge: `${novosCount} novos` },
-              { to: '/admin/produtos',      label: 'Gerenciar produtos',    icon: 'tag',        badge: null },
-              { to: '/admin/clientes',      label: 'Base de clientes',      icon: 'users',      badge: null },
-              { to: '/admin/configuracoes', label: 'Personalizar loja',     icon: 'settings',   badge: null },
-            ].map((a, i) => {
-              const I = Icon[a.icon];
-              return (
-                <Link key={i} to={a.to}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[var(--paper)] border border-transparent hover:border-[var(--line)] transition group">
-                  <div className="w-9 h-9 rounded-lg bg-[var(--royal-50)] text-[var(--royal-700)] grid place-items-center shrink-0">
-                    <I className="w-4 h-4" />
-                  </div>
-                  <span className="flex-1 text-[13.5px] font-medium text-zinc-700 group-hover:text-[var(--ink)]">{a.label}</span>
-                  {a.badge && <span className="text-[11px] text-[var(--royal-700)] bg-[var(--royal-50)] px-2 py-0.5 rounded-full">{a.badge}</span>}
-                  <Icon.arrowRight className="w-4 h-4 text-zinc-300 group-hover:text-[var(--royal-700)]" />
-                </Link>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* Pedidos recentes */}
@@ -143,7 +106,7 @@ export default function AdminDashboard() {
           </Link>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
+          <table className="panel-data-table w-full text-[13px]">
             <thead className="bg-[var(--paper)] border-b border-[var(--line)]">
               <tr>
                 {['Pedido', 'Cliente', 'Total', 'Pagamento', 'Status'].map(h => (
@@ -154,11 +117,11 @@ export default function AdminDashboard() {
             <tbody>
               {recentes.map((p, i) => (
                 <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
-                  <td className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)]">{p.id}</td>
-                  <td className="px-5 py-3.5 text-zinc-700">{p.clienteNome ?? p.cliente?.usuario?.nome ?? ''}</td>
-                  <td className="px-5 py-3.5 font-semibold">{formatBRL(p.total)}</td>
-                  <td className="px-5 py-3.5 text-zinc-500">{p.pagamento}</td>
-                  <td className="px-5 py-3.5">
+                  <td data-label="Pedido" className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)]">{p.codigo ?? p.id}</td>
+                  <td data-label="Cliente" className="px-5 py-3.5 text-zinc-700">{p.clienteNome ?? p.cliente?.usuario?.nome ?? ''}</td>
+                  <td data-label="Total" className="px-5 py-3.5 font-semibold">{formatBRL(p.total)}</td>
+                  <td data-label="Pagamento" className="px-5 py-3.5 text-zinc-500">{p.pagamento}</td>
+                  <td data-label="Status" className="px-5 py-3.5">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[p.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
                       {STATUS_LABEL[p.status] ?? p.status}
                     </span>

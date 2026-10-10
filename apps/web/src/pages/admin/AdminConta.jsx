@@ -1,3 +1,4 @@
+import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState } from 'react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/useAuth';
@@ -17,8 +18,7 @@ export default function AdminConta() {
     } catch (e) { setError(e.message); } finally { setSaving(false); }
   }
   return <div className="max-w-xl">
-    <h1 className="font-display font-bold text-3xl mb-2">Minha conta</h1>
-    <p className="text-zinc-600 mb-6">{user?.nome} · {user?.email}</p>
+    <PanelPageHeader title="Minha conta" description={`${user?.nome} · ${user?.email}`} />
     <form onSubmit={submit} className="bg-white p-6 rounded-2xl space-y-4 border">
       <h2 className="font-bold text-xl">Alterar senha</h2>
       <p className="text-sm text-zinc-500">Use pelo menos 12 caracteres. Troque a senha de teste antes de usar o painel no dia a dia.</p>
