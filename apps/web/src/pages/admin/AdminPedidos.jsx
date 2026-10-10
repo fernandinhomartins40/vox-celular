@@ -2,10 +2,12 @@ import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import PanelDialog from '../../components/panel/PanelDialog';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
 import { brazilPhone } from '../../lib/catalog';
+import { formatPanelDate, normalizeSearch, ORDER_ADMIN_GUIDANCE, ORDER_ACTION, setPanelParams } from '../../lib/panel';
 
 const STATUS_LIST_API  = ['TODOS', 'NOVO', 'EM_PREPARO', 'PRONTO', 'ENTREGUE'];
 const STATUS_LABEL     = { NOVO: 'Novo', EM_PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Entregue', TODOS: 'Todos' };
@@ -19,13 +21,19 @@ const NEXT_STATUS = { NOVO: 'EM_PREPARO', EM_PREPARO: 'PRONTO', PRONTO: 'ENTREGU
 
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
-  const [filtro, setFiltro] = useState('TODOS');
-  const [busca, setBusca] = useState('');
-  const [detalhe, setDetalhe] = useState(null);
+  const [params, setParams] = useSearchParams();
+  const filtro = STATUS_LIST_API.includes(params.get('status')) ? params.get('status') : 'TODOS';
+  const setFiltro = value => setPanelParams(setParams, { status: value === 'TODOS' ? '' : value });
+  const busca = params.get('busca') ?? '';
+  const setBusca = value => setPanelParams(setParams, { busca: value });
+  const detalhe = pedidos.find(p => p.id === params.get('pedido')) ?? null;
+  const setDetalhe = value => setPanelParams(setParams, { pedido: value?.id }, false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     api.get('/pedidos')
@@ -37,11 +45,16 @@ export default function AdminPedidos() {
   const filtrados = pedidos.filter(p => {
     const matchFiltro = filtro === 'TODOS' || p.status === filtro;
     const clienteNome = p.clienteNome ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.nome : p.cliente) ?? '';
-    const matchBusca  = busca === '' ||
-      `${p.codigo ?? ''} ${p.id}`.toLowerCase().includes(busca.toLowerCase()) ||
-      clienteNome.toLowerCase().includes(busca.toLowerCase());
-    return matchFiltro && matchBusca;
+    const matchBusca = !normalizeSearch(busca) || normalizeSearch(`${p.codigo ?? ''} ${p.id} ${clienteNome}`).includes(normalizeSearch(busca));
+    return matchFiltro && matchBusca && (!params.get('cliente') || p.clienteId === params.get('cliente'));
   });
+
+  const atualizar = async () => {
+    setRefreshing(true); setActionError('');
+    try { const data = await api.get('/pedidos'); setPedidos(Array.isArray(data) ? data : (data.pedidos ?? [])); }
+    catch (e) { setActionError(e.message); }
+    finally { setRefreshing(false); }
+  };
 
   const avancarStatus = async (id) => {
     if (pending) return;
@@ -50,10 +63,11 @@ export default function AdminPedidos() {
     const novoStatus = NEXT_STATUS[pedido.status];
     setPending(true);
     setActionError('');
+    setSuccess('');
     try {
-      const updated = await api.patch(`/pedidos/${id}/status`, { status: novoStatus });
+      const updated = await api.patch(`/pedidos/${id}/status`, { status: novoStatus, expectedStatus: pedido.status });
       setPedidos(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
-      if (detalhe?.id === id) setDetalhe(prev => ({ ...prev, ...updated }));
+      setSuccess(`Pedido ${pedido.codigo ?? pedido.id}: ${STATUS_LABEL[updated.status]}.`);
     } catch (e) {
       setActionError(e.message);
     } finally {
@@ -66,9 +80,14 @@ export default function AdminPedidos() {
 
   return (
     <div>
-      <PanelPageHeader title="Pedidos" description="Encontre um pedido e atualize o andamento." />
+      <PanelPageHeader title="Pedidos" description="Abra um pedido, confira os itens e escolha a próxima ação.">
+        <button className="panel-secondary-button" disabled={refreshing || pending} onClick={atualizar}>{refreshing ? 'Atualizando…' : 'Atualizar pedidos'}</button>
+      </PanelPageHeader>
 
-      {actionError && <p role="alert" className="text-red-600 mb-4">{actionError}</p>}
+      {actionError && !detalhe && <p role="alert" className="text-red-600 mb-4">{actionError}</p>}
+      {success && !detalhe && <p role="status" className="panel-success-notice">{success}</p>}
+      {params.get('cliente') && <div className="panel-inline-notice">Pedidos deste cliente <button onClick={() => setPanelParams(setParams, { cliente: '' })}>Ver todos os clientes</button></div>}
+      {params.get('pedido') && !detalhe && <p role="status">Este pedido não está disponível nesta conta. Você pode consultar os demais pedidos abaixo.</p>}
       {/* Filtros */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative flex-1 min-w-[200px]">
@@ -109,7 +128,7 @@ export default function AdminPedidos() {
                 return (
                   <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
                     <td data-label="Pedido" className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)] whitespace-nowrap">{p.codigo ?? p.id}</td>
-                    <td data-label="Data" className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{p.data ?? p.createdAt?.slice(0, 10)}</td>
+                    <td data-label="Data" className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{formatPanelDate(p.data ?? p.createdAt)}</td>
                     <td data-label="Cliente" className="px-5 py-3.5 font-medium text-zinc-800 whitespace-nowrap">{clienteNome}</td>
                     <td data-label="Produtos" className="px-5 py-3.5 text-zinc-500 max-w-[180px] truncate">{itensList}</td>
                     <td data-label="Total" className="px-5 py-3.5 font-semibold whitespace-nowrap">{formatBRL(p.total)}</td>
@@ -122,13 +141,13 @@ export default function AdminPedidos() {
                     <td data-label="Ações" className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         <button onClick={() => setDetalhe(p)}
-                          className="w-8 h-8 rounded-lg bg-[var(--royal-50)] text-[var(--royal-700)] grid place-items-center hover:bg-[var(--royal-100)] transition" title="Ver detalhes">
-                          <Icon.eye className="w-3.5 h-3.5" />
+                          className="panel-secondary-button" title="Ver detalhes">
+                          <Icon.eye className="w-3.5 h-3.5" /> Ver detalhes
                         </button>
                         {NEXT_STATUS[p.status] && (
                           <button disabled={pending} onClick={() => avancarStatus(p.id)}
-                            className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 grid place-items-center hover:bg-emerald-100 transition" title={`Avançar para ${STATUS_LABEL[NEXT_STATUS[p.status]]}`}>
-                            <Icon.check className="w-3.5 h-3.5" />
+                            className="panel-secondary-button" aria-label={`${ORDER_ACTION[p.status]}: ${p.codigo ?? p.id}`} title={ORDER_ACTION[p.status]}>
+                            <Icon.check className="w-3.5 h-3.5" /> <span>{ORDER_ACTION[p.status]}</span>
                           </button>
                         )}
                         {telefone && <a href={`https://wa.me/${telefone}?text=${encodeURIComponent(`Olá ${clienteNome}! Sobre seu pedido ${p.codigo ?? p.id}: `)}`}
@@ -140,7 +159,7 @@ export default function AdminPedidos() {
                 );
               })}
               {filtrados.length === 0 && (
-                <tr><td colSpan={8} className="px-5 py-10 text-center text-zinc-500">Nenhum pedido encontrado.</td></tr>
+                <tr><td colSpan={8} className="px-5 py-10 text-center text-zinc-500">Nenhum pedido encontrado.{(busca || filtro !== 'TODOS' || params.get('cliente')) && <button className="panel-secondary-button mt-3" onClick={() => setPanelParams(setParams, { busca: '', status: '', cliente: '' })}>Limpar filtros</button>}</td></tr>
               )}
             </tbody>
           </table>
@@ -154,13 +173,15 @@ export default function AdminPedidos() {
             <div className="flex items-center justify-between p-6 border-b border-[var(--line)]">
               <div>
                 <div className="font-display font-bold text-[22px]">{detalhe.codigo ?? detalhe.id}</div>
-                <div className="text-[13px] text-zinc-500">{detalhe.data ?? detalhe.createdAt?.slice(0, 10)} · {detalhe.pagamento}</div>
+                <div className="text-[13px] text-zinc-500">{formatPanelDate(detalhe.data ?? detalhe.createdAt)} · {detalhe.pagamento}</div>
               </div>
               <button aria-label="Fechar detalhes" onClick={() => setDetalhe(null)} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
                 <Icon.close className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6 space-y-5">
+              {actionError && <p role="alert" className="panel-inline-notice">{actionError} <button disabled={refreshing} onClick={atualizar}>Atualizar pedidos</button></p>}
+              {success && <p role="status" className="panel-success-notice">{success}</p>}
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-0.5">Cliente</div>
@@ -171,6 +192,8 @@ export default function AdminPedidos() {
                   {STATUS_LABEL[detalhe.status] ?? detalhe.status}
                 </span>
               </div>
+              <p className="panel-inline-notice">{ORDER_ADMIN_GUIDANCE[detalhe.status]}</p>
+              {brazilPhone(detalhe.clienteTelefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(detalhe.clienteTelefone)}?text=${encodeURIComponent(`Olá ${detalhe.clienteNome}! Seu pedido ${detalhe.codigo ?? detalhe.id} está ${STATUS_LABEL[detalhe.status]?.toLowerCase()}. Vamos combinar o próximo passo?`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Avisar cliente no WhatsApp</a>}
               <div>
                 <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-2">Itens</div>
                 <div className="space-y-2">
@@ -193,7 +216,7 @@ export default function AdminPedidos() {
               {NEXT_STATUS[detalhe.status] && (
                 <button disabled={pending} onClick={() => avancarStatus(detalhe.id)}
                   className="w-full inline-flex items-center justify-center gap-2 h-11 bg-[var(--royal-700)] hover:bg-[var(--royal-800)] text-white rounded-xl font-semibold text-[13px] transition">
-                  <Icon.check className="w-4 h-4" /> Avançar para "{STATUS_LABEL[NEXT_STATUS[detalhe.status]]}"
+                  <Icon.check className="w-4 h-4" /> {pending ? 'Atualizando…' : ORDER_ACTION[detalhe.status]}
                 </button>
               )}
             </div>

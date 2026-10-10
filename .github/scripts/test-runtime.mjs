@@ -90,7 +90,15 @@ const redemptions = await Promise.all(Array.from({ length: 6 }, () => fetch(base
   method: 'POST', headers: { Authorization: `Bearer ${customer.token}`, 'Content-Type': 'application/json' }, body: '{}',
 })));
 assert.deepEqual(redemptions.map(r => r.status).sort(), [200, 400, 400, 400, 400, 400]);
-assert.equal((await json('/api/fidelidade/pontos', { token: customer.token })).saldo, 0);
+const savedPoints = await json('/api/fidelidade/pontos', { token: customer.token });
+assert.equal(savedPoints.saldo, 0);
+assert.equal(savedPoints.resgates.length, 1, 'Receipt can be recovered after closing/reloading');
+assert.equal(savedPoints.resgates[0].recompensa.titulo, savedPoints.recompensas.find(r => r.id === 'ci-reward').titulo);
+assert.match(savedPoints.resgates[0].codigo, /^VOX-/);
+const otherCustomer = await json('/api/auth/register', { method: 'POST', status: 201, body: {
+  nome: 'CI Isolated Customer', email: 'ci-isolated@example.com', senha: 'ci-isolated-password', lojaId: loja.id,
+} });
+assert.deepEqual((await json('/api/fidelidade/pontos', { token: otherCustomer.token })).resgates, [], 'Other customers cannot see reward codes');
 assert.equal(sql(`SELECT count(*) FROM "ResgateRecompensa" WHERE "clienteId"='${me.cliente.id}';`), '1');
 const invalidImage = await json(`/api/produtos/${product.id}`, { method: 'PATCH', token: admin.token, status: 400,
   body: { image: { dataUrl: 'data:image/gif;base64,AAAA' } } });
@@ -109,6 +117,15 @@ assert.equal(progressed.timeline[0].data, '2020-01-01T00:00:00.000Z');
 assert.equal(progressed.timeline[1].ok, true);
 const repeated = await json('/api/pedidos/ci-order-1/status', { method: 'PATCH', token: admin.token, body: { status: 'EM_PREPARO' } });
 assert.equal(repeated.timeline[1].data, progressed.timeline[1].data);
+await json('/api/pedidos/ci-order-1/status', { method: 'PATCH', token: admin.token, status: 409, body: { status: 'PRONTO', expectedStatus: 'NOVO' } });
+assert.equal((await json('/api/pedidos?status=EM_PREPARO', { token: admin.token })).length, 1, 'Stale action leaves the actual order unchanged');
+await json('/api/pedidos?status=invalid', { token: admin.token, status: 400 });
+assert.equal((await json(`/api/pedidos?cliente=${me.cliente.id}`, { token: admin.token })).length, 2000);
+assert.deepEqual(await json('/api/pedidos?cliente=not-this-store', { token: admin.token }), []);
+assert.deepEqual(await json('/api/pedidos/meus', { token: otherCustomer.token }), []);
+const ownHistory = (await json('/api/clientes', { token: admin.token })).find(c => c.id === me.cliente.id).historicoPedidos;
+assert.equal(ownHistory.length, 2000);
+assert(ownHistory.every(p => p.codigo.startsWith('CI-')), 'Customer links receive the real order code');
 const before = performance.now();
 const results = await Promise.all(Array.from({ length: 12 }, () => json('/api/dashboard', { token: admin.token })));
 for (const result of results) {

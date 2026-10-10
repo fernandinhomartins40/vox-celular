@@ -7,7 +7,7 @@ export const fidelidadeRouter = Router();
 
 fidelidadeRouter.get('/pontos', requireAuth, async (req: AuthRequest, res) => {
   const cliente = await prisma.cliente.findFirst({
-    where: { usuarioId: req.user!.userId },
+    where: { usuarioId: req.user!.userId, lojaId: req.user!.lojaId },
     include: {
       historicoP: { orderBy: { createdAt: 'desc' }, take: 20 },
     }
@@ -15,7 +15,14 @@ fidelidadeRouter.get('/pontos', requireAuth, async (req: AuthRequest, res) => {
   if (!cliente) { res.status(404).json({ error: 'Cliente não encontrado' }); return; }
 
   const recompensas = await prisma.recompensaCatalogo.findMany({
-    where: { lojaId: req.user!.lojaId, ativo: true }
+    where: { lojaId: req.user!.lojaId, ativo: true, pontos: { gt: 0 } },
+    orderBy: { pontos: 'asc' },
+  });
+  const resgates = await prisma.resgateRecompensa.findMany({
+    where: { clienteId: cliente.id, recompensa: { lojaId: req.user!.lojaId } },
+    select: { id: true, codigo: true, createdAt: true, usadoEm: true, recompensa: { select: { titulo: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
   });
 
   const NIVEIS = [
@@ -29,15 +36,16 @@ fidelidadeRouter.get('/pontos', requireAuth, async (req: AuthRequest, res) => {
   res.json({
     saldo: cliente.pontos,
     nivel: cliente.nivel,
-    meta: proximo?.min ?? 9999,
+    meta: proximo?.min ?? null,
     proximoNivel: proximo?.nivel ?? 'Máximo',
     historico: cliente.historicoP,
     recompensas,
+    resgates,
   });
 });
 
 fidelidadeRouter.post('/resgatar/:recompensaId', requireAuth, async (req: AuthRequest, res) => {
-  const cliente = await prisma.cliente.findFirst({ where: { usuarioId: req.user!.userId } });
+  const cliente = await prisma.cliente.findFirst({ where: { usuarioId: req.user!.userId, lojaId: req.user!.lojaId } });
   if (!cliente) { res.status(404).json({ error: 'Cliente não encontrado' }); return; }
 
   const recompensaId = String(req.params.recompensaId);
@@ -47,8 +55,9 @@ fidelidadeRouter.post('/resgatar/:recompensaId', requireAuth, async (req: AuthRe
 
   const codigo = 'VOX-' + nanoid(6).toUpperCase();
 
+  let saldo: number;
   try {
-  await prisma.$transaction(async (tx) => {
+  saldo = await prisma.$transaction(async (tx) => {
     const debito = await tx.cliente.updateMany({
       where: { id: cliente.id, lojaId: req.user!.lojaId, pontos: { gte: recompensa.pontos } },
       data: { pontos: { decrement: recompensa.pontos } },
@@ -65,6 +74,7 @@ fidelidadeRouter.post('/resgatar/:recompensaId', requireAuth, async (req: AuthRe
     await tx.resgateRecompensa.create({
       data: { clienteId: cliente.id, recompensaId: recompensa.id, codigo }
     });
+    return (await tx.cliente.findUniqueOrThrow({ where: { id: cliente.id }, select: { pontos: true } })).pontos;
   });
   } catch (error) {
     res.status(error instanceof Error && error.message === 'SALDO_INSUFICIENTE' ? 400 : 500)
@@ -72,5 +82,5 @@ fidelidadeRouter.post('/resgatar/:recompensaId', requireAuth, async (req: AuthRe
     return;
   }
 
-  res.json({ codigo });
+  res.json({ codigo, saldo });
 });

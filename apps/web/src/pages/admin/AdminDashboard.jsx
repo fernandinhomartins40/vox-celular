@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/useAuth.js';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
+import { orderLink } from '../../lib/panel';
 
 const STATUS_STYLE = {
   'NOVO':       'bg-blue-50 text-blue-700 border-blue-200',
@@ -51,7 +52,7 @@ export default function AdminDashboard() {
     { label: 'Pedidos hoje',    valor: metrics.pedidosHoje,                sub: `${metrics.pedidosMes} no mês`,               icon: 'package',    cor: 'text-[var(--royal-700)]', bg: 'bg-[var(--royal-50)]' },
     { label: 'Faturamento mês', valor: formatBRL(metrics.faturamentoMes),  sub: `Ontem: ${formatBRL(metrics.faturamentoOntem)}`, icon: 'trendingUp', cor: 'text-emerald-700',       bg: 'bg-emerald-50' },
     { label: 'Ticket médio',    valor: formatBRL(metrics.ticketMedio),     sub: 'Por pedido',                                 icon: 'barChart',   cor: 'text-violet-700',        bg: 'bg-violet-50' },
-    { label: 'Estoque baixo',   valor: metrics.estoqueBaixo,               sub: 'Produtos críticos',                          icon: 'bell',       cor: 'text-amber-700',         bg: 'bg-amber-50' },
+    { label: 'Estoque baixo', valor: metrics.estoqueBaixo, sub: 'Ver produtos com até 5 unidades', icon: 'bell', to: '/admin/produtos?estoque=baixo' },
   ];
 
   return (
@@ -59,7 +60,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <PanelPageHeader title={`Olá, ${user?.nome?.split(' ')[0] ?? 'lojista'}`} description="Acompanhe sua loja e escolha o que fazer agora." />
       <PanelQuickActions items={[
-        { to: '/admin/pedidos', label: 'Atender pedidos', description: `${novosCount} novos pedidos`, icon: 'package' },
+        { to: novosCount ? '/admin/pedidos?status=NOVO' : '/admin/pedidos', label: 'Atender pedidos', description: `${novosCount} novos pedidos`, icon: 'package' },
         { to: '/admin/produtos', label: 'Gerenciar produtos', description: 'Cadastro, preço e estoque', icon: 'tag' },
         { to: '/admin/clientes', label: 'Consultar clientes', description: 'Contatos, compras e pontos', icon: 'users' },
         { to: '/admin/configuracoes', label: 'Editar página da loja', description: 'Horários, banner e redes sociais', icon: 'settings' },
@@ -67,7 +68,7 @@ export default function AdminDashboard() {
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {cards.map(c => <PanelMetricCard key={c.label} label={c.label} value={c.valor} description={c.sub} icon={c.icon} />)}
+        {cards.map(c => <PanelMetricCard key={c.label} to={c.to} label={c.label} value={c.valor} description={c.sub} icon={c.icon} />)}
       </div>
 
       <div className="grid gap-5">
@@ -117,7 +118,7 @@ export default function AdminDashboard() {
             <tbody>
               {recentes.map((p, i) => (
                 <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
-                  <td data-label="Pedido" className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)]">{p.codigo ?? p.id}</td>
+                  <td data-label="Pedido" className="px-5 py-3.5 font-display font-bold text-[var(--royal-700)]"><Link to={orderLink('/admin', p.id)} className="panel-inline-link" aria-label={`Abrir pedido ${p.codigo ?? p.id}`}>{p.codigo ?? p.id} <Icon.arrowRight className="w-4 h-4" /></Link></td>
                   <td data-label="Cliente" className="px-5 py-3.5 text-zinc-700">{p.clienteNome ?? p.cliente?.usuario?.nome ?? ''}</td>
                   <td data-label="Total" className="px-5 py-3.5 font-semibold">{formatBRL(p.total)}</td>
                   <td data-label="Pagamento" className="px-5 py-3.5 text-zinc-500">{p.pagamento}</td>

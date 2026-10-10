@@ -17,9 +17,15 @@ pedidosRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
   const search = Array.isArray(req.query.search) ? String(req.query.search[0]) : String(req.query.search ?? '');
 
   const where: Record<string, unknown> = { lojaId: req.user!.lojaId };
-  if (status && status !== 'Todos' && status !== 'undefined') {
-    where.status = status.replace(' ', '_').toUpperCase();
+  if (status && !['Todos', 'TODOS', 'undefined'].includes(status)) {
+    const normalized = status.replace(' ', '_').toUpperCase();
+    if (!['NOVO', 'EM_PREPARO', 'PRONTO', 'ENTREGUE'].includes(normalized)) {
+      res.status(400).json({ error: 'Escolha uma situação de pedido válida.' }); return;
+    }
+    where.status = normalized;
   }
+  const clienteId = typeof req.query.cliente === 'string' ? req.query.cliente : '';
+  if (clienteId) where.clienteId = clienteId;
   if (search && search !== 'undefined') {
     where.OR = [
       { codigo: { contains: search, mode: 'insensitive' } },
@@ -48,12 +54,12 @@ pedidosRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
 
 pedidosRouter.get('/meus', requireAuth, async (req: AuthRequest, res) => {
   const cliente = await prisma.cliente.findFirst({
-    where: { usuarioId: req.user!.userId },
+    where: { usuarioId: req.user!.userId, lojaId: req.user!.lojaId },
   });
   if (!cliente) { res.status(404).json({ error: 'Cliente não encontrado' }); return; }
 
   const pedidos = await prisma.pedido.findMany({
-    where: { clienteId: cliente.id },
+    where: { clienteId: cliente.id, lojaId: req.user!.lojaId },
     include: { itens: true, timeline: { orderBy: { ordem: 'asc' } } },
     orderBy: { createdAt: 'desc' },
   });
@@ -62,12 +68,15 @@ pedidosRouter.get('/meus', requireAuth, async (req: AuthRequest, res) => {
 
 pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res) => {
   const pedidoId = String(req.params.id);
-  const { status } = req.body as { status: string };
+  const { status, expectedStatus } = req.body as { status: string; expectedStatus?: string };
 
   const validStatuses = ['NOVO', 'EM_PREPARO', 'PRONTO', 'ENTREGUE'];
   if (!validStatuses.includes(status)) {
     res.status(400).json({ error: 'Status inválido' });
     return;
+  }
+  if (expectedStatus !== undefined && !validStatuses.includes(expectedStatus)) {
+    res.status(400).json({ error: 'Situação anterior inválida.' }); return;
   }
 
   const pedido = await prisma.pedido.findFirst({
@@ -84,11 +93,13 @@ pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res)
     ENTREGUE: 'Entregue',
   };
 
+  try {
   const updated = await prisma.$transaction(async (tx) => {
-  await tx.pedido.update({
-    where: { id: pedidoId },
+  const changed = await tx.pedido.updateMany({
+    where: { id: pedidoId, lojaId: req.user!.lojaId, ...(expectedStatus ? { status: expectedStatus as 'NOVO' | 'EM_PREPARO' | 'PRONTO' | 'ENTREGUE' } : {}) },
     data: { status: status as 'NOVO' | 'EM_PREPARO' | 'PRONTO' | 'ENTREGUE' },
   });
+  if (changed.count !== 1) throw new Error('PEDIDO_ALTERADO');
 
   for (const s of statusOrder.slice(0, novoIdx + 1)) {
     await tx.timelinePedido.updateMany({
@@ -103,4 +114,7 @@ pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res)
   });
   });
   res.json(updated);
+  } catch (error) {
+    res.status(error instanceof Error && error.message === 'PEDIDO_ALTERADO' ? 409 : 500).json({ error: error instanceof Error && error.message === 'PEDIDO_ALTERADO' ? 'Este pedido foi atualizado em outra sessão. Atualize os pedidos antes de continuar.' : 'Não foi possível atualizar o pedido.' });
+  }
 });

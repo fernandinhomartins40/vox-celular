@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { PHONE_DIGITS } from '../../data';
+import { formatPanelDate } from '../../lib/panel';
 
 const NIVEL_STYLE = {
   'Bronze': 'text-amber-700 bg-amber-50',
@@ -26,13 +27,15 @@ const NIVEIS = [
   { nivel: 'Platina',min: 1200, max: null },
 ];
 
-export default function ClienteFidelidade() {
+export default function ClienteFidelidade({ embedded = false }) {
   const [fidelidade, setFidelidade] = useState(null);
   const [resgatado, setResgatado] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [resgatando, setResgatando] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [revisando, setRevisando] = useState(null);
+  const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
     api.get('/fidelidade/pontos')
@@ -49,7 +52,11 @@ export default function ClienteFidelidade() {
     try {
       const r = await api.post(`/fidelidade/resgatar/${recompensa.id}`, {});
       setResgatado({ ...recompensa, codigo: r.codigo });
-      setFidelidade(await api.get('/fidelidade/pontos'));
+      setRevisando(null);
+      setCopyStatus('');
+      setFidelidade(prev => ({ ...prev, saldo: r.saldo ?? prev.saldo - (recompensa.pontos ?? recompensa.custo), resgates: [{ codigo: r.codigo, createdAt: new Date().toISOString(), recompensa: { titulo: recompensa.titulo ?? recompensa.nome } }, ...(prev.resgates ?? [])] }));
+      try { setFidelidade(await api.get('/fidelidade/pontos')); }
+      catch { setActionError('Resgate confirmado. Não foi possível atualizar o histórico agora; seu código continua disponível.'); }
     } catch (e) {
       setActionError(e.message);
     } finally {
@@ -62,11 +69,11 @@ export default function ClienteFidelidade() {
   if (!fidelidade) return null;
 
   const p = fidelidade;
-  const progresso = p.meta ? Math.round((p.saldo / p.meta) * 100) : 100;
+  const progresso = p.meta ? Math.min(100, Math.max(0, Math.round((p.saldo / p.meta) * 100))) : 100;
 
   return (
     <div className="space-y-6">
-      <PanelPageHeader title="Pontos e recompensas" description="Veja seu saldo e escolha uma recompensa." />
+      {!embedded && <PanelPageHeader title="Pontos e recompensas" description="Veja seu saldo e escolha uma recompensa." />}
 
       {/* Cartão de pontos */}
       <div className="royal-radiant rounded-2xl p-7 text-white relative overflow-hidden">
@@ -99,9 +106,9 @@ export default function ClienteFidelidade() {
       </div>
 
       {/* Níveis */}
-      <div className="bg-white border border-[var(--line)] rounded-2xl p-6">
-        <div className="font-display font-bold text-[18px] mb-4">Níveis do programa</div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <details className="bg-white border border-[var(--line)] rounded-2xl p-6">
+        <summary className="font-display font-bold text-[18px] cursor-pointer">Como funcionam os níveis</summary>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
           {NIVEIS.map((n, i) => {
             const atual = n.nivel === p.nivel;
             return (
@@ -114,7 +121,7 @@ export default function ClienteFidelidade() {
             );
           })}
         </div>
-      </div>
+      </details>
 
       <div className="grid md:grid-cols-2 gap-5">
         {/* Recompensas */}
@@ -122,11 +129,12 @@ export default function ClienteFidelidade() {
           <div className="font-display font-bold text-[18px] mb-4">Resgatar recompensas</div>
           {actionError && <p role="alert" className="text-red-600 mb-3">{actionError}</p>}
           <div className="space-y-3">
-            {(p.recompensas ?? []).map((r, i) => {
+            {[...(p.recompensas ?? [])].sort((a, b) => (a.pontos ?? a.custo) - (b.pontos ?? b.custo)).map((r, i) => {
               const custo = r.pontos ?? r.custo ?? 0;
               const pode = custo <= p.saldo;
               return (
-                <div key={i} className={`flex items-center justify-between p-4 rounded-xl border transition ${pode ? 'border-[var(--line)] hover:border-[var(--royal-700)]' : 'border-[var(--line)] opacity-50'}`}>
+                <div key={r.id ?? i} className="panel-reward-card">
+                  <div className="flex flex-wrap gap-3 items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-lg grid place-items-center ${pode ? 'bg-[var(--royal-50)] text-[var(--royal-700)]' : 'bg-zinc-100 text-zinc-400'}`}>
                       <Icon.gift className="w-4 h-4" />
@@ -138,10 +146,16 @@ export default function ClienteFidelidade() {
                   </div>
                   <button
                     disabled={!pode || resgatando}
-                    onClick={() => resgatar(r)}
+                    onClick={() => { setRevisando(r); setActionError(''); }}
                     className={`px-3.5 h-8 rounded-full text-[12px] font-semibold transition ${pode ? 'bg-[var(--royal-700)] text-white hover:bg-[var(--royal-800)]' : 'bg-zinc-100 text-zinc-400 cursor-not-allowed'}`}>
                     {pode ? 'Resgatar' : `Faltam ${custo - p.saldo}`}
                   </button>
+                  </div>
+                  {revisando?.id === r.id && <div className="panel-reward-review">
+                    <strong>Usar {custo} pontos em {r.titulo ?? r.nome}?</strong>
+                    <p>Seu saldo passa de {p.saldo} para {p.saldo - custo} pontos. O código ficará salvo em Meus resgates.</p>
+                    <div className="panel-filter-bar"><button className="panel-primary-button" disabled={resgatando} onClick={() => resgatar(r)}>{resgatando ? 'Confirmando…' : 'Confirmar resgate'}</button><button className="panel-secondary-button" disabled={resgatando} onClick={() => setRevisando(null)}>Voltar</button></div>
+                  </div>}
                 </div>
               );
             })}
@@ -184,6 +198,11 @@ export default function ClienteFidelidade() {
         </div>
       </div>
 
+      <section className="panel-surface" aria-label="Meus resgates">
+        <h2>Meus resgates</h2><p className="panel-muted">Os últimos 20 códigos ficam disponíveis aqui para você consultar novamente.</p>
+        {(p.resgates ?? []).length === 0 ? <p>Você ainda não resgatou uma recompensa.</p> : <div className="panel-receipt-list">{p.resgates.map(r => <div key={r.id ?? r.codigo}><div><strong>{r.recompensa?.titulo ?? r.titulo}</strong><small>{formatPanelDate(r.createdAt)} · {r.usadoEm ? 'Utilizada' : 'Código gerado'}</small></div><button className="panel-secondary-button" onClick={() => { setResgatado({ titulo: r.recompensa?.titulo ?? r.titulo, codigo: r.codigo }); setCopyStatus(''); }}>Ver código</button></div>)}</div>}
+      </section>
+
       {/* Modal resgate */}
       {resgatado && (
         <PanelDialog label="Resgate confirmado" onClose={() => setResgatado(null)}>
@@ -207,6 +226,10 @@ export default function ClienteFidelidade() {
                 <Icon.whatsapp className="w-4 h-4" /> WhatsApp
               </a>
             </div>
+            <button className="panel-secondary-button mt-3" onClick={async () => {
+              try { await navigator.clipboard.writeText(resgatado.codigo); setCopyStatus('Código copiado.'); }
+              catch { setCopyStatus('Selecione o código acima para copiar ou envie pelo WhatsApp.'); }
+            }}>Copiar código</button><p role="status" className="panel-muted">{copyStatus}</p>
           </div>
         </PanelDialog>
       )}

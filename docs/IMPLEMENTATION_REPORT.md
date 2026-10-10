@@ -71,3 +71,33 @@ Seis PNGs fornecidos organizados em `apps/web/src/assets/redesign`; originais pr
 Build, lint e três testes de catálogo aprovados. Conferência visual local em 390/1440 px realizada com Edge e API real. Chromium no CI cobre busca sincronizada do cabeçalho, menu mobile, filtros, ordenação, estoque, detalhes, cadastro e administração. Ajustado título dos três passos para quebra durante carregamento da fonte.
 
 Workflow final main 37998597330 aprovado com deploy. Domínio conferido novamente em 390/1440 px: HTTPS 200, seis assets carregados, busca sincronizada, sem rolagem horizontal ou erros de execução. Layout mobile também verificado com fonte externa bloqueada. API ready e três contêineres saudáveis. Mapas continuam incorporados pelo provedor externo com link de direções disponível quando a incorporação não carregar.
+# Rodada de produto — painéis do cliente e lojista (10/10/2026)
+
+## Resumo e melhorias realizadas
+
+Todas as telas dos dois perfis foram analisadas conforme o protocolo. Evolução do sistema visual existente, sem dependências, serviços ou migrations novos. As tarefas são organizadas em até três decisões principais, mantendo preenchimento, revisão e ajustes opcionais necessários.
+
+- **Pedidos e clientes:** resumos e histórico abrem o pedido correto; filtro por cliente/situação fica na URL; busca aceita acentos; mensagens de WhatsApp reaproveitam código e contato. Próxima ação tem nome explícito, orientação e feedback. Atualização com situação esperada evita sobrescrever uma alteração de outra sessão.
+- **Produtos:** cadastro/edição guiados em Produto → Venda → Revisão e salvar. Validação direciona à etapa correta, preservando os dados ao voltar. Foto é preparada em WebP 900 × 900 sem recorte obrigatório; ajustes por mouse/teclado continuam disponíveis. Campos opcionais permanecem acessíveis. Busca, categorias reais, estoque baixo, zerado e inativos combinam-se; dashboard abre o filtro correto. Falhas de ativação/destaque aparecem na tela.
+- **Benefícios:** pontos/recompensas e ofertas reunidos na mesma área, mantendo URLs antigas. Resgate exige revisão do débito, mostra saldo confirmado e salva código recuperável em Meus resgates. Falha de atualização do histórico após confirmação não apresenta o débito como fracassado.
+- **Conta e página da loja:** cliente e lojista reutilizam a troca segura de senha. Cadastro aceita telefone opcional. Textos de banner/horários têm prévia antes de salvar. Estados vazios indicam a próxima ação.
+
+## Correções, backend e segurança
+
+Corrigida soma de valores Decimal recebidos como texto e rótulo da média por cliente; telefone recebe DDI uma vez; datas de calendário mantêm o dia; acompanhamento de fallback não inventa confirmação de pagamento. Resgates retornam apenas códigos do cliente e da loja autenticados, limitados aos 20 mais recentes; débito transacional e proteção contra concorrência preservados. Histórico de compras mantém isolamento por loja. Nenhum dado comercial foi substituído por fixture; simulações existem apenas nos testes.
+
+## UX/UI e áreas alteradas
+
+Shell/rotas, componentes compartilhados de formulário de conta, etapas, vazio, acompanhamento e estilos; páginas de pedidos, clientes, produtos, configurações, resumos, benefícios e cadastro; contratos de pedidos/clientes/fidelidade; testes de fluxo e CI. Hierarquia, cores, fontes, foco de teclado e alvos de toque seguem o mesmo sistema nos dois perfis.
+
+## Validação e comparação
+
+Builds web/API, lint, actionlint e seis testes unitários aprovados. Chromium/Edge validou todos os destinos e os fluxos principais em 320, 390, 768, 1024, 1280, 1440 e 1920 px, sem overflow horizontal, verificando navegação mobile, foco/Escape, dados preservados, validação, recorte opcional, resgate e recuperação após falha parcial. Revisão visual de desktop/mobile e regressão com dois valores monetários serializados como texto aprovadas.
+
+Antes: procurar novamente o pedido, trocar destinos para benefícios, recortar foto obrigatoriamente e perder acesso ao código ao fechar. Depois: contexto abre automaticamente, benefícios no mesmo destino, imagem pronta com ajuste opcional e código recuperável sem novo débito.
+
+Testes com API/PostgreSQL real foram ampliados para criação/edição pelo formulário, foto persistida, estoque, senha dos dois perfis, contato opcional, códigos recuperáveis, concorrência e isolamento. Executam no workflow antes do deploy; validação desta publicação ainda em andamento.
+
+## Limites e riscos restantes
+
+Sem bloqueio para implementação. Listas existentes de pedidos/clientes/produtos continuam sem paginação; volume maior poderá justificar paginação e índice de consulta por cliente nos resgates. Pagamento, entrega, criação automática de pedidos e crédito de pontos não são automatizados sem comprovação do evento/regra comercial. Três etapas representam decisões da tarefa, não três cliques para preencher qualquer formulário. Produção recebe somente o deploy automático autorizado pelo GitHub Actions; testes com escrita usam banco isolado.

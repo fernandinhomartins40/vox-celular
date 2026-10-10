@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth.js';
 import { Icon } from '../../icons';
 import './panel.css';
@@ -7,6 +7,7 @@ import './panel.css';
 export default function PanelShell({ title, groups, loginPath }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const menuButton = useRef(null);
   const drawer = useRef(null);
@@ -33,7 +34,7 @@ export default function PanelShell({ title, groups, loginPath }) {
     </div>
     <nav aria-label={`Navegação — ${title}`} className="panel-navigation">
       {groups.map(group => <div key={group.label} className="panel-nav-group"><p>{group.label}</p>
-        {group.items.map(({ to, label, icon, end }) => { const I = Icon[icon]; return <NavLink key={to} to={to} end={end} onClick={() => setOpen(false)} className={({ isActive }) => isActive ? 'panel-nav-link is-active' : 'panel-nav-link'}><I /><span>{label}</span></NavLink>; })}
+        {group.items.map(({ to, label, icon, end, aliases = [] }) => { const I = Icon[icon]; const aliasActive = aliases.includes(pathname); return <NavLink key={to} to={to} end={end} aria-current={aliasActive ? 'page' : undefined} onClick={() => setOpen(false)} className={({ isActive }) => isActive || aliasActive ? 'panel-nav-link is-active' : 'panel-nav-link'}><I /><span>{label}</span></NavLink>; })}
       </div>)}
     </nav>
     <div className="panel-sidebar-footer">

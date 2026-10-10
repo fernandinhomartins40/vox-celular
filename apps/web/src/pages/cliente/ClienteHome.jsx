@@ -4,10 +4,11 @@ import { PanelPageHeader, PanelQuickActions } from '../../components/panel/Panel
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth.js';
-import { api } from '../../lib/api.js';
+import { api, assetUrl } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
 import { PHONE_DIGITS } from '../../data';
+import { formatPanelDate, orderLink } from '../../lib/panel';
 
 const STATUS_STYLE = {
   NOVO:       'bg-blue-50 text-blue-700',
@@ -59,8 +60,8 @@ export default function ClienteHome() {
       </PanelPageHeader>
       <PanelQuickActions items={[
         { to: '/area-cliente/pedidos', label: 'Acompanhar pedido', description: 'Status e detalhes da compra', icon: 'package' },
-        { to: '/area-cliente/fidelidade', label: 'Usar meus pontos', description: 'Saldo e recompensas juntos', icon: 'award' },
-        { to: '/area-cliente/promocoes', label: 'Ver ofertas', description: 'Oportunidades da loja', icon: 'tag' },
+        { to: '/area-cliente/beneficios', label: 'Usar meus pontos', description: 'Saldo e recompensas juntos', icon: 'award' },
+        { to: '/area-cliente/beneficios?aba=ofertas', label: 'Ver ofertas', description: 'Oportunidades da loja', icon: 'tag' },
       ]} />
       {loading && <PanelLoading />}
       {failed.length > 0 && <div role="alert" className="panel-inline-notice">Não foi possível consultar {failed.join(', ')}. <button onClick={() => window.location.reload()}>Tentar novamente</button></div>}
@@ -68,9 +69,9 @@ export default function ClienteHome() {
       {!loading && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { to: '/area-cliente/pedidos', label: 'Meus pedidos', icon: 'package', val: failed.includes('pedidos') ? '—' : pedidos.length, sub: failed.includes('pedidos') ? 'indisponível' : 'no histórico' },
-          { to: '/area-cliente/fidelidade', label: 'Pontos', icon: 'award', val: pontos?.saldo ?? '—', sub: pontos ? `nível ${pontos.nivel}` : 'indisponível' },
-          { to: '/area-cliente/promocoes', label: 'Ofertas', icon: 'tag', val: failed.includes('ofertas') ? '—' : promocoes.length, sub: failed.includes('ofertas') ? 'indisponível' : 'disponíveis' },
-          { to: '/area-cliente/fidelidade', label: 'Recompensas', icon: 'gift', val: failed.includes('pontos') ? '—' : recompensasDisponiveis, sub: failed.includes('pontos') ? 'indisponível' : 'disponíveis' },
+          { to: '/area-cliente/beneficios', label: 'Pontos', icon: 'award', val: pontos?.saldo ?? '—', sub: pontos ? `nível ${pontos.nivel}` : 'indisponível' },
+          { to: '/area-cliente/beneficios?aba=ofertas', label: 'Ofertas', icon: 'tag', val: failed.includes('ofertas') ? '—' : promocoes.length, sub: failed.includes('ofertas') ? 'indisponível' : 'disponíveis' },
+          { to: '/area-cliente/beneficios', label: 'Recompensas', icon: 'gift', val: failed.includes('pontos') ? '—' : recompensasDisponiveis, sub: failed.includes('pontos') ? 'indisponível' : 'disponíveis' },
         ].map(c => <PanelMetricCard key={c.label} to={c.to} label={c.label} value={c.val} description={c.sub} icon={c.icon} />)}
 
       </div>}
@@ -81,7 +82,7 @@ export default function ClienteHome() {
           <div className="bg-white border border-[var(--line)] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="font-display font-bold text-[18px]">Último pedido</div>
-              <Link to="/area-cliente/pedidos" className="text-[12px] text-[var(--royal-700)] hover:underline">Ver todos</Link>
+              <Link to={orderLink('/area-cliente', ultimoPedido.id)} className="panel-inline-link">Acompanhar esta compra <Icon.arrowRight className="w-4 h-4" /></Link>
             </div>
             <div className="flex items-center justify-between mb-3">
               <span className="font-display font-bold text-[var(--royal-700)]">{ultimoPedido.codigo ?? ultimoPedido.id}</span>
@@ -93,7 +94,7 @@ export default function ClienteHome() {
               {(ultimoPedido.produtos ?? ultimoPedido.itens ?? []).map(p => p.nome ?? p.produto?.nome ?? '').filter(Boolean).join(', ')}
             </div>
             <div className="flex items-center justify-between pt-3 border-t border-[var(--line)]">
-              <span className="text-[12px] text-zinc-500">{ultimoPedido.data ?? ultimoPedido.createdAt?.slice(0, 10)}</span>
+              <span className="text-[12px] text-zinc-500">{formatPanelDate(ultimoPedido.data ?? ultimoPedido.createdAt)}</span>
               <span className="font-display font-bold text-[18px]">{formatBRL(ultimoPedido.total)}</span>
             </div>
           </div>
@@ -104,7 +105,7 @@ export default function ClienteHome() {
           <div className="bg-white border border-[var(--line)] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="font-display font-bold text-[18px]">Programa de fidelidade</div>
-              <Link to="/area-cliente/fidelidade" className="text-[12px] text-[var(--royal-700)] hover:underline">Ver detalhes</Link>
+              <Link to="/area-cliente/beneficios" className="text-[12px] text-[var(--royal-700)] hover:underline">Ver detalhes</Link>
             </div>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-amber-50 grid place-items-center">
@@ -134,10 +135,10 @@ export default function ClienteHome() {
         <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--line)] flex items-center justify-between">
             <div className="font-display font-bold text-[18px]">Oferta da loja</div>
-            <Link to="/area-cliente/promocoes" className="text-[12px] text-[var(--royal-700)] hover:underline">Ver todas</Link>
+            <Link to="/area-cliente/beneficios?aba=ofertas" className="text-[12px] text-[var(--royal-700)] hover:underline">Ver todas</Link>
           </div>
           <div className="flex flex-col sm:flex-row">
-            {promo.img && <img src={promo.img} alt="" className="sm:w-48 h-40 sm:h-auto object-cover" />}
+            {promo.img && <img src={assetUrl(promo.img)} alt={promo.titulo} loading="lazy" className="sm:w-48 h-40 sm:h-auto object-cover" />}
             <div className="p-6 flex flex-col justify-between">
               <div>
                 <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-[var(--royal-50)] text-[var(--royal-700)] rounded-full text-[11px] font-semibold mb-3">

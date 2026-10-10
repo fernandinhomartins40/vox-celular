@@ -10,12 +10,12 @@ import AdminProdutos from './pages/admin/AdminProdutos';
 import AdminClientes from './pages/admin/AdminClientes';
 import AdminConfiguracoes from './pages/admin/AdminConfiguracoes';
 import AdminConta from './pages/admin/AdminConta';
+import PanelAccount from './components/panel/PanelAccount';
 import ClienteLogin from './pages/cliente/ClienteLogin';
 import ClienteLayout from './pages/cliente/ClienteLayout';
 import ClienteHome from './pages/cliente/ClienteHome';
 import ClientePedidos from './pages/cliente/ClientePedidos';
-import ClienteFidelidade from './pages/cliente/ClienteFidelidade';
-import ClientePromocoes from './pages/cliente/ClientePromocoes';
+import ClienteBeneficios from './pages/cliente/ClienteBeneficios';
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -41,8 +41,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true,          element: <ClienteHome /> },
       { path: 'pedidos',      element: <ClientePedidos /> },
-      { path: 'fidelidade',   element: <ClienteFidelidade /> },
-      { path: 'promocoes',    element: <ClientePromocoes /> },
+      { path: 'beneficios',   element: <ClienteBeneficios /> },
+      { path: 'fidelidade',   element: <ClienteBeneficios initialTab="pontos" /> },
+      { path: 'promocoes',    element: <ClienteBeneficios initialTab="ofertas" /> },
+      { path: 'conta',        element: <PanelAccount /> },
     ],
   },
 ]);

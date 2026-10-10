@@ -8,7 +8,7 @@ import { PHONE_DIGITS } from '../../data';
 export default function ClienteLogin() {
   const { login, register, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nome: '', email: '', senha: '' });
+  const [form, setForm] = useState({ nome: '', email: '', senha: '', telefone: '' });
   const [creating, setCreating] = useState(false);
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function ClienteLogin() {
     e.preventDefault();
     setErro('');
     setLoading(true);
-    const result = creating ? await register(form.nome.trim(), form.email.trim(), form.senha) : await login(form.email.trim(), form.senha);
+    const result = creating ? await register(form.nome.trim(), form.email.trim(), form.senha, { telefone: form.telefone.trim() || undefined }) : await login(form.email.trim(), form.senha);
     setLoading(false);
     if (result.ok) { navigate('/area-cliente', { replace: true }); }
     else { setErro(result.error || 'E-mail ou senha incorretos.'); }
@@ -64,6 +64,7 @@ export default function ClienteLogin() {
                 </div>
               </div>
 
+              {creating && <details><summary className="text-sm cursor-pointer">Adicionar telefone (opcional)</summary><label htmlFor="customer-phone" className="block mt-3 text-sm">Telefone para contato</label><input id="customer-phone" type="tel" autoComplete="tel" value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} className="w-full border rounded-xl p-3" /><p className="text-xs text-zinc-500 mt-1">Ajuda a loja a combinar os detalhes do seu pedido.</p></details>}
               {erro && (
                 <div role="alert" className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-[13px] text-red-700">
                   <Icon.close className="w-4 h-4 shrink-0" /> {erro}

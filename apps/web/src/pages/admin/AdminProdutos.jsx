@@ -1,3 +1,6 @@
+import { useSearchParams } from 'react-router-dom';
+import { PanelSteps, PanelEmptyState } from '../../components/panel/PanelFlow';
+import { normalizeSearch, productStepError, setPanelParams } from '../../lib/panel';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import PanelDialog from '../../components/panel/PanelDialog';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
@@ -30,9 +33,9 @@ const emptyImage = {
 };
 
 const tabs = [
-  { id: 'basico', label: '1. Produto', icon: Icon.package },
-  { id: 'imagens', label: '2. Imagem', icon: Icon.eye },
-  { id: 'precos', label: '3. Venda', icon: Icon.card },
+  { id: 'basico', label: 'Produto' },
+  { id: 'precos', label: 'Venda' },
+  { id: 'revisao', label: 'Revisão' },
 ];
 
 function normalizeProduto(produto) {
@@ -76,6 +79,11 @@ async function buildCroppedImage(imageState) {
 
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, size, size);
+  if (imageState.autoFit) {
+    const scale = Math.min(size / image.width, size / image.height);
+    ctx.drawImage(image, (size - image.width * scale) / 2, (size - image.height * scale) / 2, image.width * scale, image.height * scale);
+    return canvas.toDataURL('image/webp', 0.82);
+  }
   ctx.drawImage(
     image,
     (crop.x / 100) * image.width,
@@ -92,7 +100,15 @@ async function buildCroppedImage(imageState) {
 
 export default function AdminProdutos() {
   const [produtos, setProdutos] = useState([]);
-  const [filtro, setFiltro] = useState('Todos');
+  const [params, setParams] = useSearchParams();
+  const filtro = params.get('categoria') || 'Todos';
+  const busca = params.get('busca') || '';
+  const estoqueFiltro = params.get('estoque') || '';
+  const [actionError, setActionError] = useState('');
+  const [updating, setUpdating] = useState({});
+  const pendingProducts = useRef(new Set());
+  const savingRef = useRef(false);
+  const setFiltro = value => setPanelParams(setParams, { categoria: value === 'Todos' ? '' : value });
   const [modalMode, setModalMode] = useState(null);
   const [activeTab, setActiveTab] = useState('basico');
   const [editando, setEditando] = useState(null);
@@ -111,9 +127,9 @@ export default function AdminProdutos() {
       .finally(() => setLoading(false));
   }, []);
 
-  const cats = useMemo(() => ['Todos', ...CATEGORIES.filter(c => c !== 'Todos')], []);
-  const categoriasProduto = useMemo(() => CATEGORIES.filter(c => c !== 'Todos'), []);
-  const filtrados = filtro === 'Todos' ? produtos : produtos.filter(p => p.categoria === filtro);
+  const categoriasProduto = useMemo(() => [...new Set([...CATEGORIES.filter(c => c !== 'Todos'), ...produtos.map(p => p.categoria)])], [produtos]);
+  const cats = ['Todos', ...categoriasProduto];
+  const filtrados = produtos.filter(p => (filtro === 'Todos' || p.categoria === filtro) && normalizeSearch(`${p.nome} ${p.sub} ${p.categoria}`).includes(normalizeSearch(busca)) && (!estoqueFiltro || (estoqueFiltro === 'baixo' ? p.ativo !== false && p.estoque <= 5 : estoqueFiltro === 'zero' ? p.ativo !== false && p.estoque === 0 : p.ativo === false)));
   const currentImage = imageState.source || assetUrl(editando?.img || editando?.imgUrl);
 
   const updateProduto = (produto) => {
@@ -122,26 +138,23 @@ export default function AdminProdutos() {
     return normalizado;
   };
 
-  const toggleAtivo = async (id) => {
+  const toggleProduto = async (id, field) => {
     const produto = produtos.find(p => p.id === id);
-    if (!produto) return;
-    try {
-      const updated = await api.patch(`/produtos/${id}`, { ativo: !produto.ativo });
-      updateProduto(updated);
-    } catch (e) {
-      console.error('Erro ao alternar ativo:', e.message);
-    }
+    if (!produto || pendingProducts.current.has(id)) return;
+    pendingProducts.current.add(id); setUpdating(v => ({ ...v, [id]: true })); setActionError('');
+    try { updateProduto(await api.patch(`/produtos/${id}`, { [field]: !produto[field] })); }
+    catch (e) { setActionError(e.message); }
+    finally { pendingProducts.current.delete(id); setUpdating(v => ({ ...v, [id]: false })); }
   };
-
-  const toggleDestaque = async (id) => {
-    const produto = produtos.find(p => p.id === id);
-    if (!produto) return;
-    try {
-      const updated = await api.patch(`/produtos/${id}`, { destaque: !produto.destaque });
-      updateProduto(updated);
-    } catch (e) {
-      console.error('Erro ao alternar destaque:', e.message);
+  const toggleAtivo = id => toggleProduto(id, 'ativo');
+  const toggleDestaque = id => toggleProduto(id, 'destaque');
+  const goStep = next => {
+    const target = tabs.findIndex(t => t.id === next);
+    for (let i = 0; i < target; i++) {
+      const message = productStepError(form, imageState.source, modalMode === 'create', tabs[i].id);
+      if (message) { setFormError(message); setActiveTab(tabs[i].id); return; }
     }
+    setFormError(''); setActiveTab(next);
   };
 
   const abrirNovo = () => {
@@ -182,11 +195,13 @@ export default function AdminProdutos() {
     const reader = new FileReader();
     reader.onload = async () => {
       const source = String(reader.result);
-      const image = await loadImage(source);
+      let image;
+      try { image = await loadImage(source); } catch { setFormError('Não foi possível abrir esta imagem. Escolha outro arquivo.'); return; }
       const minSide = Math.min(image.width, image.height);
       const size = (minSide / image.width) * 100;
-      setCropDraft({
+      setImageState({
         source,
+        autoFit: true,
         fileName: file.name,
         naturalWidth: image.width,
         naturalHeight: image.height,
@@ -205,27 +220,17 @@ export default function AdminProdutos() {
     if (!cropDraft) return;
     setImageState(cropDraft);
     setCropDraft(null);
-    setActiveTab('imagens');
+    setActiveTab('basico');
   };
 
   const salvar = async () => {
+    if (savingRef.current) return;
+    for (const step of ['basico', 'precos']) {
+      const message = productStepError(form, imageState.source, modalMode === 'create', step);
+      if (message) { setFormError(message); setActiveTab(step); return; }
+    }
+    savingRef.current = true;
     setFormError('');
-    if (!form.nome.trim() || !form.descricao.trim() || !form.categoria) {
-      setActiveTab('basico');
-      setFormError('Preencha nome, categoria e descricao.');
-      return;
-    }
-    if (!form.preco || Number(form.preco) <= 0) {
-      setActiveTab('precos');
-      setFormError('Informe um preco valido.');
-      return;
-    }
-    if (modalMode === 'create' && !imageState.source) {
-      setActiveTab('imagens');
-      setFormError('Envie uma imagem do produto.');
-      return;
-    }
-
     setSaving(true);
     try {
       const imageDataUrl = await buildCroppedImage(imageState);
@@ -255,7 +260,7 @@ export default function AdminProdutos() {
     } catch (e) {
       setFormError(e.message);
     } finally {
-      setSaving(false);
+      savingRef.current = false; setSaving(false);
     }
   };
 
@@ -271,6 +276,11 @@ export default function AdminProdutos() {
         </button>
       </PanelPageHeader>
 
+      {actionError && <p role="alert" className="panel-inline-notice">{actionError}</p>}
+      <div className="panel-filter-bar">
+        <label className="panel-search"><span className="sr-only">Buscar produto</span><input value={busca} placeholder="Buscar nome ou categoria" onChange={e => setPanelParams(setParams, { busca: e.target.value })} /></label>
+        <label><span className="sr-only">Filtrar estoque</span><select value={estoqueFiltro} onChange={e => setPanelParams(setParams, { estoque: e.target.value })}><option value="">Todo o estoque</option><option value="baixo">Estoque baixo (até 5)</option><option value="zero">Sem estoque</option><option value="inativo">Produtos inativos</option></select></label>
+      </div>
       <div className="flex flex-wrap gap-2 mb-6">
         {cats.map(c => (
           <button key={c} aria-pressed={filtro === c} onClick={() => setFiltro(c)}
@@ -280,7 +290,7 @@ export default function AdminProdutos() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {filtrados.map(p => {
           const discount = p.precoOriginal ? Math.round((1 - p.preco / p.precoOriginal) * 100) : 0;
           return (
@@ -309,11 +319,11 @@ export default function AdminProdutos() {
                     className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 bg-[var(--royal-50)] text-[var(--royal-700)] rounded-lg text-[12px] font-medium hover:bg-[var(--royal-100)] transition">
                     <Icon.edit className="w-3.5 h-3.5" /> Editar
                   </button>
-                  <button onClick={() => toggleDestaque(p.id)}
+                  <button disabled={updating[p.id]} aria-label={p.destaque ? `Remover destaque de ${p.nome}` : `Destacar ${p.nome}`} onClick={() => toggleDestaque(p.id)}
                     className={`w-8 h-8 rounded-lg grid place-items-center transition ${p.destaque ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`} title="Destaque">
                     <Icon.star className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => toggleAtivo(p.id)}
+                  <button disabled={updating[p.id]} aria-label={p.ativo !== false ? `Desativar ${p.nome}` : `Ativar ${p.nome}`} onClick={() => toggleAtivo(p.id)}
                     className={`w-8 h-8 rounded-lg grid place-items-center transition ${p.ativo !== false ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`} title={p.ativo !== false ? 'Desativar' : 'Ativar'}>
                     {p.ativo !== false ? <Icon.check className="w-3.5 h-3.5" /> : <Icon.close className="w-3.5 h-3.5" />}
                   </button>
@@ -323,7 +333,7 @@ export default function AdminProdutos() {
           );
         })}
         {filtrados.length === 0 && (
-          <div className="col-span-full py-12 text-center text-zinc-500">Nenhum produto encontrado.</div>
+          <div className="col-span-full"><PanelEmptyState title="Nenhum produto encontrado" description={produtos.length ? 'Ajuste os filtros para encontrar seu produto.' : 'Cadastre o primeiro produto para exibir na loja.'} action={produtos.length ? 'Limpar filtros' : 'Novo produto'} onAction={produtos.length ? () => setParams({}) : abrirNovo} /></div>
         )}
       </div>
 
@@ -331,7 +341,8 @@ export default function AdminProdutos() {
         <ProductFormModal
           mode={modalMode}
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={goStep}
+          onAdjust={() => setCropDraft({ ...imageState, autoFit: false })}
           form={form}
           setForm={setForm}
           formError={formError}
@@ -357,127 +368,41 @@ export default function AdminProdutos() {
   );
 }
 
-function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formError, saving, onClose, onSave, onFile, categorias, currentImage, imageState }) {
-  return (
-    <PanelDialog label="Produto" onClose={onClose} className="p-3" layer="z-50">
-      <div className="relative bg-white rounded-lg w-full max-w-5xl max-h-[92vh] overflow-hidden shadow-2xl">
-        <div className="flex items-start justify-between px-6 py-5 border-b border-[var(--line)]">
-          <div>
-            <div className="flex items-center gap-2 font-display font-bold text-[17px]">
-              <Icon.package className="w-4 h-4 text-blue-600" />
-              {mode === 'create' ? 'Cadastrar Produto' : 'Editar Produto'}
-            </div>
-            <div className="text-[13px] text-zinc-500 mt-2">Preencha o produto, adicione a imagem e ajuste a venda.</div>
+function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formError, saving, onClose, onSave, onFile, onAdjust, categorias, currentImage, imageState }) {
+  const current = tabs.findIndex(t => t.id === activeTab);
+  const contentRef = useRef(null);
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0 });
+    if (formError) contentRef.current?.querySelector('[role=alert]')?.focus();
+  }, [activeTab, formError]);
+  return <PanelDialog label="Produto" onClose={() => { if (!saving) onClose(); }} className="p-3" layer="z-50">
+    <div className="panel-product-dialog">
+      <header><div><h2>{mode === 'create' ? 'Cadastrar produto' : 'Editar produto'}</h2><p className="panel-muted">Produto, venda e revisão. Seus dados ficam preenchidos ao voltar.</p></div><button disabled={saving} aria-label="Fechar produto" onClick={onClose}><Icon.close /></button></header>
+      <div ref={contentRef} className="panel-product-content">
+        <PanelSteps steps={tabs.map(t => t.label)} current={current} />
+        {formError && <p tabIndex={-1} role="alert" className="panel-inline-notice">{formError}</p>}
+        {activeTab === 'basico' && <div className="space-y-4">
+          <TextField label="Nome do produto" value={form.nome} onChange={nome => setForm(v => ({ ...v, nome }))} />
+          <SelectField label="Categoria" value={form.categoria} options={categorias} onChange={categoria => setForm(v => ({ ...v, categoria }))} />
+          <TextAreaField label="Descrição" rows={3} value={form.descricao} onChange={descricao => setForm(v => ({ ...v, descricao }))} />
+          <div className="panel-product-image">
+            {currentImage && <img src={currentImage} alt="Prévia do produto" />}
+            <div><label className="block text-sm font-semibold" htmlFor="product-image">Foto do produto</label><input id="product-image" type="file" accept="image/*" onChange={onFile} /><p className="panel-muted">A imagem fica pronta ao selecionar. Você pode ajustar o recorte se precisar.</p>{imageState.source && <button className="panel-secondary-button" onClick={onAdjust}>Ajustar imagem</button>}</div>
           </div>
-          <button aria-label="Fechar produto" onClick={onClose} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
-            <Icon.close className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="max-h-[calc(92vh-170px)] overflow-y-auto px-6 py-4">
-          {formError && <div className="mb-4 rounded-lg bg-red-50 border border-red-100 text-red-600 px-3 py-2 text-[12px]">{formError}</div>}
-
-          <div className="grid grid-cols-3 bg-zinc-100 rounded-md p-1 mb-3">
-            {tabs.map(tab => {
-              const TabIcon = tab.icon;
-              const active = activeTab === tab.id;
-              return (
-                <button key={tab.id} aria-pressed={active} onClick={() => setActiveTab(tab.id)}
-                  className={`h-10 inline-flex items-center justify-center gap-2 rounded text-[13px] font-semibold transition ${active ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-800'}`}>
-                  <TabIcon className="w-4 h-4" /> {tab.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {activeTab === 'basico' && (
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <TextField label="Nome do Produto *" value={form.nome} onChange={nome => setForm(v => ({ ...v, nome }))} />
-                <SelectField label="Categoria *" value={form.categoria} options={categorias} onChange={categoria => setForm(v => ({ ...v, categoria }))} />
-              </div>
-              <TextAreaField label="Descricao" rows={4} value={form.descricao} onChange={descricao => setForm(v => ({ ...v, descricao }))} />
-              <div className="flex flex-wrap items-center gap-3">
-                <SwitchField checked={form.ativo} onChange={ativo => setForm(v => ({ ...v, ativo }))} />
-                <span className="text-[13px] text-zinc-800">Produto ativo</span>
-                <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${form.ativo ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-zinc-100 text-zinc-500 border border-zinc-200'}`}>
-                  {form.ativo ? 'Ativo' : 'Inativo'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'imagens' && (
-            <div>
-              <label className="border-2 border-dashed border-zinc-300 rounded-lg min-h-[290px] flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/30 transition">
-                <span className="w-16 h-16 rounded-full bg-blue-50 text-blue-600 grid place-items-center mb-4">
-                  <Icon.arrowUpRight className="w-8 h-8 -rotate-45" />
-                </span>
-                <span className="font-display font-bold text-[18px] text-zinc-900">Adicionar Imagens do Produto</span>
-                <span className="text-[14px] text-zinc-500 mt-2">Clique para selecionar a imagem</span>
-                <span className="text-[11px] text-zinc-400 mt-3">Uma imagem por produto. JPG, PNG ou WebP.</span>
-                <span className="mt-5 h-10 px-5 inline-flex items-center justify-center gap-2 rounded-md border border-blue-600 bg-white text-blue-600 text-[13px] font-semibold">
-                  <Icon.plus className="w-4 h-4" /> Selecionar Imagens
-                </span>
-                <input type="file" accept="image/*" onChange={onFile} className="hidden" />
-              </label>
-
-              <div className="flex items-center justify-between mt-5 mb-3">
-                <div className="text-[13px] font-semibold text-zinc-700">
-                  Imagens do Produto <span className="ml-2 border border-zinc-300 rounded-full px-2 py-0.5 text-[11px]">{currentImage ? '1/1 prontas' : '0/1 prontas'}</span>
-                </div>
-                <div className="text-[12px] text-zinc-500">A primeira imagem sera a principal</div>
-              </div>
-
-              {currentImage ? (
-                <div className="w-52 border-2 border-blue-600 rounded-lg p-2 relative">
-                  <span className="absolute -top-3 -left-2 bg-blue-600 text-white rounded-full px-2.5 py-1 text-[11px] font-bold">Principal</span>
-                  <span className="absolute top-3 right-3 bg-emerald-600 text-white rounded-full px-3 py-1 text-[11px] font-bold">Pronto</span>
-                  <img src={currentImage} alt="" className="w-full aspect-square object-cover rounded-md bg-zinc-50" />
-                  {imageState.fileName && <div className="mt-2 truncate text-[11px] text-zinc-500">{imageState.fileName}</div>}
-                </div>
-              ) : (
-                <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-5 text-[13px] text-zinc-500">Nenhuma imagem adicionada.</div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'precos' && (
-            <div className="grid md:grid-cols-2 gap-4">
-              <TextField label="Preco atual (R$) *" type="number" value={form.preco} onChange={preco => setForm(v => ({ ...v, preco }))} />
-              <TextField label="Preco original / De (R$)" type="number" value={form.precoOriginal} onChange={precoOriginal => setForm(v => ({ ...v, precoOriginal }))} />
-            </div>
-          )}
-
-          {activeTab === 'precos' && (
-            <div className="grid md:grid-cols-2 gap-4">
-              <TextField label="Estoque disponivel" type="number" value={form.estoque} onChange={estoque => setForm(v => ({ ...v, estoque }))} />
-              <TextField label="Subtitulo / variacao" value={form.sub} onChange={sub => setForm(v => ({ ...v, sub }))} />
-            </div>
-          )}
-
-          {activeTab === 'precos' && (
-            <div className="space-y-4">
-              <TextField label="Badge da oferta" value={form.badge} onChange={badge => setForm(v => ({ ...v, badge }))} placeholder="OFERTA, NOVO, TOP VENDAS..." />
-              <ToggleField label="Produto em destaque" checked={form.destaque} onChange={destaque => setForm(v => ({ ...v, destaque }))} />
-            </div>
-          )}
-
-          {activeTab === 'basico' && (
-            <TextAreaField label="Especificacoes (uma por linha)" rows={8} value={form.specsText} onChange={specsText => setForm(v => ({ ...v, specsText }))} />
-          )}
-        </div>
-
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--line)] bg-white">
-          <button onClick={onClose} className="h-11 px-4 border border-blue-600 rounded-md text-[13px] font-semibold text-blue-600 hover:bg-blue-50 transition">Cancelar</button>
-          <button onClick={onSave} disabled={saving}
-            className="h-11 px-5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-md text-[13px] font-semibold transition">
-            {saving ? 'Salvando...' : mode === 'create' ? 'Cadastrar Produto' : 'Salvar Alteracoes'}
-          </button>
-        </div>
+          <details><summary>Mais detalhes (opcional)</summary><div className="space-y-4 mt-4"><TextField label="Subtítulo / variação" value={form.sub} onChange={sub => setForm(v => ({ ...v, sub }))} /><TextAreaField label="Especificações (uma por linha)" rows={4} value={form.specsText} onChange={specsText => setForm(v => ({ ...v, specsText }))} /></div></details>
+        </div>}
+        {activeTab === 'precos' && <div className="space-y-4">
+          <TextField label="Preço atual (R$)" type="number" value={form.preco} onChange={preco => setForm(v => ({ ...v, preco }))} />
+          <TextField label="Estoque disponível" type="number" value={form.estoque} onChange={estoque => setForm(v => ({ ...v, estoque }))} />
+          <ToggleField label="Disponível na loja" checked={form.ativo} onChange={ativo => setForm(v => ({ ...v, ativo }))} />
+          <ToggleField label="Produto em destaque" checked={form.destaque} onChange={destaque => setForm(v => ({ ...v, destaque }))} />
+          <details><summary>Preço anterior e selo (opcional)</summary><div className="space-y-4 mt-4"><TextField label="Preço original / De (R$)" type="number" value={form.precoOriginal} onChange={precoOriginal => setForm(v => ({ ...v, precoOriginal }))} /><TextField label="Selo da oferta" value={form.badge} onChange={badge => setForm(v => ({ ...v, badge }))} placeholder="OFERTA, NOVO, TOP VENDAS..." /></div></details>
+        </div>}
+        {activeTab === 'revisao' && <section className="panel-product-review"><h3>Confira antes de salvar</h3>{currentImage && <img src={currentImage} alt="Prévia do produto" />}<strong>{form.nome}</strong><p>{form.categoria} · {form.sub}</p><p>{form.descricao}</p><dl><div><dt>Preço</dt><dd>{formatBRL(form.preco)}</dd></div><div><dt>Estoque</dt><dd>{form.estoque} unidades</dd></div><div><dt>Visibilidade</dt><dd>{form.ativo ? 'Disponível na loja' : 'Produto inativo'}</dd></div><div><dt>Destaque</dt><dd>{form.destaque ? 'Sim' : 'Não'}</dd></div></dl><p className="panel-muted">Ao salvar, estas informações serão atualizadas na loja.</p></section>}
       </div>
-    </PanelDialog>
-  );
+      <footer><button className="panel-secondary-button" disabled={saving} onClick={current ? () => setActiveTab(tabs[current - 1].id) : onClose}>{current ? 'Voltar' : 'Cancelar'}</button>{current < 2 ? <button className="panel-primary-button" onClick={() => setActiveTab(tabs[current + 1].id)}>Continuar</button> : <button className="panel-primary-button" disabled={saving} onClick={onSave}>{saving ? 'Salvando…' : mode === 'create' ? 'Cadastrar produto' : 'Salvar alterações'}</button>}</footer>
+    </div>
+  </PanelDialog>;
 }
 
 function CropModal({ draft, setDraft, onClose, onApply }) {
@@ -691,14 +616,5 @@ function ToggleField({ label, checked, onChange }) {
       <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="w-4 h-4 accent-blue-600" />
       {label}
     </label>
-  );
-}
-
-function SwitchField({ checked, onChange }) {
-  return (
-    <button type="button" role="switch" aria-checked={checked} aria-label="Produto ativo" onClick={() => onChange(!checked)}
-      className="w-11 h-11 grid place-items-center">
-      <span className={`block w-11 h-6 rounded-full p-0.5 transition ${checked ? 'bg-blue-600' : 'bg-zinc-300'}`}><span className={`block w-5 h-5 bg-white rounded-full shadow transition ${checked ? 'translate-x-5' : 'translate-x-0'}`} /></span>
-    </button>
   );
 }

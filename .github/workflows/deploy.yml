@@ -159,7 +159,7 @@ jobs:
       - name: Migrations, bootstrap, authentication, uploads, persistence and resource smoke test
         run: node .github/scripts/test-runtime.mjs
       - name: Product search and customer contact regression tests
-        run: node --test apps/web/src/lib/catalog.test.js
+        run: node --test apps/web/src/lib/catalog.test.js apps/web/src/lib/panel.test.js
       - name: Product flows in Chromium against real API and PostgreSQL
         run: |
           npm install --prefix "$RUNNER_TEMP/vox-browser" --no-audit --no-fund playwright@1.56.1

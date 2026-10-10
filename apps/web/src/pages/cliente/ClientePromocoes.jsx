@@ -2,7 +2,7 @@ import { PanelLoading } from '../../components/panel/PanelFeedback';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/useAuth.js';
-import { api } from '../../lib/api.js';
+import { api, assetUrl } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
 import { PHONE_DIGITS } from '../../data';
@@ -13,7 +13,7 @@ function diasRestantes(validade) {
   return Math.max(0, Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24)));
 }
 
-export default function ClientePromocoes() {
+export default function ClientePromocoes({ embedded = false }) {
   const { user } = useAuth();
   const [promocoes, setPromocoes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,7 @@ export default function ClientePromocoes() {
 
   return (
     <div>
-      <PanelPageHeader title="Ofertas" description="Confira as ofertas disponíveis na loja." />
+      {!embedded && <PanelPageHeader title="Ofertas" description="Confira as ofertas disponíveis na loja." />}
 
       {promocoes.length > 0 && <div className="bg-[var(--royal-900)] text-white rounded-2xl px-6 py-4 mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -65,10 +65,10 @@ export default function ClientePromocoes() {
               <div key={i} className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden flex flex-col hover:border-[var(--royal-700)] hover:shadow-[0_12px_30px_-15px_rgba(8,37,163,0.3)] transition group">
                 {promo.img && (
                   <div className="relative aspect-[4/3] overflow-hidden bg-[var(--paper)]">
-                    <img src={promo.img} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <img src={assetUrl(promo.img)} alt={promo.titulo} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                     <div className="absolute top-3 left-3 flex gap-2">
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[var(--royal-700)] text-white rounded-full text-[10px] font-display font-bold tracking-wider">
-                        <Icon.tag className="w-2.5 h-2.5" /> EXCLUSIVO
+                        <Icon.tag className="w-2.5 h-2.5" /> OFERTA
                       </span>
                       {discount > 0 && (
                         <span className="inline-flex items-center px-2 py-1 bg-[var(--red-500)] text-white rounded-full text-[10px] font-bold">

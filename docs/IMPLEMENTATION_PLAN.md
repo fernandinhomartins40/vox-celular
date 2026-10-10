@@ -49,3 +49,39 @@ Workflow main 37988464216 aprovado, incluindo deploy. Release e845bfd636aacd74fb
 
 ## Redesign fornecido pelo usuário
 Implementar as pranchetas desktop e mobile com assets locais: cabeçalho/busca compartilhada, hero, benefícios, categorias, cartões de produtos reais, faixa TIM, três passos, serviços, depoimentos, contato e navegação inferior mobile. Preservar carrinho, WhatsApp, cadastro e acesso ao lojista. Converter assets para WebP sem ampliar; manter originais. CSS restrito à landing page para preservar painel/área do cliente. Validar visualmente em 390/1440 px e no Chromium com API/PostgreSQL real. Status: concluído e publicado na main; workflow 37998597330 aprovado, domínio validado em 390/1440 px.
+
+## Rodada atual — todos os painéis como produto em três passos
+
+Análise realizada sobre as 14 páginas de cliente/lojista, rotas e componentes compartilhados, contratos de autenticação/produtos/pedidos/clientes/fidelidade/promoções/config/dashboard, schema e testes de produção. O sistema de design já publicado será evoluído. Não haverá dependências, serviços permanentes ou migrations novos.
+
+| ID | TIPO | PRIORIDADE | PROBLEMA / EVIDÊNCIA | SOLUÇÃO / ESFORÇO ELIMINADO | ÁREAS | RISCO | TESTE | STATUS |
+|---|---|---|---|---|---|---|---|---|
+| OP-08 | JUNTAR/ANTECIPAR | P1 | Código do pedido no histórico de clientes sem ação; resumo abre lista genérica | Links contextuais com pedido/cliente/status na URL, abertura do pedido correto e filtro pré-preenchido, sem procurar de novo | Pedidos, clientes, dashboards | Baixo | Navegador com dados reais/isolados | IN_PROGRESS |
+| OP-09 | ELIMINAR/AUTOMATIZAR | P1 | Editor de produto tem três abas, mas não guia conclusão; recorte obrigatório; erros de ativação só no console | Três etapas guiadas com validação e revisão; imagem pronta automaticamente com recorte opcional; preservar campos avançados; feedback de ativação/destaque | Produtos | Médio | Criação/edição, payload e imagem persistidos, teclado | IN_PROGRESS |
+| OP-10 | ANTECIPAR | P1 | Dashboard mostra estoque baixo sem acesso ao subconjunto; catálogo sem busca de administração | Busca combinada e filtros de estoque/visibilidade; indicador abre produtos que precisam de atenção | Dashboard/produtos | Baixo | Busca sem acentos, filtros combinados | IN_PROGRESS |
+| OP-11 | JUNTAR | P1 | Ofertas e pontos são destinos separados do mesmo objetivo de benefício | Central de benefícios com pontos, recompensas e ofertas; manter URLs antigas compatíveis | Cliente, router, navegação | Baixo | Todas as rotas, aba selecionada, histórico do navegador | IN_PROGRESS |
+| OP-12 | RECUPERAR/ANTECIPAR | P1 | Resgate persistido no banco, código só existe no modal; falha no GET após POST parece falha de débito | API retorna resgates próprios e saldo confirmado; código recuperável ao voltar; separar erro de atualização de falha de resgate; revisão explícita do débito | Fidelidade API/UI | Médio | Concorrência, isolamento, recarga e falha parcial | IN_PROGRESS |
+| OP-13 | ELIMINAR/JUNTAR | P1 | Cliente não pode trocar senha pela interface apesar de endpoint existente; novas contas têm contato vazio | Disponibilizar Minha conta para os dois perfis; contato opcional no cadastro existente; reutilizar formulário de senha | Conta/login/router | Baixo | Autorização e senha, cadastro com contato opcional | IN_PROGRESS |
+| OP-14 | AUTOMATIZAR/CLAREZA | P1 | totalGasto Decimal serializado como string é somado por concatenação; contatos duplicam DDI; timeline de fallback supõe pagamento | Converter números, rotular média por cliente corretamente, telefone normalizado; datas brasileiras e acompanhamento baseado em fatos; erros no contexto da ação | Clientes/pedidos/helpers | Baixo | Unitários + PostgreSQL + navegador | IN_PROGRESS |
+| OP-15 | JUNTAR/ANTECIPAR | P2 | Configuração não mostra resultado antes de salvar; telas vazias sem próximo passo | Prévia de banner/horários, orientações curtas e próximo passo em estados vazios; próximas ações em pedidos; componentes compartilhados de fluxo | Config/UI compartilhada | Baixo | Prévia, gravação, vazio/erro, responsividade | IN_PROGRESS |
+
+### Análise por objetivo e reconstrução do fluxo
+
+| Objetivo / páginas | Trabalho que o sistema pode fazer | Três ações principais propostas |
+|---|---|---|
+| Entrar/criar conta — logins | Campo opcional de contato já suportado; orientação de senha; estado de envio | Escolher entrar/criar → preencher → enviar |
+| Lojista organizar atendimento — visão geral/pedidos/clientes | Levar ao pedido/cliente/filtro correto e preparar mensagem com código e próximo status | Abrir pedido contextual → conferir → atualizar/contatar |
+| Cliente acompanhar — início/pedidos | Abrir a compra exata, explicar próxima etapa e preparar contato | Abrir compra → consultar andamento → pedir ajuda se necessário |
+| Cadastrar/editar — produtos | Preparar imagem, agrupar descrição/foto e preço/estoque, calcular prévia | Produto e foto → venda → revisar e salvar |
+| Corrigir estoque — visão geral/produtos | Localizar automaticamente estoque ativo ≤ 5, manter busca/filtros | Abrir alerta → editar → revisar e salvar; preenchimento dentro da tarefa |
+| Fidelidade/ofertas — central de benefícios | Ordenar recompensas utilizáveis, recuperar códigos já gerados e reunir ofertas | Escolher recompensa → revisar débito/confirmar → apresentar/enviar código |
+| Configurar — página da loja | Mostrar prévia e dizer onde será exibido | Abrir página → editar e conferir prévia → salvar |
+| Conta — cliente/lojista | Reutilizar endpoint seguro de troca de senha | Abrir Minha conta → preencher → salvar |
+
+Três passos são decisões principais, não uma promessa de três cliques para digitar todos os campos. Revisões que protegem dados/pontos e ajustes opcionais de imagem são preservados.
+
+### Ordem, preservação e bloqueios
+
+Helpers/contratos e dados recuperáveis → ligações contextuais e filtros → formulário guiado → central de benefícios/conta → prévia/feedback → testes locais e CI com PostgreSQL → deploy automático na main e leitura de saúde da aplicação.
+
+Não automatizar pagamentos, entregas, cancelamento, crédito de pontos, frete nem criação de pedidos a partir de WhatsApp: não há integração/regra comercial que comprove esses eventos. Não criar gestão comercial de campanhas/recompensas nesta rodada. Nenhum bloqueio impede as melhorias seguras acima. Produção só recebe o deploy autorizado por GitHub Actions; testes que gravam usam ambientes isolados.

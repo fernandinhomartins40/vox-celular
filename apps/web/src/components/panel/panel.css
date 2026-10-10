@@ -124,3 +124,70 @@ a.panel-metric-card:hover { border-color: var(--royal-400); }
   .panel-content [role=dialog] .grid-cols-3:has(> button) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { .vox-panel *, .vox-panel *::before { animation: none !important; transition: none !important; } }
+
+.panel-primary-button, .panel-secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 10px; font-weight: 600; text-align: center; }
+.panel-primary-button { background: var(--royal-700); color: white; }
+.panel-primary-button:hover { background: var(--royal-800); }
+.panel-secondary-button { background: white; border: 1px solid var(--line); color: var(--royal-700); }
+.panel-secondary-button:hover { background: var(--royal-50); }
+.vox-panel button:disabled { opacity: .6; }
+.panel-filter-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.panel-filter-bar :is(input, select) { background: white; border: 1px solid var(--line); padding: 10px 12px; max-width: 100%; }
+.panel-search { flex: 1; min-width: min(220px, 100%); }
+.panel-search input { width: 100%; }
+.panel-muted { color: #66758b; font-size: 13px; margin: 6px 0; }
+.panel-surface { padding: 24px; background: white; border: 1px solid var(--line); border-radius: var(--panel-radius); }
+.panel-surface h2 { font-size: 20px; font-weight: 700; }
+.panel-sections { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.panel-sections button { padding: 10px 16px; border-radius: 10px; border: 1px solid var(--line); background: white; font-weight: 600; }
+.panel-sections button[aria-pressed=true] { background: var(--royal-700); color: white; border-color: var(--royal-700); }
+.panel-reward-card { padding: 14px; background: var(--paper); border-radius: 12px; }
+.panel-reward-review { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+.panel-reward-review p { color: #4a5870; margin-top: 6px; }
+.panel-receipt-list > div { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.panel-receipt-list small { display: block; color: #66758b; margin-top: 4px; }
+.panel-order-guidance { background: var(--royal-50); padding: 12px 16px; border-radius: 10px; color: var(--royal-800); }
+.panel-success-notice { background: #ecfdf5; color: #166534; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 16px; }
+.panel-search-field { display: flex; flex-direction: column; flex: 1; gap: 6px; min-width: min(220px, 100%); font-weight: 600; }
+.panel-search-field input { font-weight: 400; }
+.panel-inline-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--royal-700); font-weight: 600; }
+.panel-content td[data-label="Ações"] > div { flex-wrap: wrap; justify-content: flex-end; }
+.panel-order-timeline { display: grid; gap: 18px; padding: 8px 0; }
+.panel-order-timeline li { display: flex; gap: 12px; align-items: center; }
+.panel-order-timeline li > span { display: grid; place-items: center; flex-shrink: 0; width: 32px; height: 32px; background: #eef1f7; border-radius: 50%; color: #66758b; }
+.panel-order-timeline .is-complete > span { background: var(--royal-700); color: white; }
+.panel-order-timeline svg, .panel-steps svg { width: 18px; height: 18px; }
+.panel-order-timeline small { display: block; color: #66758b; margin-top: 2px; }
+.panel-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 24px; }
+.panel-steps li { display: flex; align-items: center; gap: 8px; color: #66758b; font-size: 13px; }
+.panel-steps li > span { display: grid; place-items: center; width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%; background: #eef1f7; }
+.panel-steps .is-current { color: var(--royal-700); }
+.panel-steps .is-current > span { background: var(--royal-700); color: white; }
+.panel-product-dialog { position: relative; width: 100%; max-width: 720px; max-height: 92dvh; display: flex; flex-direction: column; background: white; border-radius: var(--panel-radius); box-shadow: 0 20px 60px #14213d40; }
+.panel-product-dialog > :is(header, footer) { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.panel-product-dialog > footer { border-bottom: 0; border-top: 1px solid var(--line); }
+.panel-product-dialog header h2 { font-size: 22px; font-weight: 700; }
+.panel-product-dialog header button { flex-shrink: 0; }
+.panel-product-dialog header svg { width: 22px; height: 22px; }
+.panel-product-content { overflow-y: auto; padding: 24px; min-height: 0; }
+.panel-product-content > [role=alert] { margin-bottom: 16px; }
+.panel-product-content summary { cursor: pointer; font-weight: 600; color: var(--royal-700); padding: 10px 0; }
+.panel-product-image { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 16px; border: 1px dashed var(--line); border-radius: 12px; }
+.panel-product-image > div { flex: 1; min-width: 0; }
+.panel-product-image input { width: 100%; margin: 8px 0; font-size: 13px; }
+.panel-product-image img, .panel-product-review img { width: 100px; height: 100px; object-fit: cover; border-radius: 10px; }
+.panel-product-review > strong { display: block; margin-top: 12px; font-size: 20px; }
+.panel-product-review h3 { font-weight: 700; font-size: 18px; margin-bottom: 12px; }
+.panel-product-review dl { margin: 20px 0; padding: 16px; background: var(--paper); border-radius: 12px; }
+.panel-product-review dl > div { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; padding: 6px 0; }
+.panel-product-review dd { font-weight: 600; }
+.panel-config-preview { margin-top: 16px; padding: 20px; border-radius: 12px; background: var(--royal-800); color: white; overflow-wrap: anywhere; }
+.panel-config-preview strong { font-size: 22px; }
+.panel-config-preview p { margin: 8px 0; }
+@media (max-width: 480px) {
+  .panel-product-dialog > :is(header, footer), .panel-product-content { padding: 16px; }
+  .panel-steps li { flex-direction: column; text-align: center; gap: 4px; font-size: 12px; }
+  .panel-filter-bar > label { width: 100%; }
+  .panel-filter-bar select { width: 100%; }
+  .panel-surface { padding: 18px; }
+}

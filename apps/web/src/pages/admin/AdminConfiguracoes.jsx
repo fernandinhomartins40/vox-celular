@@ -37,7 +37,7 @@ export default function AdminConfiguracoes() {
       .finally(() => setLoading(false));
   }, []);
 
-  const onChange = (e) => setConfig(v => ({ ...v, [e.target.name]: e.target.value }));
+  const onChange = (e) => { setSalvo(false); setConfig(v => ({ ...v, [e.target.name]: e.target.value })); };
 
   const salvar = async (e) => {
     e.preventDefault();
@@ -68,6 +68,11 @@ export default function AdminConfiguracoes() {
 
       {error && <p role="alert" className="text-red-600 mb-4">{error}</p>}
       <form onSubmit={salvar} className="space-y-5 max-w-2xl">
+        <section className="panel-surface" aria-label="Prévia das alterações">
+          <h2>Prévia das alterações</h2><p className="panel-muted">Confira os textos antes de salvar. A aparência final segue o layout da loja.</p>
+          <div className="panel-config-preview"><strong>{config.heroSlide1Titulo || 'Título do banner'}</strong><p>{config.heroSlide1Sub || 'Descrição do banner'}</p><span>{config.heroSlide1Preco || 'Preço do banner'}</span></div>
+          <p className="mt-3 text-sm">Segunda a sexta: {config.horarioSemana || 'Não informado'} · Sábado: {config.horarioSabado || 'Não informado'}</p>
+        </section>
         {sections.map((s, si) => {
           const I = Icon[s.icon] ?? Icon.settings;
           return (

@@ -2,10 +2,13 @@ import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import PanelDialog from '../../components/panel/PanelDialog';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
 import { PHONE_DIGITS } from '../../data';
+import { formatPanelDate, normalizeSearch, orderTimeline, ORDER_GUIDANCE, setPanelParams } from '../../lib/panel';
+import { PanelEmptyState, PanelOrderTimeline } from '../../components/panel/PanelFlow';
 
 const STATUS_STYLE = {
   NOVO:       'bg-blue-50 text-blue-700 border-blue-200',
@@ -15,22 +18,14 @@ const STATUS_STYLE = {
 };
 const STATUS_LABEL = { NOVO: 'Novo', EM_PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Entregue' };
 
-const TIMELINE_STEPS = ['Pedido recebido', 'Pagamento confirmado', 'Em preparo', 'Pronto para retirada', 'Entregue'];
-const STATUS_STEP = { NOVO: 1, EM_PREPARO: 2, PRONTO: 3, ENTREGUE: 4 };
-
-function buildTimeline(pedido) {
-  const step = STATUS_STEP[pedido.status] ?? 0;
-  if (pedido.timeline) return pedido.timeline;
-  return TIMELINE_STEPS.map((label, i) => ({
-    status: label,
-    data: i <= step ? (pedido.data ?? pedido.createdAt?.slice(0, 10)) : null,
-    ok: i <= step,
-  }));
-}
-
 export default function ClientePedidos() {
   const [pedidos, setPedidos] = useState([]);
-  const [detalhe, setDetalhe] = useState(null);
+  const [params, setParams] = useSearchParams();
+  const selected = pedidos.find(p => p.id === params.get('pedido'));
+  const detalhe = selected ? { ...selected, timeline: orderTimeline(selected) } : null;
+  const setDetalhe = value => setPanelParams(setParams, { pedido: value?.id }, false);
+  const busca = params.get('busca') ?? '';
+  const filtrados = pedidos.filter(p => normalizeSearch(`${p.codigo ?? ''} ${(p.itens ?? p.produtos ?? []).map(i => i.nome ?? i.produto?.nome ?? '').join(' ')}`).includes(normalizeSearch(busca)) && (params.get('situacao') !== 'abertos' || p.status !== 'ENTREGUE'));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -47,30 +42,27 @@ export default function ClientePedidos() {
   return (
     <div>
       <PanelPageHeader title="Meus pedidos" description="Acompanhe suas compras e consulte os detalhes." />
+      {params.get('pedido') && !detalhe && <p role="status" className="panel-inline-notice">Este pedido não está disponível nesta conta. Consulte suas compras abaixo.</p>}
+      {pedidos.length > 0 && <div className="panel-filter-bar"><label className="panel-search-field">Buscar compra<input value={busca} onChange={e => setPanelParams(setParams, { busca: e.target.value })} placeholder="Número do pedido ou produto" /></label><button aria-pressed={params.get('situacao') === 'abertos'} className="panel-secondary-button" onClick={() => setPanelParams(setParams, { situacao: params.get('situacao') === 'abertos' ? '' : 'abertos' })}>Somente em andamento</button></div>}
 
       {pedidos.length === 0 ? (
-        <div className="text-center py-20 bg-white border border-[var(--line)] rounded-2xl">
-          <div className="w-16 h-16 mx-auto rounded-full bg-zinc-100 grid place-items-center mb-4">
-            <Icon.package className="w-7 h-7 text-zinc-400" />
-          </div>
-          <div className="font-display font-bold text-[18px] text-zinc-700">Nenhum pedido ainda</div>
-          <p className="text-[13px] text-zinc-500 mt-1">Seus pedidos aparecerão aqui.</p>
-        </div>
+        <PanelEmptyState title="Nenhum pedido ainda" description="Escolha um produto na loja. Suas compras registradas pela equipe aparecerão aqui." action="Escolher um produto" to="/#produtos" />
       ) : (
         <div className="space-y-4">
-          {pedidos.map((p, i) => {
-            const timeline = buildTimeline(p);
+          {filtrados.length === 0 && <PanelEmptyState title="Nenhuma compra corresponde à busca" description="Tente outro número ou consulte todas as compras." action="Limpar filtros" onAction={() => setPanelParams(setParams, { busca: '', situacao: '' })} />}
+          {filtrados.map((p, i) => {
+            const timeline = orderTimeline(p);
             const itensList = (p.produtos ?? p.itens ?? []).map(x => `${x.qty ?? x.quantidade ?? 1}x ${x.nome ?? x.produto?.nome ?? ''}`).join(', ');
             return (
               <div key={i} className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
+                <div className="flex flex-wrap gap-3 items-center justify-between px-6 py-4 border-b border-[var(--line)]">
                   <div className="flex items-center gap-3">
                     <span className="font-display font-bold text-[var(--royal-700)] text-[16px]">{p.codigo ?? p.id}</span>
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[p.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
                       {STATUS_LABEL[p.status] ?? p.status}
                     </span>
                   </div>
-                  <div className="text-[12px] text-zinc-500">{p.data ?? p.createdAt?.slice(0, 10)}</div>
+                  <div className="text-[12px] text-zinc-500">{formatPanelDate(p.data ?? p.createdAt)}</div>
                 </div>
 
                 <div className="px-6 py-4">
@@ -88,28 +80,8 @@ export default function ClientePedidos() {
                     </div>
                   </div>
 
-                  {/* Mini timeline */}
-                  <div className="mt-4 flex items-center gap-0">
-                    {timeline.map((t, ti) => (
-                      <div key={ti} className="flex items-center flex-1 last:flex-none">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold transition-all ${
-                          t.ok ? 'bg-[var(--royal-700)] text-white' : 'bg-zinc-100 text-zinc-400'
-                        }`}>
-                          {t.ok ? <Icon.check className="w-3.5 h-3.5" /> : ti + 1}
-                        </div>
-                        {ti < timeline.length - 1 && (
-                          <div className={`flex-1 h-0.5 mx-1 ${t.ok ? 'bg-[var(--royal-700)]' : 'bg-zinc-200'}`} />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-1 text-[9px] text-zinc-400 px-0.5">
-                    {timeline.map((t, ti) => (
-                      <div key={ti} className="text-center" style={{ width: ti < timeline.length - 1 ? '20%' : 'auto' }}>
-                        {t.status.split(' ')[0]}
-                      </div>
-                    ))}
-                  </div>
+                  <p className="panel-order-guidance">{ORDER_GUIDANCE[p.status]}</p>
+
                 </div>
               </div>
             );
@@ -124,7 +96,7 @@ export default function ClientePedidos() {
             <div className="flex items-center justify-between p-6 border-b border-[var(--line)]">
               <div>
                 <div className="font-display font-bold text-[22px]">{detalhe.codigo ?? detalhe.id}</div>
-                <div className="text-[13px] text-zinc-500">{detalhe.data ?? detalhe.createdAt?.slice(0, 10)} · {detalhe.pagamento}</div>
+                <div className="text-[13px] text-zinc-500">{formatPanelDate(detalhe.data ?? detalhe.createdAt)} · {detalhe.pagamento}</div>
               </div>
               <button aria-label="Fechar detalhes" onClick={() => setDetalhe(null)} className="w-9 h-9 rounded-full hover:bg-zinc-100 grid place-items-center">
                 <Icon.close className="w-5 h-5" />
@@ -150,21 +122,10 @@ export default function ClientePedidos() {
               {/* Timeline completa */}
               <div>
                 <div className="font-display font-bold text-[15px] mb-3">Acompanhamento</div>
-                <div className="space-y-3">
-                  {(detalhe.timeline ?? []).map((t, ti) => (
-                    <div key={ti} className="flex items-start gap-3">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${t.ok ? 'bg-[var(--royal-700)] text-white' : 'bg-zinc-100 text-zinc-400'}`}>
-                        {t.ok ? <Icon.check className="w-3.5 h-3.5" /> : <span className="text-[10px] font-bold">{ti + 1}</span>}
-                      </div>
-                      <div>
-                        <div className={`font-medium text-[13px] ${t.ok ? 'text-[var(--ink)]' : 'text-zinc-400'}`}>{t.status}</div>
-                        {t.data && <div className="text-[11px] text-zinc-500">{t.data}</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <PanelOrderTimeline timeline={detalhe.timeline ?? []} />
               </div>
-              <a href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(`Olá! Quero informações sobre o pedido ${detalhe.id}`)}`}
+
+              <a href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(`Olá! Quero informações sobre o pedido ${detalhe.codigo ?? detalhe.id}`)}`}
                 target="_blank" rel="noopener"
                 className="w-full inline-flex items-center justify-center gap-2 h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-[13px] transition">
                 <Icon.whatsapp className="w-4 h-4" /> Rastrear / falar com a loja

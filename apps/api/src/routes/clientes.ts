@@ -6,6 +6,7 @@ export const clientesRouter = Router();
 
 type PedidoClienteResumo = {
   id: string;
+  codigo: string;
   total: unknown;
   status: string;
   createdAt: Date;
@@ -35,7 +36,7 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     },
     include: {
       usuario: { select: { nome: true, email: true } },
-      pedidos: { select: { id: true, total: true, status: true, createdAt: true } }
+      pedidos: { where: { lojaId: req.user!.lojaId }, select: { id: true, codigo: true, total: true, status: true, createdAt: true }, orderBy: { createdAt: 'desc' } }
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -53,6 +54,7 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     pedidos: c.pedidos.length,
     historicoPedidos: c.pedidos.map((p: PedidoClienteResumo) => ({
       id: p.id,
+      codigo: p.codigo,
       total: p.total,
       status: p.status,
       createdAt: p.createdAt,
