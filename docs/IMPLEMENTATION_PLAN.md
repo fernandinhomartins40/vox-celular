@@ -89,9 +89,9 @@ Não automatizar pagamentos, entregas, cancelamento, crédito de pontos, frete n
 
 | ID | Prioridade | Evidência | Implementação | Validação | Status |
 |---|---|---|---|---|---|
-| LP-01 | P1 | Formulário estreito com apenas banner/horários/redes | Usar toda a área do painel, 13 abas por seção e design geral | Navegador 390/768/1440/1920, teclado | IN_PROGRESS |
-| LP-02 | P1 | Prévia anterior era um cartão genérico | Componentes públicos compartilhados em iframe isolado; largura real 1440/390, atualizações por mensagem com origem verificada | Edição sem publicar, recarga e comparação pública | IN_PROGRESS |
-| LP-03 | P1 | Conteúdo fixo das demais seções | Configuração JSON por loja com defaults compatíveis; textos/listas/links/imagens e design; produtos mantêm fonte única | PostgreSQL, permissões e conteúdo inválido | IN_PROGRESS |
-| LP-04 | P1 | Imagens sem gerenciamento no editor | Upload WebP limitado, validado e armazenado no volume persistente da loja | Upload real, acesso público e recarga | IN_PROGRESS |
+| LP-01 | P1 | Formulário estreito com apenas banner/horários/redes | Usar toda a área do painel, 13 abas por seção e design geral | Navegador 390/768/1440/1920, teclado | DONE |
+| LP-02 | P1 | Prévia anterior era um cartão genérico | Componentes públicos compartilhados em iframe isolado; largura real 1440/390, atualizações por mensagem com origem verificada | Edição sem publicar, recarga e comparação pública | DONE |
+| LP-03 | P1 | Conteúdo fixo das demais seções | Configuração JSON por loja com defaults compatíveis; textos/listas/links/imagens e design; produtos mantêm fonte única | PostgreSQL, permissões e conteúdo inválido | DONE |
+| LP-04 | P1 | Imagens sem gerenciamento no editor | Upload WebP limitado, validado e armazenado no volume persistente da loja | Upload real, acesso público e recarga | DONE |
 
 Implementar → lint/build → testes locais e CI reais → corrigir → deploy automático main → saúde HTTPS. Migration aditiva, sem substituir conteúdo existente. Prévia desativa navegação/envios; salvar publica todas as abas juntas. Arquivos enviados são preservados, inclusive se um rascunho for abandonado; não apagar imagens existentes automaticamente.
