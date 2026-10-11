@@ -164,4 +164,24 @@ assert.equal(docker(['exec', 'vox_db', 'psql', '-U', 'vox', '-d', 'vox_restore_c
 for (const name of ['vox_db', 'vox_api', 'vox_web']) {
   assert.equal(docker(['inspect', name, '--format', '{{.State.OOMKilled}}']).trim(), 'false');
 }
-console.log('PASS: real migrations, idempotent bootstrap, auth/roles, product upload, dashboard, SPA, persistence, backup restore, DNS recovery and no OOM.');
+// Exercise the demo batch in its own tenant; business/browser fixtures stay untouched.
+sql(`INSERT INTO "Loja" (id,nome,telefone,endereco,cidade,"mapsUrl","createdAt") VALUES ('ci-demo-store','CI demo','','','Palmital','',NOW());`);
+const demoSeed = password => compose('--profile', 'tools', 'run', '--rm', '--no-deps', '-e', 'ALLOW_DEMO_SEED=true', '-e', 'DEMO_STORE_ID=ci-demo-store', '-e', 'TEST_CUSTOMER_PASSWORD=' + password, 'migrate', 'node', 'dist/seed-demo.js');
+demoSeed('ci-demo-customer-password');
+assert.equal(sql(`SELECT count(*) FROM "Produto" WHERE "lojaId"='ci-demo-store'`), '32');
+assert.equal(sql(`SELECT count(*) FROM "Cliente" WHERE "lojaId"='ci-demo-store'`), '30');
+assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "lojaId"='ci-demo-store'`), '90');
+assert.equal(sql(`SELECT count(*) FROM "Promocao" WHERE "lojaId"='ci-demo-store'`), '12');
+assert.equal(sql(`SELECT count(*) FROM "RecompensaCatalogo" WHERE "lojaId"='ci-demo-store'`), '8');
+assert.equal(sql(`SELECT count(*) FROM "Produto" WHERE "lojaId"='ci-demo-store' AND ativo`), '0');
+assert.equal(sql(`SELECT count(*) FROM "Pedido" p WHERE p."lojaId"='ci-demo-store' AND p.total <> (SELECT sum(i.qty*i.preco) FROM "ItemPedido" i WHERE i."pedidoId"=p.id)`), '0');
+assert.equal(sql(`SELECT count(*) FROM "Cliente" c WHERE c."lojaId"='ci-demo-store' AND c.pontos <> (SELECT sum(h.pontos) FROM "HistoricoPontos" h WHERE h."clienteId"=c.id)`), '0');
+sql(`UPDATE "Produto" SET estoque=123 WHERE id='vox-demo-v1-ci-demo-store-produto-0';`);
+demoSeed('ci-another-password-preserved');
+assert.equal(sql(`SELECT estoque FROM "Produto" WHERE id='vox-demo-v1-ci-demo-store-produto-0'`), '123');
+assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "lojaId"='ci-demo-store'`), '90');
+const demoLogin = await json('/api/auth/login', { method: 'POST', body: { email: 'teste.cliente@voxcelular.example', senha: 'ci-demo-customer-password' } });
+assert.equal(demoLogin.user.role, 'CLIENTE');
+assert.equal((await json('/api/pedidos/meus', { token: demoLogin.token })).length, 3);
+assert.equal((await json('/api/fidelidade/pontos', { token: demoLogin.token })).saldo, 150);
+console.log('PASS: real migrations, idempotent bootstrap/demo, auth/roles, product upload, dashboard, SPA, persistence, backup restore, DNS recovery and no OOM.');

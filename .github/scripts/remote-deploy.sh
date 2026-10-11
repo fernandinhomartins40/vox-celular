@@ -24,6 +24,7 @@ if ss -H -lnt "sport = :$DEPLOY_PORT" | grep -q .; then
   own_port=$(docker inspect vox_web --format '{{range (index .NetworkSettings.Ports "80/tcp")}}{{.HostPort}}{{end}}' 2>/dev/null || true)
   [[ "$own_port" == "$DEPLOY_PORT" ]] || { echo "Port $DEPLOY_PORT is already in use by another service." >&2; exit 1; }
 fi
+
 [[ -f "$RELEASE_DIR/release.env" && -f "$RELEASE_DIR/docker-compose.yml" ]] || exit 1
 # Validate the uploaded immutable image manifest before sourcing it.
 [[ $(wc -l < "$RELEASE_DIR/release.env") -eq 3 ]] || exit 1
@@ -143,4 +144,18 @@ if [[ "${CREATE_TEST_ADMIN:-false}" == true ]]; then
   export ALLOW_TEST_ADMIN_SEED
   compose --profile tools run --rm --no-deps -e TEST_ADMIN_EMAIL -e TEST_ADMIN_PASSWORD -e ALLOW_TEST_ADMIN_SEED migrate node dist/seed.js
   unset TEST_ADMIN_EMAIL TEST_ADMIN_PASSWORD ALLOW_TEST_ADMIN_SEED
+fi
+if [[ "${SEED_DEMO_DATA:-false}" == true ]]; then
+  access_file="$APP_ROOT/test-customer.env"
+  if [[ ! -f "$access_file" ]]; then
+    access_tmp=$(mktemp "$APP_ROOT/test-customer.env.XXXXXX")
+    printf 'TEST_CUSTOMER_PASSWORD=%s\n' "$(openssl rand -hex 18)" > "$access_tmp"
+    chmod 600 "$access_tmp"
+    mv -T "$access_tmp" "$access_file"
+  fi
+  set -a; source "$access_file"; set +a
+  ALLOW_DEMO_SEED=true
+  export ALLOW_DEMO_SEED
+  compose --profile tools run --rm --no-deps -e TEST_CUSTOMER_PASSWORD -e ALLOW_DEMO_SEED migrate node dist/seed-demo.js
+  unset TEST_CUSTOMER_PASSWORD ALLOW_DEMO_SEED
 fi

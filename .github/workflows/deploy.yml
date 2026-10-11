@@ -9,6 +9,10 @@ on:
         description: 'Create non-destructive test operator access'
         type: boolean
         default: false
+      seed_demo_data:
+        description: 'Create additive fictional demo data (preserve existing records)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -231,6 +235,7 @@ jobs:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REGISTRY_USER: ${{ github.actor }}
           CREATE_TEST_ADMIN: ${{ inputs.create_test_admin && 'true' || 'false' }}
+          SEED_DEMO_DATA: ${{ inputs.seed_demo_data && 'true' || 'false' }}
         run: |
           printf '%s\n' "$REGISTRY_TOKEN" |
-            sshpass -e ssh vox-deploy "APP_ROOT='$APP_ROOT' RELEASE='$RELEASE' DEPLOY_PORT='$DEPLOY_PORT' GHCR_USER='$REGISTRY_USER' CREATE_TEST_ADMIN='$CREATE_TEST_ADMIN' bash '$APP_ROOT/releases/$RELEASE/.github/scripts/remote-deploy.sh'"
+            sshpass -e ssh vox-deploy "APP_ROOT='$APP_ROOT' RELEASE='$RELEASE' DEPLOY_PORT='$DEPLOY_PORT' GHCR_USER='$REGISTRY_USER' CREATE_TEST_ADMIN='$CREATE_TEST_ADMIN' SEED_DEMO_DATA='$SEED_DEMO_DATA' bash '$APP_ROOT/releases/$RELEASE/.github/scripts/remote-deploy.sh'"
