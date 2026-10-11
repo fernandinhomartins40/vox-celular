@@ -67,11 +67,15 @@ try {
       if (role === 'LOJISTA') await details.click();
       const dialog = page.getByRole('dialog', { name: 'Detalhes do pedido' });
       await dialog.waitFor();
+      await page.waitForFunction(() => document.querySelector('[role="dialog"][aria-label="Detalhes do pedido"]')?.contains(document.activeElement));
       await page.keyboard.press('Tab');
       assert.equal(await dialog.evaluate(el => el.contains(document.activeElement)), true);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
-      if (role === 'LOJISTA') assert.equal(await details.evaluate(el => document.activeElement === el), true);
+      if (role === 'LOJISTA') {
+        await page.waitForFunction(() => document.activeElement?.matches('button[aria-label="Ver detalhes"]') || document.activeElement?.textContent?.trim() === 'Ver detalhes');
+        assert.equal(await details.evaluate(el => document.activeElement === el), true);
+      }
       if (role === 'LOJISTA') {
         await details.click();
         await dialog.getByRole('button', { name: /Iniciar preparo|Marcar como pronto|Confirmar entrega/ }).click();
