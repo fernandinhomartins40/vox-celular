@@ -7,3 +7,6 @@ uploads
 
 # Configuracao local de agentes
 /.claude/
+
+# Credenciais de teste: documento exclusivamente local
+/CREDENCIAIS_TESTE.md
