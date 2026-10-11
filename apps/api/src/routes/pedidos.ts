@@ -21,7 +21,8 @@ pedidosRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
   try {
     const pedido = await prisma.$transaction(async tx => {
       // Serialize retries for the same customer/key, including concurrent requests.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${cliente.id}), hashtext(${parsed.data.checkoutKey}))`;
+      // pg_advisory_xact_lock returns PostgreSQL void, which Prisma cannot deserialize.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${cliente.id}), hashtext(${parsed.data.checkoutKey}))`;
       const existing = await tx.pedido.findUnique({ where: { clienteId_checkoutKey: { clienteId: cliente.id, checkoutKey: parsed.data.checkoutKey } }, include: { itens: true } });
       if (existing) return existing;
       const itens = [];
