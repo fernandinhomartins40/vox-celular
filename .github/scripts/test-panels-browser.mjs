@@ -55,9 +55,9 @@ try {
           await page.keyboard.press('Escape');
           assert.equal(await page.getByRole('button', { name: 'Abrir menu', exact: true }).evaluate(el => document.activeElement === el), true);
         }
-        if (process.env.PANEL_SCREENSHOTS && route === '') {
+        if (process.env.PANEL_SCREENSHOTS && (route === '' || route === '/conta')) {
           await mkdir(process.env.PANEL_SCREENSHOTS, { recursive: true });
-          await page.screenshot({ path: `${process.env.PANEL_SCREENSHOTS}/${role}-${width}.png`, fullPage: true });
+          await page.screenshot({ path: `${process.env.PANEL_SCREENSHOTS}/${role}-${width}${route === '/conta' ? '-account' : ''}.png`, fullPage: true });
         }
       }
       await page.goto(base + prefix);
