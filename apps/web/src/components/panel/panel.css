@@ -5,6 +5,14 @@
   font-family: 'DM Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.5;
 }
 .panel-mobile-nav { display:none; }
+.panel-image-editor { position:relative; width:min(640px,100%); max-height:90dvh; overflow:auto; background:white; border:1px solid var(--line); border-radius:16px; }
+.panel-image-editor header, .panel-image-editor footer { padding:20px; border-bottom:1px solid var(--line); }
+.panel-image-editor h2 { font-size:20px; font-weight:700; }
+.panel-image-editor-body { padding:20px; display:grid; gap:16px; }
+.panel-image-editor canvas { width:100%; max-height:320px; object-fit:contain; background:var(--paper); border:1px solid var(--line); }
+.panel-image-editor label { display:grid; gap:6px; font-weight:600; }
+.panel-image-editor select { border:1px solid var(--line); padding:8px; }
+.panel-image-editor footer { display:flex; justify-content:flex-end; gap:12px; border-top:1px solid var(--line); border-bottom:0; }
 .panel-account-layout { display:grid; grid-template-columns:minmax(240px,1fr) minmax(0,2fr); gap:24px; align-items:start; }
 .panel-account-profile, .panel-account-form { background:white; border:1px solid var(--line); border-radius:var(--panel-radius); overflow:hidden; min-width:0; }
 .panel-account-heading { display:flex; align-items:center; gap:12px; padding:20px 24px; border-bottom:1px solid var(--line); }

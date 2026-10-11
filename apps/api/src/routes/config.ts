@@ -2,9 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { requireLojista, AuthRequest } from '../middleware/auth.js';
-import path from 'node:path';
-import { randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { normalizedImage, storeImage } from '../lib/imageStorage.js';
 
 const text = z.string().max(2000);
 const primitive = z.union([text, z.number().finite()]);
@@ -43,17 +41,12 @@ const landingSchema = z.object(Object.fromEntries(['design', 'header', 'hero', '
 export const configRouter = Router();
 
 configRouter.post('/image', requireLojista, async (req: AuthRequest, res) => {
-  const parsed = z.object({ dataUrl: z.string().max(7000000).startsWith('data:image/webp;base64,') }).safeParse(req.body);
+  const parsed = z.object({ dataUrl: z.string().max(7000000).startsWith('data:image/'), profile: z.enum(['product', 'hero', 'category', 'background', 'portability']).default('product') }).safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'Envie uma imagem WebP de até 5 MB.' }); return; }
-  const buffer = Buffer.from(parsed.data.dataUrl.split(',')[1], 'base64');
-  if (buffer.length > 5 * 1024 * 1024 || buffer.toString('ascii', 0, 4) !== 'RIFF' || buffer.toString('ascii', 8, 12) !== 'WEBP') { res.status(400).json({ error: 'Imagem inválida.' }); return; }
   try {
-    const folder = path.join(process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads'), 'landing', req.user!.lojaId);
-    await mkdir(folder, { recursive: true });
-    const name = `${randomUUID()}.webp`;
-    await writeFile(path.join(folder, name), buffer);
-    res.status(201).json({ url: `/uploads/landing/${req.user!.lojaId}/${name}` });
-  } catch { res.status(500).json({ error: 'Não foi possível salvar a imagem.' }); }
+    const buffer = await normalizedImage(parsed.data.dataUrl, parsed.data.profile);
+    res.status(201).json({ url: await storeImage(buffer, 'landing', req.user!.lojaId) });
+  } catch (e) { res.status(400).json({ error: e instanceof Error && /^(Limite|Armazenamento|Há imagens)/.test(e.message) ? e.message : 'Imagem inválida ou muito pesada. Escolha outra foto ou tente novamente.' }); }
 });
 
 configRouter.get('/', requireLojista, async (req: AuthRequest, res) => {

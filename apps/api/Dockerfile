@@ -12,6 +12,7 @@ RUN npm exec --workspace=@vox/api -- prisma generate && npm run build --workspac
 FROM build AS migrate
 ENV NODE_ENV=production
 WORKDIR /app/apps/api
+RUN mkdir -p /app/uploads && chown node:node /app/uploads
 USER node
 CMD ["node", "../../node_modules/prisma/build/index.js", "migrate", "deploy"]
 

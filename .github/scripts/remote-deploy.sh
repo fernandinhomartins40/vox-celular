@@ -159,3 +159,7 @@ if [[ "${SEED_DEMO_DATA:-false}" == true ]]; then
   compose --profile tools run --rm --no-deps -e TEST_CUSTOMER_PASSWORD -e ALLOW_DEMO_SEED migrate node dist/seed-demo.js
   unset TEST_CUSTOMER_PASSWORD ALLOW_DEMO_SEED
 fi
+
+if [[ "${PUBLISH_DEMO_CATALOG:-false}" == true ]]; then
+  compose --profile tools run --rm --no-deps -e ALLOW_PRESENTATION_SEED=true migrate node dist/seed-presentation.js
+fi

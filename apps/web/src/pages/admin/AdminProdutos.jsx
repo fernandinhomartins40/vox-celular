@@ -11,6 +11,7 @@ import { api, assetUrl } from '../../lib/api.js';
 import { CATEGORIES } from '../../data';
 import { Icon } from '../../icons';
 import { formatBRL, badgeStyle } from '../../utils';
+import { compressCanvas, IMAGE_ACCEPT } from '../../lib/imageUpload';
 
 const emptyForm = {
   nome: '',
@@ -84,7 +85,7 @@ async function buildCroppedImage(imageState) {
   if (imageState.autoFit) {
     const scale = Math.min(size / image.width, size / image.height);
     ctx.drawImage(image, (size - image.width * scale) / 2, (size - image.height * scale) / 2, image.width * scale, image.height * scale);
-    return canvas.toDataURL('image/webp', 0.82);
+    return (await compressCanvas(canvas)).dataUrl;
   }
   ctx.drawImage(
     image,
@@ -97,7 +98,7 @@ async function buildCroppedImage(imageState) {
     size,
     size,
   );
-  return canvas.toDataURL('image/webp', 0.82);
+  return (await compressCanvas(canvas)).dataUrl;
 }
 
 export default function AdminProdutos() {
@@ -192,6 +193,7 @@ export default function AdminProdutos() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    if (file.size > 15 * 1024 * 1024) { setFormError('Escolha uma imagem de até 15 MB.'); return; }
     if (!file.type.startsWith('image/')) {
       setFormError('Selecione um arquivo de imagem.');
       return;
@@ -201,6 +203,7 @@ export default function AdminProdutos() {
       const source = String(reader.result);
       let image;
       try { image = await loadImage(source); } catch { setFormError('Não foi possível abrir esta imagem. Escolha outro arquivo.'); return; }
+      if (image.width * image.height > 40000000) { setFormError('Escolha uma imagem de até 40 megapixels.'); return; }
       const minSide = Math.min(image.width, image.height);
       const size = (minSide / image.width) * 100;
       setImageState({
@@ -299,7 +302,7 @@ export default function AdminProdutos() {
         {pagination.items.map(p => {
           const discount = p.precoOriginal ? Math.round((1 - p.preco / p.precoOriginal) * 100) : 0;
           return (
-            <div key={p.id} className={`bg-white border rounded-lg overflow-hidden transition ${p.ativo !== false ? 'border-[var(--line)]' : 'border-[var(--line)] opacity-50'}`}>
+            <div key={p.id} className="bg-white border border-[var(--line)] rounded-lg overflow-hidden transition">
               <div className="relative aspect-square bg-[var(--paper)] overflow-hidden">
                 {p.img ? <img loading="lazy" src={assetUrl(p.img)} alt={p.nome} className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-zinc-400 text-[12px]">Sem imagem</div>}
                 {p.badge && (
@@ -394,7 +397,7 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
           <TextAreaField label="Descrição" rows={3} value={form.descricao} onChange={descricao => setForm(v => ({ ...v, descricao }))} />
           <div className="panel-product-image">
             {currentImage && <img src={currentImage} alt="Prévia do produto" />}
-            <div><label className="block text-sm font-semibold" htmlFor="product-image">Foto do produto</label><input id="product-image" type="file" accept="image/*" onChange={onFile} /><p className="panel-muted">A imagem fica pronta ao selecionar. Você pode ajustar o recorte se precisar.</p>{imageState.source && <button className="panel-secondary-button" onClick={onAdjust}>Ajustar imagem</button>}</div>
+            <div><label className="block text-sm font-semibold" htmlFor="product-image">Foto do produto</label><input id="product-image" type="file" accept={IMAGE_ACCEPT} onChange={onFile} /><p className="panel-muted">900 × 900 px · WebP comprimido. Ajuste o recorte antes de salvar.</p>{imageState.source && <button className="panel-secondary-button" onClick={onAdjust}>Ajustar imagem</button>}</div>
           </div>
           <details><summary>Mais detalhes (opcional)</summary><div className="space-y-4 mt-4"><TextField label="Subtítulo / variação" value={form.sub} onChange={sub => setForm(v => ({ ...v, sub }))} /><TextAreaField label="Especificações (uma por linha)" rows={4} value={form.specsText} onChange={specsText => setForm(v => ({ ...v, specsText }))} /></div></details>
         </div>}

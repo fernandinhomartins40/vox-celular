@@ -13,6 +13,10 @@ on:
         description: 'Create additive fictional demo data (preserve existing records)'
         type: boolean
         default: false
+      publish_demo_catalog:
+        description: 'Publish the existing demo catalog with local generated product photos'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -162,6 +166,8 @@ jobs:
           docker compose --profile tools pull --policy missing
       - name: Migrations, bootstrap, authentication, uploads, persistence and resource smoke test
         run: node .github/scripts/test-runtime.mjs
+      - name: Image conversion, dimensions and validation
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/imageStorage.test.js
       - name: Product search and customer contact regression tests
         run: node --test apps/web/src/lib/catalog.test.js apps/web/src/lib/panel.test.js
       - name: Product flows in Chromium against real API and PostgreSQL
@@ -236,6 +242,7 @@ jobs:
           REGISTRY_USER: ${{ github.actor }}
           CREATE_TEST_ADMIN: ${{ inputs.create_test_admin && 'true' || 'false' }}
           SEED_DEMO_DATA: ${{ inputs.seed_demo_data && 'true' || 'false' }}
+          PUBLISH_DEMO_CATALOG: ${{ inputs.publish_demo_catalog && 'true' || 'false' }}
         run: |
           printf '%s\n' "$REGISTRY_TOKEN" |
-            sshpass -e ssh vox-deploy "APP_ROOT='$APP_ROOT' RELEASE='$RELEASE' DEPLOY_PORT='$DEPLOY_PORT' GHCR_USER='$REGISTRY_USER' CREATE_TEST_ADMIN='$CREATE_TEST_ADMIN' SEED_DEMO_DATA='$SEED_DEMO_DATA' bash '$APP_ROOT/releases/$RELEASE/.github/scripts/remote-deploy.sh'"
+            sshpass -e ssh vox-deploy "APP_ROOT='$APP_ROOT' RELEASE='$RELEASE' DEPLOY_PORT='$DEPLOY_PORT' GHCR_USER='$REGISTRY_USER' CREATE_TEST_ADMIN='$CREATE_TEST_ADMIN' SEED_DEMO_DATA='$SEED_DEMO_DATA' PUBLISH_DEMO_CATALOG='$PUBLISH_DEMO_CATALOG' bash '$APP_ROOT/releases/$RELEASE/.github/scripts/remote-deploy.sh'"

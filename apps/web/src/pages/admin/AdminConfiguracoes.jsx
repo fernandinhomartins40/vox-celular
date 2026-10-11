@@ -6,6 +6,8 @@ import { resolveStoreContent } from '../../components/storeContent';
 import { SECTIONS, LABELS, ADVANCED_FIELDS, ICON_LABELS } from './landingEditorFields';
 import { Icon } from '../../icons';
 import './landing-editor.css';
+import PanelImageEditor from '../../components/panel/PanelImageEditor';
+import { IMAGE_ACCEPT, imageProfile } from '../../lib/imageUpload';
 
 export default function AdminConfiguracoes() {
   const [params, setParams] = useSearchParams();
@@ -18,6 +20,7 @@ export default function AdminConfiguracoes() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [imageDraft, setImageDraft] = useState(null);
   const [dirty, setDirty] = useState(false);
   const [viewport, setViewport] = useState('desktop');
   const [ready, setReady] = useState(0);
@@ -55,18 +58,13 @@ export default function AdminConfiguracoes() {
     setConfig(previous => { const next = structuredClone(previous); let target = next.landingPage[section]; path.slice(0, -1).forEach(key => { target = target[key]; }); target[path.at(-1)] = value; return next; });
     setDirty(true); setSaved(false);
   };
-  async function upload(path, file) {
-    if (!file) return;
+  async function upload(path, prepared) {
     setUploading(true); setError('');
     try {
-      if (!file.type.startsWith('image/') || file.size > 15 * 1024 * 1024) throw new Error('Escolha uma imagem de até 15 MB.');
-      const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement('canvas'); canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
-      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
-      const result = await api.post('/config/image', { dataUrl: canvas.toDataURL('image/webp', .85) });
+      const result = await api.post('/config/image', { dataUrl: prepared.dataUrl, profile: imageDraft.profile.id });
       update(path, result.url);
-    } catch (e) { setError(e.message || 'Não foi possível abrir a imagem.'); }
+      setImageDraft(null);
+    } catch (e) { setError(e.message || 'Não foi possível abrir a imagem.'); throw e; }
     finally { setUploading(false); }
   }
   async function save(event) {
@@ -88,7 +86,7 @@ export default function AdminConfiguracoes() {
     const id = `editor-${section}-${path.join('-')}`;
     const image = ['image', 'img'].includes(key) || (key === 'background' && section === 'hero');
     const options = key === 'font' ? ['DM Sans', 'Barlow', 'Barlow Condensed'] : key === 'radius' ? ['0', '8', '12', '16', '20', '24'] : null;
-    if (image) return <div key={id} className="editor-field editor-image"><label htmlFor={`${id}-file`}>{name}</label><input id={`${id}-file`} type="file" aria-label={`Enviar ${name}`} accept="image/*" disabled={saving || uploading} onChange={e => { upload(path, e.target.files?.[0]); e.target.value = ''; }} /><p className="panel-muted">Escolha uma foto. O tamanho será ajustado automaticamente.</p><details><summary>Usar endereço de imagem</summary><label htmlFor={id}>Endereço da imagem</label><input disabled={saving || uploading} id={id} value={value} onChange={e => update(path, e.target.value)} /></details></div>;
+    if (image) { const profile = imageProfile(section, key); return <div key={id} className="editor-field editor-image"><label htmlFor={`${id}-file`}>{name}</label><input id={`${id}-file`} type="file" aria-label={`Enviar ${name}`} accept={IMAGE_ACCEPT} disabled={saving || uploading} onChange={e => { const file = e.target.files?.[0]; if (file) setImageDraft({ path, file, profile }); e.target.value = ''; }} /><p className="panel-muted">Recorte de {profile.width} × {profile.height} px. Conversão para WebP antes do envio.</p><details><summary>Usar endereço de imagem</summary><label htmlFor={id}>Endereço da imagem</label><input disabled={saving || uploading} id={id} value={value} onChange={e => update(path, e.target.value)} /></details></div>; }
     if (key === 'icon') return <div key={id} className="editor-field"><label htmlFor={id}>Símbolo</label><select disabled={saving} id={id} value={value} onChange={e => update(path, e.target.value)}>{[...new Set([value, ...Object.keys(Icon)])].map(icon => <option key={icon} value={icon}>{ICON_LABELS[icon] ?? `Símbolo: ${icon}`}</option>)}</select></div>;
     return <div key={id} className="editor-field"><label htmlFor={id}>{typeof key === 'number' ? `Texto ${key + 1}` : name}</label>
       {options ? <select disabled={saving} id={id} value={value} onChange={e => update(path, e.target.value)}>{options.map(o => <option key={o}>{o}</option>)}</select> : section === 'design' && ['primary', 'accent', 'background'].includes(key) ? <input disabled={saving} id={id} type="color" value={value} onChange={e => update(path, e.target.value)} /> : ['title', 'subtitle', 'description', 'desc', 'texto', 'captionText'].includes(key) ? <textarea disabled={saving} id={id} rows={3} maxLength={2000} value={value} onInput={e => update(path, e.currentTarget.value)} /> : <input disabled={saving} id={id} type={typeof value === 'number' ? 'number' : 'text'} min={key === 'estrelas' ? 1 : undefined} max={key === 'estrelas' ? 5 : undefined} maxLength={2000} value={value} onChange={e => update(path, typeof value === 'number' ? Number(e.target.value) : e.target.value)} />}
@@ -108,5 +106,6 @@ export default function AdminConfiguracoes() {
       {ADVANCED_FIELDS[section] && <details key={section} className="editor-advanced"><summary>Mais opções desta seção</summary><p className="panel-muted">Ajuste apenas se precisar. As opções atuais serão mantidas.</p>{Object.entries(config.landingPage[section]).filter(([key]) => ADVANCED_FIELDS[section].includes(key)).map(([key, value]) => field(value, [key]))}</details>}
       {['contact', 'footer'].includes(section) && ['horarioSemana', 'horarioSabado', ...(section === 'footer' ? ['instagramUrl', 'facebookUrl'] : [])].map(key => <div className="editor-field" key={key}><label htmlFor={key}>{({ horarioSemana: 'Segunda a sexta', horarioSabado: 'Sábado', instagramUrl: 'Instagram (URL)', facebookUrl: 'Facebook (URL)' })[key]}</label><input disabled={saving} id={key} name={key} value={config[key] ?? ''} onChange={e => { setConfig(c => ({ ...c, [key]: e.target.value })); setDirty(true); setSaved(false); }} /></div>)}
     </section><section className="editor-preview" aria-label="Prévia real da seção"><header><strong>Prévia ao vivo</strong><div><button type="button" aria-pressed={viewport === 'desktop'} onClick={() => setViewport('desktop')}>Desktop</button><button type="button" aria-pressed={viewport === 'mobile'} onClick={() => setViewport('mobile')}>Celular</button></div></header><p>Mesmo componente da loja. Links e envios ficam desativados nesta prévia.</p><div ref={previewContainer} className="editor-preview-scroll"><iframe style={{ width: viewport === 'mobile' ? 390 : 1440, minWidth: viewport === 'mobile' ? 390 : 1440, zoom: Math.min(1, previewWidth / (viewport === 'mobile' ? 390 : 1440)), height: 900 }} ref={frame} title="Prévia real da landing page" src="/admin/landing-preview" className={viewport === 'mobile' ? 'is-mobile' : ''} /></div></section></div>
+    {imageDraft && <PanelImageEditor file={imageDraft.file} profile={imageDraft.profile} onClose={() => setImageDraft(null)} onApply={prepared => upload(imageDraft.path, prepared)} />}
   </form>;
 }

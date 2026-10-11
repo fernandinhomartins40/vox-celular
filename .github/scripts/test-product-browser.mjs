@@ -83,6 +83,7 @@ try {
   await page.getByRole('tab', { name: 'Banner principal', exact: true }).click();
   await page.locator('#editor-hero-title').fill('CI landing editor real');
   await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'ci-hero.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWNgMDlJGmIY1XByNJRMhmnSAAC4rv0BDv2fxwAAAABJRU5ErkJggg==', 'base64') });
+    await page.getByRole('button', { name: 'Usar imagem', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('#editor-hero-image')?.value.startsWith('/uploads/landing/'));
   const livePreview = page.frameLocator('iframe[title="Prévia real da landing page"]');
   assert.equal(await page.locator('#editor-hero-title').inputValue(), 'CI landing editor real', 'Upload preserves the edited title');

@@ -66,9 +66,17 @@ await json('/api/dashboard', { token: customer.token, status: 403 });
 const product = await json('/api/produtos', { method: 'POST', token: admin.token, status: 201, body: {
   nome: 'CI product', sub: 'Integration', categoria: 'Acessórios', preco: 10.25,
   descricao: 'Real database and persistent upload test', estoque: 20,
-  image: { dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aOVsAAAAASUVORK5CYII=' },
+  image: { dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWMQstpDEmIY1WA1GkpCwzVpAACwrQgQ1m/4jwAAAABJRU5ErkJggg==' },
 } });
 assert.equal((await fetch(base + product.imgUrl)).status, 200);
+const savedPhoto = await fetch(base + product.imgUrl);
+assert.match(savedPhoto.headers.get('content-type'), /image\/webp/);
+assert.match(savedPhoto.headers.get('cache-control'), /immutable/);
+const landingPhoto = { dataUrl: 'data:image/webp;base64,' + Buffer.from(await savedPhoto.arrayBuffer()).toString('base64'), profile: 'category' };
+const landingOne = await json('/api/config/image', { method: 'POST', token: admin.token, status: 201, body: landingPhoto });
+const landingTwo = await json('/api/config/image', { method: 'POST', token: admin.token, status: 201, body: landingPhoto });
+assert.equal(landingOne.url, landingTwo.url, 'Repeated landing images must reuse stored file');
+await json('/api/config/image', { method: 'POST', token: admin.token, status: 400, body: { ...landingPhoto, profile: 'unbounded' } });
 assert.equal((await json(`/api/produtos?lojaId=${loja.id}`))[0].id, product.id);
 
 // Product improvements use the same real, isolated database as deployment verification.
@@ -184,4 +192,15 @@ const demoLogin = await json('/api/auth/login', { method: 'POST', body: { email:
 assert.equal(demoLogin.user.role, 'CLIENTE');
 assert.equal((await json('/api/pedidos/meus', { token: demoLogin.token })).length, 3);
 assert.equal((await json('/api/fidelidade/pontos', { token: demoLogin.token })).saldo, 150);
+const present = () => compose('--profile', 'tools', 'run', '--rm', '--no-deps', '-e', 'ALLOW_PRESENTATION_SEED=true', '-e', 'DEMO_STORE_ID=ci-demo-store', 'migrate', 'node', 'dist/seed-presentation.js');
+present();
+assert.equal(sql(`SELECT count(*) FROM "Produto" WHERE "lojaId"='ci-demo-store' AND ativo AND "imgUrl" LIKE '/uploads/catalogo/%' AND nome NOT LIKE '[TESTE]%'`), '32');
+assert.equal(sql(`SELECT estoque FROM "Produto" WHERE id='vox-demo-v1-ci-demo-store-produto-0'`), '123');
+const pictures = await json('/api/produtos?lojaId=ci-demo-store');
+assert.equal(pictures.length, 32);
+assert.equal((await fetch(base + pictures[0].imgUrl)).status, 200);
+sql(`UPDATE "Produto" SET ativo=false, nome='Edited catalog name' WHERE id='vox-demo-v1-ci-demo-store-produto-0';`);
+present(); demoSeed('ci-another-password-preserved');
+assert.equal(sql(`SELECT nome FROM "Produto" WHERE id='vox-demo-v1-ci-demo-store-produto-0'`), 'Edited catalog name');
+assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "lojaId"='ci-demo-store'`), '90');
 console.log('PASS: real migrations, idempotent bootstrap/demo, auth/roles, product upload, dashboard, SPA, persistence, backup restore, DNS recovery and no OOM.');

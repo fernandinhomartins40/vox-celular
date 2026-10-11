@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { mkdir, readFile } from 'node:fs/promises';
 const require = createRequire(`${process.env.PANEL_TOOLS ?? `${process.env.RUNNER_TEMP}/vox-browser`}/package.json`);
 const { chromium } = require('playwright');
 const base = process.env.PANEL_BASE ?? 'http://127.0.0.1:3196';
@@ -27,7 +28,13 @@ try {
     await page.getByRole('tab', { name: 'Banner principal', exact: true }).click();
     const title = page.locator('#editor-hero-title'); // Wait for the banner tab to finish rendering.
     await title.fill('Banner editado em tempo real');
-    await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAGUlEQVQokWNgMDlJGmIY1XByNJRMhmnSAAC4rv0BDv2fxwAAAABJRU5ErkJggg==', 'base64') });
+    await page.getByLabel('Enviar Imagem', { exact: true }).setInputFiles({ name: 'catalog.webp', mimeType: 'image/webp', buffer: await readFile('apps/api/assets/catalog/product-0.webp') });
+    await page.getByLabel('Enquadramento', { exact: true }).selectOption('cover');
+    await page.getByLabel('Zoom', { exact: true }).focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.getByLabel('Prévia do recorte', { exact: true }).getAttribute('width'), '900');
+    if (process.env.PANEL_SCREENSHOTS) { await mkdir(process.env.PANEL_SCREENSHOTS, { recursive: true }); await page.screenshot({ path: `${process.env.PANEL_SCREENSHOTS}/crop-${width}.png` }); }
+    await page.getByRole('button', { name: 'Usar imagem', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('#editor-hero-image')?.value === '/uploads/landing/fixture.webp');
     await preview.getByRole('heading', { name: 'Banner editado em tempo real' }).waitFor();
     assert.equal(config.landingPage.hero.title, 'CI persisted hero', 'Draft does not mutate saved data');

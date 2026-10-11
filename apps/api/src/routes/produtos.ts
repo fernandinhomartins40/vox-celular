@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import path from 'node:path';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { unlink } from 'node:fs/promises';
+import { normalizedImage, storeImage } from '../lib/imageStorage.js';
 import { prisma } from '../lib/prisma.js';
 import { requireLojista, AuthRequest } from '../middleware/auth.js';
 
@@ -50,25 +51,11 @@ function serializeProduto<T extends {
   };
 }
 
-function parseDataUrl(dataUrl: string) {
-  const match = /^data:image\/(webp|jpeg|jpg|png);base64,([a-z0-9+/=]+)$/i.exec(dataUrl);
-  if (!match) return null;
-  const ext = match[1].toLowerCase() === 'jpeg' ? 'jpg' : match[1].toLowerCase();
-  const buffer = Buffer.from(match[2], 'base64');
-  if (!buffer.length || buffer.length > 5 * 1024 * 1024) return null;
-  return { ext, buffer };
-}
-
 async function saveProductImage(lojaId: string, produtoId: string, dataUrl?: string) {
   if (!dataUrl) return null;
-  const parsed = parseDataUrl(dataUrl);
-  if (!parsed) throw new Error('Imagem invalida. Envie PNG, JPG ou WebP ate 5 MB.');
+  const buffer = await normalizedImage(dataUrl, 'product');
 
-  const dir = path.join(uploadsRoot, 'produtos', lojaId);
-  await mkdir(dir, { recursive: true });
-  const fileName = `${produtoId}-${Date.now()}.${parsed.ext}`;
-  await writeFile(path.join(dir, fileName), parsed.buffer);
-  return `${publicUploadsPath}/${lojaId}/${fileName}`;
+  return storeImage(buffer, 'produtos', lojaId, true);
 }
 
 async function removeLocalImage(imgUrl?: string | null) {

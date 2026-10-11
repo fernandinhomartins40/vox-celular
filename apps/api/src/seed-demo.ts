@@ -26,7 +26,7 @@ async function main() {
   await prisma.$transaction(async tx => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(3196002)`;
     // A completed batch is never reset: user edits, passwords and resgates survive reruns.
-    if (await tx.pedido.findUnique({ where: { lojaId_codigo: { lojaId: loja.id, codigo: 'TESTE-VOX-090' } } })) {
+    if (await tx.pedido.findUnique({ where: { id: id('pedido', 89) } })) {
       console.log('Demo batch already exists; all user changes preserved.'); return;
     }
     for (let n = 0; n < 32; n++) {
