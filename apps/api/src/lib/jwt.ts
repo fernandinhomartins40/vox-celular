@@ -5,10 +5,10 @@ if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || SECRET.
   throw new Error('Production requires JWT_SECRET with at least 32 characters.');
 }
 
-export function signToken(payload: { userId: string; lojaId: string; role: string }) {
+export function signToken(payload: { userId: string; lojaId: string; role: string; tokenVersion?: number }) {
   return jwt.sign(payload, SECRET, { expiresIn: '7d' });
 }
 
 export function verifyToken(token: string) {
-  return jwt.verify(token, SECRET) as { userId: string; lojaId: string; role: string };
+  return jwt.verify(token, SECRET) as { userId: string; lojaId: string; role: string; tokenVersion?: number };
 }

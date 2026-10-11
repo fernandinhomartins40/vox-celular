@@ -1,9 +1,32 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
+import { api } from '../lib/api';
 import { Icon } from '../icons';
 import { PHONE_DIGITS } from '../data';
 import { formatBRL } from '../utils';
 
 export default function CartDrawer({ open, onClose, items, setItems }) {
+  const { user } = useAuth();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  const [pedido, setPedido] = useState(null);
+  async function confirmar() {
+    if (pending) return;
+    setPending(true); setError('');
+    try {
+      const signature = JSON.stringify(items.map(p => [p.id, p.qty]));
+      let attempt;
+      try { attempt = JSON.parse(sessionStorage.getItem('vox_checkout_attempt')); } catch { /* new attempt */ }
+      if (!attempt || attempt.signature !== signature) {
+        attempt = { signature, key: crypto.randomUUID() };
+        sessionStorage.setItem('vox_checkout_attempt', JSON.stringify(attempt));
+      }
+      const result = await api.post('/pedidos', { checkoutKey: attempt.key, itens: items.map(p => ({ produtoId: p.id, qty: p.qty })) });
+      setPedido(result); setItems([]); sessionStorage.removeItem('vox_checkout_attempt');
+    } catch (e) { setError(e.message); }
+    finally { setPending(false); }
+  }
   const total = useMemo(() => items.reduce((sum, it) => sum + it.preco * it.qty, 0), [items]);
 
   const updateQty = (id, delta) => {
@@ -38,6 +61,7 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
         </div>
 
         <div className="flex-1 overflow-y-auto drawer-scroll p-5 space-y-3">
+          {pedido && <div role="status" className="panel-success-notice"><strong>Pedido {pedido.codigo} registrado</strong><p>Pagamento aguardando confirmação da loja.</p><Link to="/area-cliente/pedidos">Acompanhar meu pedido</Link></div>}
           {items.length === 0 && (
             <div className="text-center py-20 text-zinc-500">
               <div className="w-16 h-16 mx-auto rounded-full bg-zinc-100 grid place-items-center mb-4">
@@ -77,6 +101,8 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
 
         {items.length > 0 && (
           <div className="p-6 border-t border-[var(--line)] bg-[var(--paper)]">
+            {error && <p role="alert" className="text-red-600 mb-3">{error}</p>}
+            {user?.role === 'CLIENTE' ? <button onClick={confirmar} disabled={pending} className="panel-primary-button w-full mb-3">{pending ? 'Registrando pedido…' : 'Confirmar pedido'}</button> : <Link to="/area-cliente/login" state={{ returnTo: '/' }} className="panel-primary-button w-full mb-3">Entrar para confirmar pedido</Link>}
             <div className="flex items-baseline justify-between mb-1">
               <span className="text-[13px] text-zinc-600">Subtotal</span>
               <span className="font-display font-bold text-[14px]">{formatBRL(total)}</span>

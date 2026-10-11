@@ -20,7 +20,11 @@ import './redesign.css';
 
 export default function LandingPage() {
   const [filter, setFilter] = useState('Todos');
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try { const saved = JSON.parse(sessionStorage.getItem('vox_cart')); return Array.isArray(saved) ? saved : []; }
+    catch { return []; }
+  });
+  useEffect(() => { sessionStorage.setItem('vox_cart', JSON.stringify(cart)); }, [cart]);
   const [cartOpen, setCartOpen] = useState(false);
   const [modalProduct, setModalProduct] = useState(null);
   const [products, setProducts] = useState([]);

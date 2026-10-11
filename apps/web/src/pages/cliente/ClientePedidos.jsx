@@ -63,7 +63,7 @@ export default function ClientePedidos() {
                   <div className="flex items-center gap-3">
                     <span className="font-display font-bold text-[var(--royal-700)] text-[16px]">{p.codigo ?? p.id}</span>
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[p.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                      {STATUS_LABEL[p.status] ?? p.status}
+                      {p.canceladoEm ? 'Cancelado' : STATUS_LABEL[p.status] ?? p.status}
                     </span>
                   </div>
                   <div className="text-[12px] text-zinc-500">{formatPanelDate(p.data ?? p.createdAt)}</div>
@@ -84,7 +84,7 @@ export default function ClientePedidos() {
                     </div>
                   </div>
 
-                  <p className="panel-order-guidance">{ORDER_GUIDANCE[p.status]}</p>
+                  <p className="panel-order-guidance">{p.canceladoEm ? 'Pedido cancelado. Estoque liberado para novas compras.' : ORDER_GUIDANCE[p.status]}</p>
 
                 </div>
               </div>

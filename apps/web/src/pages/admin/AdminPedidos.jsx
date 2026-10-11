@@ -79,6 +79,17 @@ export default function AdminPedidos() {
     }
   };
 
+  async function cancelarPedido(pedido) {
+    if (pending || !window.confirm(`Cancelar o pedido ${pedido.codigo} e devolver os itens ao estoque?`)) return;
+    setPending(true); setActionError('');
+    try {
+      const updated = await api.post(`/pedidos/${pedido.id}/cancelar`, {});
+      setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, ...updated } : p));
+      setSuccess(`Pedido ${pedido.codigo} cancelado.`);
+    } catch (e) { setActionError(e.message); }
+    finally { setPending(false); }
+  }
+
   if (loading) return <PanelLoading />;
   if (error) return <PanelError message={error} />;
 
@@ -140,7 +151,7 @@ export default function AdminPedidos() {
                     <td data-label="Pagamento" className="px-5 py-3.5 text-zinc-500 whitespace-nowrap">{p.pagamento}</td>
                     <td data-label="Status" className="px-5 py-3.5">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold border ${STATUS_STYLE[p.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                        {STATUS_LABEL[p.status] ?? p.status}
+                        {p.canceladoEm ? 'Cancelado' : STATUS_LABEL[p.status] ?? p.status}
                       </span>
                     </td>
                     <td data-label="Ações" className="px-5 py-3.5">
@@ -149,7 +160,7 @@ export default function AdminPedidos() {
                           className="panel-secondary-button" title="Ver detalhes">
                           <Icon.eye className="w-3.5 h-3.5" /> Ver detalhes
                         </button>
-                        {NEXT_STATUS[p.status] && (
+                        {!p.canceladoEm && NEXT_STATUS[p.status] && (
                           <button disabled={pending} onClick={() => avancarStatus(p.id)}
                             className="panel-secondary-button" aria-label={`${ORDER_ACTION[p.status]}: ${p.codigo ?? p.id}`} title={ORDER_ACTION[p.status]}>
                             <Icon.check className="w-3.5 h-3.5" /> <span>{ORDER_ACTION[p.status]}</span>
@@ -196,10 +207,10 @@ export default function AdminPedidos() {
                   <div className="text-[12px] text-zinc-500">{detalhe.clienteEmail ?? (typeof detalhe.cliente === 'object' ? detalhe.cliente?.usuario?.email : detalhe.email) ?? ''}</div>
                 </div>
                 <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[12px] font-semibold border ${STATUS_STYLE[detalhe.status] ?? 'bg-zinc-100 text-zinc-600'}`}>
-                  {STATUS_LABEL[detalhe.status] ?? detalhe.status}
+                  {detalhe.canceladoEm ? 'Cancelado' : STATUS_LABEL[detalhe.status] ?? detalhe.status}
                 </span>
               </div>
-              <p className="panel-inline-notice">{ORDER_ADMIN_GUIDANCE[detalhe.status]}</p>
+              <p className="panel-inline-notice">{detalhe.canceladoEm ? 'Pedido cancelado. Estoque liberado.' : ORDER_ADMIN_GUIDANCE[detalhe.status]}</p>
               {detalhe.clienteId && <Link className="panel-secondary-button" to={`/admin/clientes?clienteDetalhe=${encodeURIComponent(detalhe.clienteId)}`}>Ver contato e histórico do cliente</Link>}
               {brazilPhone(detalhe.clienteTelefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(detalhe.clienteTelefone)}?text=${encodeURIComponent(`Olá ${detalhe.clienteNome}! Seu pedido ${detalhe.codigo ?? detalhe.id} está ${STATUS_LABEL[detalhe.status]?.toLowerCase()}. Vamos combinar o próximo passo?`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Avisar cliente no WhatsApp</a>}
               <div>
@@ -221,7 +232,8 @@ export default function AdminPedidos() {
                   <span>Total</span><span>{formatBRL(detalhe.total)}</span>
                 </div>
               </div>
-              {NEXT_STATUS[detalhe.status] && (
+              {detalhe.checkoutKey && !detalhe.canceladoEm && detalhe.status === 'NOVO' && <button className="panel-secondary-button" disabled={pending} onClick={() => cancelarPedido(detalhe)}>Cancelar pedido e liberar estoque</button>}
+              {!detalhe.canceladoEm && NEXT_STATUS[detalhe.status] && (
                 <button disabled={pending} onClick={() => avancarStatus(detalhe.id)}
                   className="w-full inline-flex items-center justify-center gap-2 h-11 bg-[var(--royal-700)] hover:bg-[var(--royal-800)] text-white rounded-xl font-semibold text-[13px] transition">
                   <Icon.check className="w-4 h-4" /> {pending ? 'Atualizando…' : ORDER_ACTION[detalhe.status]}

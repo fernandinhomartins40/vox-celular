@@ -16,7 +16,7 @@ authRouter.patch('/senha', requireAuth, async (req: AuthRequest, res) => {
       res.status(400).json({ error: 'Senha atual incorreta.' }); return;
     }
     const senhaHash = await bcrypt.hash(parsed.data.novaSenha, 12);
-    const changed = await prisma.usuario.updateMany({ where: { id: user.id, senhaHash: user.senhaHash }, data: { senhaHash } });
+    const changed = await prisma.usuario.updateMany({ where: { id: user.id, senhaHash: user.senhaHash }, data: { senhaHash, tokenVersion: { increment: 1 } } });
     if (changed.count !== 1) { res.status(409).json({ error: 'Senha alterada em outra sessão.' }); return; }
     res.json({ ok: true });
   } catch { res.status(500).json({ error: 'Não foi possível alterar a senha.' }); }
@@ -25,6 +25,7 @@ authRouter.patch('/senha', requireAuth, async (req: AuthRequest, res) => {
 const loginSchema = z.object({
   email: z.string().email(),
   senha: z.string().min(6),
+  lojaId: z.string().min(1).optional(),
 });
 
 const registerSchema = z.object({
@@ -40,14 +41,15 @@ authRouter.post('/login', async (req, res) => {
   const parse = loginSchema.safeParse(req.body);
   if (!parse.success) { res.status(400).json({ error: parse.error.errors }); return; }
 
-  const { email, senha } = parse.data;
-  const usuario = await prisma.usuario.findFirst({ where: { email } });
+  const { email, senha, lojaId } = parse.data;
+  const candidates = await prisma.usuario.findMany({ where: { email, ...(lojaId ? { lojaId } : {}) }, take: 2 });
+  const usuario = candidates.length === 1 ? candidates[0] : null;
   if (!usuario) { res.status(401).json({ error: 'Credenciais inválidas' }); return; }
 
   const ok = await bcrypt.compare(senha, usuario.senhaHash);
   if (!ok) { res.status(401).json({ error: 'Credenciais inválidas' }); return; }
 
-  const token = signToken({ userId: usuario.id, lojaId: usuario.lojaId, role: usuario.role });
+  const token = signToken({ userId: usuario.id, lojaId: usuario.lojaId, role: usuario.role, tokenVersion: usuario.tokenVersion });
   res.json({
     token,
     user: { id: usuario.id, nome: usuario.nome, email: usuario.email, role: usuario.role, lojaId: usuario.lojaId }
@@ -83,7 +85,7 @@ authRouter.post('/register', async (req, res) => {
     include: { cliente: true }
   });
 
-  const token = signToken({ userId: usuario.id, lojaId: usuario.lojaId, role: usuario.role });
+  const token = signToken({ userId: usuario.id, lojaId: usuario.lojaId, role: usuario.role, tokenVersion: usuario.tokenVersion });
   res.status(201).json({
     token,
     user: { id: usuario.id, nome: usuario.nome, email: usuario.email, role: usuario.role, lojaId: usuario.lojaId }

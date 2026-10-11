@@ -1,5 +1,6 @@
 import { PanelPageHeader } from './PanelShell';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../auth/useAuth';
 import { Icon } from '../../icons';
@@ -39,7 +40,7 @@ export default function PanelAccount() {
       </div>)}
       <label className="panel-check-label"><input type="checkbox" checked={showPassword} onChange={event => setShowPassword(event.target.checked)} /> Mostrar senhas</label>
       {error && <p role="alert" className="panel-account-error">{error}</p>}
-      {success && <p role="status" className="panel-account-success">Senha alterada com sucesso.</p>}
+      {success && <p role="status" className="panel-account-success">Senha alterada com sucesso. As sessões anteriores foram encerradas. <Link to={user?.role === 'LOJISTA' ? '/admin/login' : '/area-cliente/login'}>Entrar com a nova senha</Link></p>}
       </div>
       <div className="panel-account-footer">
       <button disabled={saving} className="panel-primary-button">{saving ? 'Salvando…' : 'Alterar senha'}</button>

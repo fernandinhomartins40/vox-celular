@@ -49,6 +49,7 @@ model Usuario {
   nome         String
   email        String
   senhaHash    String
+  tokenVersion Int      @default(0)
   role         Role     @default(CLIENTE)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -126,6 +127,9 @@ model Pedido {
   codigo     String      // #VOX-001 style
   status     StatusPedido @default(NOVO)
   pagamento  String
+  checkoutKey String?
+  estoqueReservado Boolean @default(false)
+  canceladoEm DateTime?
   total      Decimal     @db.Decimal(10,2)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -136,6 +140,7 @@ model Pedido {
   timeline   TimelinePedido[]
 
   @@unique([lojaId, codigo])
+  @@unique([clienteId, checkoutKey])
   @@index([lojaId, createdAt])
   @@index([clienteId, createdAt])
 }

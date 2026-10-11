@@ -203,4 +203,25 @@ sql(`UPDATE "Produto" SET ativo=false, nome='Edited catalog name' WHERE id='vox-
 present(); demoSeed('ci-another-password-preserved');
 assert.equal(sql(`SELECT nome FROM "Produto" WHERE id='vox-demo-v1-ci-demo-store-produto-0'`), 'Edited catalog name');
 assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "lojaId"='ci-demo-store'`), '90');
-console.log('PASS: real migrations, idempotent bootstrap/demo, auth/roles, product upload, dashboard, SPA, persistence, backup restore, DNS recovery and no OOM.');
+// Checkout writes only to this disposable CI store, never to production.
+const checkoutProduct = 'vox-demo-v1-ci-demo-store-produto-1';
+sql(`UPDATE "Produto" SET estoque=1, ativo=true WHERE id='${checkoutProduct}';`);
+const checkoutBody = { checkoutKey: '39ad53a0-a649-4e70-8e15-5e455841ef06', itens: [{ produtoId: checkoutProduct, qty: 1 }] };
+const purchases = await Promise.all(Array.from({ length: 2 }, () => json('/api/pedidos', { method: 'POST', token: demoLogin.token, body: checkoutBody, status: 201 })));
+assert.equal(purchases[0].id, purchases[1].id, 'Concurrent retries return the same persisted order');
+assert.equal(sql(`SELECT estoque FROM "Produto" WHERE id='${checkoutProduct}'`), '0');
+assert.equal(purchases[0].pagamento, 'Aguardando confirmação');
+await json('/api/pedidos', { method: 'POST', token: demoLogin.token, body: { ...checkoutBody, checkoutKey: '7a0a3ac4-7514-4250-8ad7-d2b2be969a99' }, status: 409 });
+assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "checkoutKey"='${checkoutBody.checkoutKey}'`), '1');
+await json(`/api/pedidos/${purchases[0].id}/cancelar`, { method: 'POST', token: demoLogin.token, body: {}, status: 403 });
+await json(`/api/pedidos/${purchases[0].id}/cancelar`, { method: 'POST', token: admin.token, body: {}, status: 404 });
+sql(`INSERT INTO "Usuario" (id, "lojaId", nome, email, "senhaHash", role, "updatedAt") SELECT 'ci-demo-merchant', 'ci-demo-store', 'CI merchant', 'ci-demo-merchant@example.test', "senhaHash", 'LOJISTA', NOW() FROM "Usuario" WHERE email='ci-admin@example.com';`);
+const demoMerchant = await json('/api/auth/login', { method: 'POST', body: { email: 'ci-demo-merchant@example.test', senha: env.ADMIN_PASSWORD, lojaId: 'ci-demo-store' } });
+for (let i = 0; i < 2; i++) await json(`/api/pedidos/${purchases[0].id}/cancelar`, { method: 'POST', token: demoMerchant.token, body: {} });
+assert.equal(sql(`SELECT estoque FROM "Produto" WHERE id='${checkoutProduct}'`), '1', 'Cancellation releases inventory exactly once');
+await json(`/api/pedidos/${purchases[0].id}/status`, { method: 'PATCH', token: demoMerchant.token, body: { status: 'EM_PREPARO', expectedStatus: 'NOVO' }, status: 409 });
+await json('/api/auth/senha', { method: 'PATCH', token: demoLogin.token, body: { senhaAtual: 'ci-demo-customer-password', novaSenha: 'ci-revoked-password-123' } });
+await json('/api/auth/me', { token: demoLogin.token, status: 401 });
+const renewed = await json('/api/auth/login', { method: 'POST', body: { email: 'teste.cliente@voxcelular.example', senha: 'ci-revoked-password-123', lojaId: 'ci-demo-store' } });
+assert.equal((await json('/api/auth/me', { token: renewed.token })).id, demoLogin.user.id);
+console.log('PASS: real migrations, checkout concurrency/idempotency, stock availability, password revocation, bootstrap/demo, auth/roles, upload, dashboard, persistence, backup restore and no OOM.');

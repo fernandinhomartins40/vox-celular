@@ -14,7 +14,8 @@ export function AuthProvider({ children }) {
   async function login(email, senha) {
     setLoading(true);
     try {
-      const data = await api.post('/auth/login', { email, senha });
+      const lojaId = import.meta.env.VITE_LOJA_ID || (await api.get('/loja')).id;
+      const data = await api.post('/auth/login', { email, senha, lojaId });
       const stored = { ...data.user, token: data.token };
       localStorage.setItem('vox_user', JSON.stringify(stored));
       setUser(stored);
