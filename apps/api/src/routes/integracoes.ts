@@ -39,7 +39,11 @@ integracoesRouter.put('/:canal', async (req: AuthRequest, res) => {
       return tx.integracaoMarketplace.upsert({ where: { lojaId_canal: { lojaId, canal: canal.id } }, create: { lojaId, canal: canal.id, ...data }, update: data });
     });
     res.json(safe(row));
-  } catch { res.status(400).json({ error: 'Não foi possível salvar. Preencha as credenciais ou tente novamente.' }); }
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error && error.message === 'VAULT_RESTORE_REQUIRED'
+      ? 'A chave de proteção está ausente. Restaure o backup do cofre antes de alterar credenciais.'
+      : 'Não foi possível salvar. Preencha as credenciais ou tente novamente.' });
+  }
 });
 integracoesRouter.delete('/:canal', async (req: AuthRequest, res) => {
   try { await prisma.integracaoMarketplace.deleteMany({ where: { lojaId: req.user!.lojaId, canal: String(req.params.canal) } }); res.json({ ok: true }); }

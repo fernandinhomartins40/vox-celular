@@ -1,15 +1,22 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { prisma } from './prisma.js';
 
 let keyPromise: Promise<Buffer> | undefined;
 function vaultKey() {
   return keyPromise ??= (async () => {
     const file = process.env.MARKETPLACE_KEY_FILE || path.resolve('secrets/marketplace.key');
     await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
-    try { await writeFile(file, randomBytes(32), { flag: 'wx', mode: 0o600 }); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
-    const key = await readFile(file);
+    let key: Buffer;
+    try { key = await readFile(file); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      if (await prisma.integracaoMarketplace.count() > 0) throw new Error('VAULT_RESTORE_REQUIRED');
+      try { await writeFile(file, randomBytes(32), { flag: 'wx', mode: 0o600 }); }
+      catch (writeError) { if ((writeError as NodeJS.ErrnoException).code !== 'EEXIST') throw writeError; }
+      key = await readFile(file);
+    }
     if (key.length !== 32) throw new Error('Invalid vault key');
     return key;
   })();

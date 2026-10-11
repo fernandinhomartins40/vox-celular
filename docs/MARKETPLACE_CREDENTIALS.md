@@ -1,5 +1,7 @@
 # Configuração de marketplaces
 
+Proteção de recuperação: se houver credenciais no banco e o arquivo da chave estiver ausente, o servidor bloqueia a geração de outra chave e o salvamento. Restaurar o volume privado correspondente ao dump antes de reiniciar a API. Isso evita misturar credenciais cifradas com chaves incompatíveis.
+
 Painel: Configurações da loja → Configurar marketplaces (`/admin/configuracoes/integracoes`). Sete canais: Mercado Livre, Magalu, Shopee, Amazon, Casas Bahia, Americanas/SkyHub e SHEIN.
 
 Campos individuais, senha mascarada, preservação de valores salvos ao deixar vazio e remoção explícita. Credenciais nunca retornam ao navegador depois do salvamento; somente nomes dos campos configurados. Nenhum valor é guardado em localStorage, arquivos do projeto ou logs.

@@ -241,6 +241,19 @@ assert.ok(!JSON.stringify(await json('/api/loja')).includes(secretFixture));
 compose('restart', 'api');
 for (let i = 0; i < 30; i++) { try { if ((await fetch(base + '/api/ready')).ok) break; } catch {} await sleep(1000); }
 await json('/api/integracoes/mercadolivre', { method: 'PUT', token: admin.token, body: { ambiente: 'homologacao', credenciais: { clientSecret: 'updated-after-restart' } } });
+// A missing key must never silently replace the key for existing ciphertext.
+const ciphertextBeforeKeyLoss = sql('SELECT credenciais FROM "IntegracaoMarketplace";');
+docker(['exec', 'vox_api', 'node', '-e', "require('node:fs').renameSync('/app/secrets/marketplace.key','/app/secrets/marketplace.key.ci-backup')"]);
+compose('restart', 'api');
+for (let i = 0; i < 30; i++) { try { if ((await fetch(base + '/api/ready')).ok) break; } catch {} await sleep(1000); }
+const lostKey = await json('/api/integracoes/mercadolivre', { method: 'PUT', token: admin.token, body: { ambiente: 'homologacao', credenciais: { clientSecret: 'must-not-overwrite' } }, status: 400 });
+assert.match(lostKey.error, /backup do cofre/);
+assert.equal(sql('SELECT credenciais FROM "IntegracaoMarketplace";'), ciphertextBeforeKeyLoss);
+assert.equal(docker(['exec', 'vox_api', 'node', '-e', "process.stdout.write(String(require('node:fs').existsSync('/app/secrets/marketplace.key')))"]).trim(), 'false');
+docker(['exec', 'vox_api', 'node', '-e', "require('node:fs').renameSync('/app/secrets/marketplace.key.ci-backup','/app/secrets/marketplace.key')"]);
+compose('restart', 'api');
+for (let i = 0; i < 30; i++) { try { if ((await fetch(base + '/api/ready')).ok) break; } catch {} await sleep(1000); }
+await json('/api/integracoes/mercadolivre', { method: 'PUT', token: admin.token, body: { ambiente: 'homologacao', credenciais: { clientSecret: 'restored-key-works' } } });
 await json('/api/integracoes/mercadolivre', { method: 'DELETE', token: demoMerchant.token });
 assert.equal((await json('/api/integracoes', { token: admin.token })).conexoes.length, 1);
 await json('/api/integracoes/mercadolivre', { method: 'DELETE', token: admin.token });
