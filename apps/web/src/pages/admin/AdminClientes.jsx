@@ -1,13 +1,15 @@
+import PanelPagination from '../../components/panel/PanelPagination';
+import { usePanelPagination } from '../../lib/usePanelPagination';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import PanelDialog from '../../components/panel/PanelDialog';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
 import { brazilPhone } from '../../lib/catalog';
-import { formatPanelDate, normalizeSearch, orderLink } from '../../lib/panel';
+import { formatPanelDate, normalizeSearch, orderLink, setPanelParams } from '../../lib/panel';
 
 const STATUS_STYLE = {
   NOVO:       'bg-blue-50 text-blue-700',
@@ -19,8 +21,11 @@ const STATUS_LABEL = { NOVO: 'Novo', EM_PREPARO: 'Em preparo', PRONTO: 'Pronto',
 
 export default function AdminClientes() {
   const [clientes, setClientes] = useState([]);
-  const [busca, setBusca] = useState('');
-  const [selecionado, setSelecionado] = useState(null);
+  const [params, setParams] = useSearchParams();
+  const busca = params.get('busca') ?? '';
+  const setBusca = value => setPanelParams(setParams, { busca: value });
+  const selecionado = clientes.find(c => c.id === params.get('clienteDetalhe')) ?? null;
+  const setSelecionado = value => setPanelParams(setParams, { clienteDetalhe: value?.id }, false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -36,6 +41,8 @@ export default function AdminClientes() {
     normalizeSearch(`${c.nome ?? ''} ${c.email ?? ''} ${c.telefone ?? ''}`).includes(normalizeSearch(busca))
   );
 
+  const pagination = usePanelPagination(filtrados, 12);
+
   const totalGasto  = clientes.reduce((s, c) => s + Number(c.totalGasto ?? 0), 0);
   const totalPontos = clientes.reduce((s, c) => s + (c.pontos ?? 0), 0);
 
@@ -45,6 +52,7 @@ export default function AdminClientes() {
   return (
     <div>
       <PanelPageHeader title="Clientes" description="Consulte contatos, compras e pontos em um só lugar." />
+      {params.get('clienteDetalhe') && !selecionado && <p role="status" className="panel-inline-notice">Este cliente não está disponível. Consulte os demais cadastros abaixo.</p>}
 
       {/* Stats rápidas */}
       <div className="grid sm:grid-cols-3 gap-4 mb-6">
@@ -69,6 +77,7 @@ export default function AdminClientes() {
       </div>
 
       {/* Lista */}
+      {busca && <button className="panel-secondary-button mb-4" onClick={() => setBusca('')}>Limpar busca</button>}
       <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="panel-data-table w-full text-[13px]">
@@ -80,7 +89,7 @@ export default function AdminClientes() {
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((c, i) => (
+              {pagination.items.map((c, i) => (
                 <tr key={i} className="border-b border-[var(--line)] last:border-0 hover:bg-[var(--paper)] transition">
                   <td data-label="Cliente" className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -105,14 +114,14 @@ export default function AdminClientes() {
                   <td data-label="Ações" className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       <button aria-label={`Ver detalhes de ${c.nome}`} onClick={() => setSelecionado(c)}
-                        className="w-8 h-8 rounded-lg bg-[var(--royal-50)] text-[var(--royal-700)] grid place-items-center hover:bg-[var(--royal-100)] transition">
-                        <Icon.eye className="w-3.5 h-3.5" />
+                        className="panel-secondary-button">
+                        <Icon.eye className="w-3.5 h-3.5" /> Ver cliente
                       </button>
                       {brazilPhone(c.telefone) && (
                         <a aria-label={`Falar com ${c.nome} no WhatsApp`} href={`https://wa.me/${brazilPhone(c.telefone)}?text=${encodeURIComponent(`Olá ${(c.nome ?? '').split(' ')[0]}! Aqui é da Vox Celular.`)}`}
                           target="_blank" rel="noopener"
-                          className="w-8 h-8 rounded-lg bg-emerald-600 text-white grid place-items-center hover:bg-emerald-700 transition">
-                          <Icon.whatsapp className="w-3.5 h-3.5" />
+                          className="panel-secondary-button">
+                          <Icon.whatsapp className="w-3.5 h-3.5" /> WhatsApp
                         </a>
                       )}
                     </div>
@@ -126,6 +135,8 @@ export default function AdminClientes() {
           </table>
         </div>
       </div>
+
+      <PanelPagination pagination={pagination} label="clientes" />
 
       {/* Modal detalhe do cliente */}
       {selecionado && (

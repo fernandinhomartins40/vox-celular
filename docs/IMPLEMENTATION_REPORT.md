@@ -112,3 +112,23 @@ Backend recebe JSON validado, escopo da loja autenticada e limites para texto/li
 Lint e builds aprovados; teste local de 13 abas, prévia fiel, viewport, rascunho, salvamento/recarga e publicação em quatro larguras aprovado. CI ampliado para upload real/persistência, permissão, conteúdo inválido e página pública com PostgreSQL. Validação completa e deploy aprovados no workflow 38096141460, commit 44d05609340ef3775e6098fab90a220c161604f3. HTTPS /api/ready retornou ok e vox_web, vox_api e vox_db estavam saudáveis após a publicação.
 
 A troca de abas conclui a navegação antes da edição; os testes aguardam o campo específico da seção, evitando editar um título homônimo da aba anterior. CI verificou upload real, rascunho sem publicação, salvamento/recarga, imagem pública persistida, permissões e regressão dos painéis. Nenhum teste foi desativado.
+
+# Simplificação dos painéis de ponta a ponta — 10/10/2026
+
+Revisados os destinos e fluxos dos dois perfis: autenticação/cadastro, início, pedidos/lista/detalhes/status, produtos/cadastro/edição/imagem/recorte, clientes/contatos/histórico, pontos/recompensas/resgates, ofertas, senha e editor/prévia da loja. Conferidos contratos de API, escopo por loja, persistência, schema, transações de resgate e atualização concorrente de pedidos. As melhorias usam o design system existente.
+
+O início apresenta uma próxima ação com base nos dados disponíveis. Pedido aberto tem prioridade sobre compra concluída; o lojista vê atendimento pendente ou alerta de estoque. Atalhos duplicados foram retirados e indicadores secundários ficam em resumos expansíveis. A navegação mobile oferece quatro destinos persistentes e mantém o menu completo.
+
+Pedidos, compras, produtos e clientes mostram até 12 registros por página, com contagem, busca global sobre o conjunto carregado e filtros preservados na URL. Alterar filtro reinicia a paginação; abrir detalhes preserva a página. Cliente pode ser aberto por link direto e recarregado sem perder a seleção. Pedido do lojista oferece acesso ao contato e histórico do cliente.
+
+Ações de produto e cliente têm texto visível. Publicação e destaque mostram o estado atual; imagens de produtos carregam sob demanda. O editor apresenta três campos principais do banner em vez de nove, mantendo os seis ajustes extras recolhidos. Imagem pode ser enviada por arquivo e símbolos são escolhidos por nomes legíveis. Todos os campos e as 13 seções continuam disponíveis.
+
+Benefícios preservam a revisão ao alternar seções, sem consultar novamente cada seção já visitada. Diálogo de código só é exibido na seção ativa. Conta permite mostrar senhas e impede edição durante envio. Login retorna ao destino interno solicitado; destinos externos, caminhos incompatíveis e travessia de caminho são rejeitados. Permissões continuam verificadas no servidor.
+
+Tarefas principais: escolher o pedido/cliente/produto, conferir ou editar, concluir. Consultar pedido desde o início abre diretamente os detalhes. Resgate mantém revisão do custo antes de debitar pontos; confirmação de entrega permanece explícita. WhatsApp do pedido descreve sua função real e não promete rastreamento externo inexistente.
+
+Comparação verificável: 25 registros exigem três páginas com até 12 itens renderizados, em vez de 25 elementos simultâneos; isso reduz a densidade e o trabalho de renderização. A busca ainda encontra o registro 25. Os endpoints seguem retornando o conjunto completo, portanto esta alteração não reduz por si só o volume das consultas nem comprova redução de RAM da VPS. Paginação no servidor permanece oportunidade para volumes maiores, preservando contratos e consultas contextuais.
+
+Sem novas dependências, contêineres, tabelas ou regras comerciais. Dados, transações, revisões, ofertas, resgates e recursos de configuração foram preservados. Deploy continua exclusivo pelo workflow automático da main, com PostgreSQL real e testes de navegador antes da publicação. Testes locais usam dados fictícios isolados; não houve escrita direta em produção.
+
+Validação local: lint e build aprovados; oito testes unitários aprovados. Regressão dos painéis verificada de 320 a 1920 px, com cenários adicionais de 25 registros, filtros/recarga, preservação entre abas e retorno após login. Editor aprovado em quatro larguras, incluindo 13 abas, prévia, upload, salvamento e recarga. Testes com API/PostgreSQL real serão executados pelo workflow antes do deploy.

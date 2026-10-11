@@ -127,6 +127,19 @@ try {
   const customerProfile = await (await customerPage.request.get(`${base}/api/auth/me`, { headers: { Authorization: `Bearer ${customerLogin.token}` } })).json();
   assert.equal(customerProfile.cliente.telefone, '42991031420');
   assert.equal((await customerPage.request.get(`${base}/api/produtos/admin`, { headers: { Authorization: `Bearer ${customerLogin.token}` } })).status(), 403);
+  for (const [prefix, email, password, target, heading, button] of [
+    ['/admin', 'ci-admin@example.com', 'ci-browser-admin-password', '/admin/clientes', 'Clientes', 'Entrar no painel'],
+    ['/area-cliente', 'ci-browser-customer@example.com', 'ci-browser-new-password', '/area-cliente/beneficios?aba=ofertas', 'Meus benefícios', 'Entrar na minha conta'],
+  ]) {
+    const loginPage = await browser.newPage();
+    await loginPage.goto(base + target);
+    await loginPage.getByLabel('E-mail', { exact: true }).fill(email);
+    await loginPage.getByLabel('Senha', { exact: true }).fill(password);
+    await loginPage.getByRole('button', { name: button, exact: true }).click();
+    await loginPage.getByRole('heading', { name: heading, exact: true }).waitFor();
+    assert.equal(loginPage.url(), base + target, `${prefix}: real login preserves the requested task`);
+    await loginPage.close();
+  }
   console.log('PASS: real catalog, guided product creation/editing and persisted WebP, contextual stock filters, customer contact registration and shared password change, order search, saved public hours, roles and mobile/desktop.');
 } finally {
   await browser.close();

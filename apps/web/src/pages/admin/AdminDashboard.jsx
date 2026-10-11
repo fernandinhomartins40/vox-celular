@@ -1,4 +1,5 @@
 import PanelMetricCard from '../../components/panel/PanelMetricCard';
+import PanelNextAction from '../../components/panel/PanelNextAction';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import { PanelPageHeader, PanelQuickActions } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
@@ -47,6 +48,7 @@ export default function AdminDashboard() {
   const maxVal = Math.max(1, ...(metrics.grafico ?? []).map(d => d.valor));
   const recentes = pedidos.slice(0, 5);
   const novosCount = pedidos.filter(p => p.status === 'NOVO').length;
+  const pendentesCount = pedidos.filter(p => p.status !== 'ENTREGUE').length;
 
   const cards = [
     { label: 'Pedidos hoje',    valor: metrics.pedidosHoje,                sub: `${metrics.pedidosMes} no mês`,               icon: 'package',    cor: 'text-[var(--royal-700)]', bg: 'bg-[var(--royal-50)]' },
@@ -59,13 +61,15 @@ export default function AdminDashboard() {
     <div>
       {/* Header */}
       <PanelPageHeader title={`Olá, ${user?.nome?.split(' ')[0] ?? 'lojista'}`} description="Acompanhe sua loja e escolha o que fazer agora." />
+      {pendentesCount > 0 ? <PanelNextAction title={`${pendentesCount} ${pendentesCount === 1 ? 'pedido precisa' : 'pedidos precisam'} de atendimento`} description="Confira os itens e avance o atendimento depois de concluir cada etapa." action="Atender agora" to={novosCount ? '/admin/pedidos?status=NOVO' : '/admin/pedidos'} /> : metrics.estoqueBaixo > 0 ? <PanelNextAction title="Confira o estoque da loja" description={`${metrics.estoqueBaixo} produtos têm até 5 unidades. Revise as quantidades antes de vender.`} action="Ver estoque baixo" to="/admin/produtos?estoque=baixo" /> : <PanelNextAction title="Tudo em dia" description="Não há pedidos em andamento. Você pode revisar os produtos da loja." action="Ver produtos" to="/admin/produtos" />}
       <PanelQuickActions items={[
-        { to: novosCount ? '/admin/pedidos?status=NOVO' : '/admin/pedidos', label: 'Atender pedidos', description: `${novosCount} novos pedidos`, icon: 'package' },
+        ...(!pendentesCount ? [{ to: '/admin/pedidos', label: 'Consultar pedidos', description: 'Compras e histórico de atendimento', icon: 'package' }] : []),
         { to: '/admin/produtos', label: 'Gerenciar produtos', description: 'Cadastro, preço e estoque', icon: 'tag' },
         { to: '/admin/clientes', label: 'Consultar clientes', description: 'Contatos, compras e pontos', icon: 'users' },
-        { to: '/admin/configuracoes', label: 'Editar página da loja', description: 'Horários, banner e redes sociais', icon: 'settings' },
+        { to: '/admin/configuracoes', label: 'Editar página da loja', description: 'Conteúdo, imagens e aparência', icon: 'settings' },
       ]} />
 
+      <details className="panel-disclosure mb-6"><summary>Resultados da loja <span>Vendas, estoque e últimos 7 dias</span></summary><div className="panel-disclosure-content">
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {cards.map(c => <PanelMetricCard key={c.label} to={c.to} label={c.label} value={c.valor} description={c.sub} icon={c.icon} />)}
@@ -98,6 +102,7 @@ export default function AdminDashboard() {
 
       </div>
 
+      </div></details>
       {/* Pedidos recentes */}
       <div className="mt-5 bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">

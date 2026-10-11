@@ -27,7 +27,7 @@ const NIVEIS = [
   { nivel: 'Platina',min: 1200, max: null },
 ];
 
-export default function ClienteFidelidade({ embedded = false }) {
+export default function ClienteFidelidade({ embedded = false, visible = true }) {
   const [fidelidade, setFidelidade] = useState(null);
   const [resgatado, setResgatado] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -204,7 +204,7 @@ export default function ClienteFidelidade({ embedded = false }) {
       </section>
 
       {/* Modal resgate */}
-      {resgatado && (
+      {resgatado && visible && (
         <PanelDialog label="Resgate confirmado" onClose={() => setResgatado(null)}>
           <div className="relative bg-white rounded-2xl w-full max-w-sm shadow-2xl p-8 text-center">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--royal-50)] text-[var(--royal-700)] grid place-items-center mb-4">

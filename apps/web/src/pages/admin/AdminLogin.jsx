@@ -1,28 +1,31 @@
 import PanelAuthLayout from '../../components/panel/PanelAuthLayout';
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { panelReturnTo } from '../../lib/panel';
 import { useAuth } from '../../auth/useAuth.js';
 import { Icon } from '../../icons';
 
 export default function AdminLogin() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const destination = panelReturnTo(location.state?.returnTo, '/admin');
   const [form, setForm] = useState({ email: '', senha: '' });
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
 
   if (user?.role === 'LOJISTA') {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to={destination} replace />;
   }
 
   const submit = async (e) => {
     e.preventDefault();
     setErro('');
     setLoading(true);
-    const result = await login(form.email, form.senha);
+    const result = await login(form.email.trim(), form.senha);
     setLoading(false);
-    if (result.ok) { navigate('/admin', { replace: true }); }
+    if (result.ok) { navigate(destination, { replace: true }); }
     else { setErro(result.error || 'E-mail ou senha incorretos.'); }
   };
 

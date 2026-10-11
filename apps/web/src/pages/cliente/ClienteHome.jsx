@@ -1,4 +1,5 @@
 import PanelMetricCard from '../../components/panel/PanelMetricCard';
+import PanelNextAction from '../../components/panel/PanelNextAction';
 import { PanelLoading } from '../../components/panel/PanelFeedback';
 import { PanelPageHeader, PanelQuickActions } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
@@ -44,7 +45,7 @@ export default function ClienteHome() {
     return () => { active = false; };
   }, [user]);
 
-  const ultimoPedido = pedidos[0] ?? null;
+  const ultimoPedido = pedidos.find(p => p.status !== 'ENTREGUE') ?? pedidos[0] ?? null;
   const promo = promocoes[0] ?? null;
   const pontos = fidelidade;
   const progresso = pontos?.meta ? Math.round((pontos.saldo / pontos.meta) * 100) : 0;
@@ -58,15 +59,17 @@ export default function ClienteHome() {
       <PanelPageHeader title={`Olá, ${user?.nome?.split(' ')[0] ?? 'cliente'}!`} description="Seus pedidos e benefícios, em um só lugar.">
         <a href={`https://wa.me/${PHONE_DIGITS}`} target="_blank" rel="noopener noreferrer" className="panel-help-link"><Icon.whatsapp /> Falar com a loja</a>
       </PanelPageHeader>
+      {!loading && ultimoPedido?.status !== 'ENTREGUE' && ultimoPedido && <PanelNextAction title={ultimoPedido.status === 'PRONTO' ? 'Seu pedido está pronto' : 'Acompanhe seu pedido'} description={`${ultimoPedido.codigo ?? ultimoPedido.id}: ${STATUS_LABEL[ultimoPedido.status] ?? ultimoPedido.status}. Veja os detalhes ou combine com a loja.`} action="Ver meu pedido" to={orderLink('/area-cliente', ultimoPedido.id)} />}
+      {!loading && !ultimoPedido && !failed.includes('pedidos') && <PanelNextAction title="Encontre seu próximo celular" description="Escolha na loja e fale com a equipe. Suas compras registradas aparecem aqui." action="Ver produtos" to="/#produtos" />}
       <PanelQuickActions items={[
-        { to: '/area-cliente/pedidos', label: 'Acompanhar pedido', description: 'Status e detalhes da compra', icon: 'package' },
+        ...(!ultimoPedido || ultimoPedido.status === 'ENTREGUE' ? [{ to: '/area-cliente/pedidos', label: 'Consultar compras', description: 'Pedidos e detalhes da compra', icon: 'package' }] : []),
         { to: '/area-cliente/beneficios', label: 'Usar meus pontos', description: 'Saldo e recompensas juntos', icon: 'award' },
         { to: '/area-cliente/beneficios?aba=ofertas', label: 'Ver ofertas', description: 'Oportunidades da loja', icon: 'tag' },
       ]} />
       {loading && <PanelLoading />}
       {failed.length > 0 && <div role="alert" className="panel-inline-notice">Não foi possível consultar {failed.join(', ')}. <button onClick={() => window.location.reload()}>Tentar novamente</button></div>}
       {/* Cards de atalho */}
-      {!loading && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {!loading && <details className="panel-disclosure"><summary>Resumo da minha conta <span>Compras, pontos e ofertas</span></summary><div className="panel-disclosure-content grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { to: '/area-cliente/pedidos', label: 'Meus pedidos', icon: 'package', val: failed.includes('pedidos') ? '—' : pedidos.length, sub: failed.includes('pedidos') ? 'indisponível' : 'no histórico' },
           { to: '/area-cliente/beneficios', label: 'Pontos', icon: 'award', val: pontos?.saldo ?? '—', sub: pontos ? `nível ${pontos.nivel}` : 'indisponível' },
@@ -74,14 +77,14 @@ export default function ClienteHome() {
           { to: '/area-cliente/beneficios', label: 'Recompensas', icon: 'gift', val: failed.includes('pontos') ? '—' : recompensasDisponiveis, sub: failed.includes('pontos') ? 'indisponível' : 'disponíveis' },
         ].map(c => <PanelMetricCard key={c.label} to={c.to} label={c.label} value={c.val} description={c.sub} icon={c.icon} />)}
 
-      </div>}
+      </div></details>}
 
       <div className="grid md:grid-cols-2 gap-5">
         {/* Último pedido */}
-        {ultimoPedido && (
+        {ultimoPedido?.status === 'ENTREGUE' && (
           <div className="bg-white border border-[var(--line)] rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="font-display font-bold text-[18px]">Último pedido</div>
+              <div className="font-display font-bold text-[18px]">{ultimoPedido.status === 'ENTREGUE' ? 'Última compra' : 'Pedido em andamento'}</div>
               <Link to={orderLink('/area-cliente', ultimoPedido.id)} className="panel-inline-link">Acompanhar esta compra <Icon.arrowRight className="w-4 h-4" /></Link>
             </div>
             <div className="flex items-center justify-between mb-3">

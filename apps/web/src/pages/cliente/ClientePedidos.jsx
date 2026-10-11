@@ -1,3 +1,5 @@
+import PanelPagination from '../../components/panel/PanelPagination';
+import { usePanelPagination } from '../../lib/usePanelPagination';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import PanelDialog from '../../components/panel/PanelDialog';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
@@ -26,6 +28,8 @@ export default function ClientePedidos() {
   const setDetalhe = value => setPanelParams(setParams, { pedido: value?.id }, false);
   const busca = params.get('busca') ?? '';
   const filtrados = pedidos.filter(p => normalizeSearch(`${p.codigo ?? ''} ${(p.itens ?? p.produtos ?? []).map(i => i.nome ?? i.produto?.nome ?? '').join(' ')}`).includes(normalizeSearch(busca)) && (params.get('situacao') !== 'abertos' || p.status !== 'ENTREGUE'));
+  const pagination = usePanelPagination(filtrados, 12);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -50,7 +54,7 @@ export default function ClientePedidos() {
       ) : (
         <div className="space-y-4">
           {filtrados.length === 0 && <PanelEmptyState title="Nenhuma compra corresponde à busca" description="Tente outro número ou consulte todas as compras." action="Limpar filtros" onAction={() => setPanelParams(setParams, { busca: '', situacao: '' })} />}
-          {filtrados.map((p, i) => {
+          {pagination.items.map((p, i) => {
             const timeline = orderTimeline(p);
             const itensList = (p.produtos ?? p.itens ?? []).map(x => `${x.qty ?? x.quantidade ?? 1}x ${x.nome ?? x.produto?.nome ?? ''}`).join(', ');
             return (
@@ -88,6 +92,8 @@ export default function ClientePedidos() {
           })}
         </div>
       )}
+
+      <PanelPagination pagination={pagination} label="compras" />
 
       {/* Modal detalhe */}
       {detalhe && (
@@ -128,7 +134,7 @@ export default function ClientePedidos() {
               <a href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(`Olá! Quero informações sobre o pedido ${detalhe.codigo ?? detalhe.id}`)}`}
                 target="_blank" rel="noopener"
                 className="w-full inline-flex items-center justify-center gap-2 h-11 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-[13px] transition">
-                <Icon.whatsapp className="w-4 h-4" /> Rastrear / falar com a loja
+                <Icon.whatsapp className="w-4 h-4" /> Falar sobre este pedido
               </a>
             </div>
           </div>

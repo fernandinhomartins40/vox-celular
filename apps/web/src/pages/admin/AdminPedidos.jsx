@@ -1,8 +1,10 @@
+import PanelPagination from '../../components/panel/PanelPagination';
+import { usePanelPagination } from '../../lib/usePanelPagination';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import PanelDialog from '../../components/panel/PanelDialog';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
@@ -48,6 +50,8 @@ export default function AdminPedidos() {
     const matchBusca = !normalizeSearch(busca) || normalizeSearch(`${p.codigo ?? ''} ${p.id} ${clienteNome}`).includes(normalizeSearch(busca));
     return matchFiltro && matchBusca && (!params.get('cliente') || p.clienteId === params.get('cliente'));
   });
+
+  const pagination = usePanelPagination(filtrados, 12);
 
   const atualizar = async () => {
     setRefreshing(true); setActionError('');
@@ -109,6 +113,7 @@ export default function AdminPedidos() {
         </div>
       </div>
 
+      {(busca || filtro !== 'TODOS' || params.get('cliente')) && filtrados.length > 0 && <button className="panel-secondary-button mb-4" onClick={() => setPanelParams(setParams, { busca: '', status: '', cliente: '' })}>Limpar filtros</button>}
       {/* Tabela */}
       <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -121,7 +126,7 @@ export default function AdminPedidos() {
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((p, i) => {
+              {pagination.items.map((p, i) => {
                 const clienteNome = p.clienteNome ?? (typeof p.cliente === 'object' ? p.cliente?.usuario?.nome : p.cliente) ?? '';
                 const telefone = brazilPhone(p.clienteTelefone ?? p.cliente?.telefone);
                 const itensList = (p.produtos ?? p.itens ?? []).map(x => x.nome ?? x.produto?.nome).filter(Boolean).join(', ');
@@ -166,6 +171,8 @@ export default function AdminPedidos() {
         </div>
       </div>
 
+      <PanelPagination pagination={pagination} label="pedidos" />
+
       {/* Modal detalhe */}
       {detalhe && (
         <PanelDialog label="Detalhes do pedido" onClose={() => setDetalhe(null)}>
@@ -193,6 +200,7 @@ export default function AdminPedidos() {
                 </span>
               </div>
               <p className="panel-inline-notice">{ORDER_ADMIN_GUIDANCE[detalhe.status]}</p>
+              {detalhe.clienteId && <Link className="panel-secondary-button" to={`/admin/clientes?clienteDetalhe=${encodeURIComponent(detalhe.clienteId)}`}>Ver contato e histórico do cliente</Link>}
               {brazilPhone(detalhe.clienteTelefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(detalhe.clienteTelefone)}?text=${encodeURIComponent(`Olá ${detalhe.clienteNome}! Seu pedido ${detalhe.codigo ?? detalhe.id} está ${STATUS_LABEL[detalhe.status]?.toLowerCase()}. Vamos combinar o próximo passo?`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Avisar cliente no WhatsApp</a>}
               <div>
                 <div className="text-[11px] text-zinc-500 uppercase tracking-wider mb-2">Itens</div>

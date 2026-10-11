@@ -20,6 +20,12 @@
 .editor-list fieldset { padding:14px; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; min-width:0; }
 .editor-list legend { font-weight:600; padding:0 6px; }
 .editor-remove { color:#a21b37; text-decoration:underline; }
+.editor-advanced { border-top:1px solid var(--line); padding-top:16px; margin:16px 0; }
+.editor-advanced summary, .editor-image summary { cursor:pointer; font-weight:600; min-height:44px; display:flex; align-items:center; gap:8px; }
+.editor-advanced summary::before, .editor-image summary::before { content:'+'; color:var(--royal-700); }
+.editor-advanced[open] summary::before, .editor-image details[open] summary::before { content:'−'; }
+.editor-advanced > p { margin-bottom:16px; }
+.editor-image details { margin-top:8px; }
 .editor-preview { min-width:0; background:white; border:1px solid var(--line); border-radius:16px; overflow:hidden; }
 .editor-preview > header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:14px 18px; }
 .editor-preview header button { padding:8px 12px; border-radius:8px; }

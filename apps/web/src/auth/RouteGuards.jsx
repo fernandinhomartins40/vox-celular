@@ -1,10 +1,11 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './useAuth.js';
 
 function RequireAuth({ role, children }) {
   const { user } = useAuth();
-  if (!user) return <Navigate to={role === 'LOJISTA' ? '/admin/login' : '/area-cliente/login'} replace />;
-  if (user.role !== role) return <Navigate to="/" replace />;
+  const location = useLocation();
+  if (!user) return <Navigate to={role === 'LOJISTA' ? '/admin/login' : '/area-cliente/login'} state={{ returnTo: location.pathname + location.search }} replace />;
+  if (user.role !== role) return <Navigate to={user.role === 'LOJISTA' ? '/admin' : '/area-cliente'} replace />;
   return children;
 }
 

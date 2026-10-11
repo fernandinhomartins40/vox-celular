@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { formatPanelDate, normalizeSearch, orderLink, orderTimeline, productStepError, setPanelParams } from './panel.js';
+import { formatPanelDate, normalizeSearch, orderLink, orderTimeline, productStepError, setPanelParams, panelReturnTo } from './panel.js';
 
 test('search accepts accents; order links encode IDs and filters preserve context', () => {
   assert.equal(normalizeSearch('  João  '), 'joao');
@@ -19,6 +19,16 @@ test('calendar dates keep their day; fallback timeline does not invent payment o
   assert.equal(timeline.some(t => /pagamento/i.test(t.status)), false);
   const actual = [{ status: 'Pedido recebido', ok: true, data: '2026-10-10' }];
   assert.equal(orderTimeline({ timeline: actual }).length, 1);
+});
+test('filtering restarts pagination; opening details and paging preserve list context', () => {
+  const initial = new URLSearchParams('busca=Maria&pagina=3');
+  setPanelParams(update => assert.equal(update(initial).toString(), 'busca=Joao'), { busca: 'Joao' });
+  setPanelParams(update => assert.equal(update(initial).toString(), 'busca=Maria&pagina=3&clienteDetalhe=c1'), { clienteDetalhe: 'c1' });
+  setPanelParams(update => assert.equal(update(initial).toString(), 'busca=Maria&pagina=2'), { pagina: '2' });
+});
+test('login returns to the requested task and rejects external or mismatched destinations', () => {
+  assert.equal(panelReturnTo('/admin/pedidos?pedido=1', '/admin'), '/admin/pedidos?pedido=1');
+  for (const path of ['//evil.test', 'https://evil.test', '/admin-other', '/admin/../outside', '/admin/%2e%2e/outside', '/admin/login', '/area-cliente']) assert.equal(panelReturnTo(path, '/admin'), '/admin');
 });
 test('guided product validates image, money and integer stock without losing optional fields', () => {
   const form = { nome: 'Celular', categoria: 'Celulares', descricao: 'Descrição', preco: '199.90', precoOriginal: '', estoque: '10' };

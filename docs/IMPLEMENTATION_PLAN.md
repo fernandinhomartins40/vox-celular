@@ -95,3 +95,19 @@ Não automatizar pagamentos, entregas, cancelamento, crédito de pontos, frete n
 | LP-04 | P1 | Imagens sem gerenciamento no editor | Upload WebP limitado, validado e armazenado no volume persistente da loja | Upload real, acesso público e recarga | DONE |
 
 Implementar → lint/build → testes locais e CI reais → corrigir → deploy automático main → saúde HTTPS. Migration aditiva, sem substituir conteúdo existente. Prévia desativa navegação/envios; salvar publica todas as abas juntas. Arquivos enviados são preservados, inclusive se um rascunho for abandonado; não apagar imagens existentes automaticamente.
+
+# Simplificar os painéis de ponta a ponta (10/10/2026)
+
+Revisados: login/cadastro, inícios, pedidos dos dois perfis, produtos/cadastro/recorte, clientes/histórico, benefícios/resgates/ofertas, conta/senha e editor/prévia; rotas, contratos de API, autenticação, persistência, componentes e testes existentes.
+
+| ID | Prioridade | Evidência / esforço atual | Solução e benefício | Teste | Status |
+|---|---|---|---|---|---|
+| UX-01 | P1 | Navegação mobile depende de abrir o menu em toda troca | Atalhos persistentes para tarefas principais; menu completo preservado | 320 a 1920 px, teclado e rotas | DONE |
+| UX-02 | P1 | Inícios repetem ações e mostram histórico antes de pendências | Priorizar pedidos em andamento; indicadores secundários recolhidos | Estados sem dados, parcial e pendentes | DONE |
+| UX-03 | P1 | Listas longas e filtros sem saída clara | Paginar apresentação, contagem, limpar filtros e preservar busca/contexto | Próxima/anterior, busca em todo conjunto, recarga | DONE |
+| UX-04 | P1 | Ações de produto/cliente apenas por ícones; pedido exige procurar cliente | Botões com texto, acesso contextual a cliente e retorno aos filtros | Editar/publicar/destacar, cliente-pedido-voltar | DONE |
+| UX-05 | P1 | Editor exige nomes técnicos de ícones, URLs e lista extensa | Escolhas legíveis, imagens por arquivo e configurações avançadas recolhidas | 13 abas, upload real, mesma prévia | DONE |
+| UX-06 | P2 | Trocar aba de benefícios descarta contexto e recarrega | Manter seção visitada e sua revisão; conta com mostrar senha | Resgate, alternar abas, senha dos dois perfis | DONE |
+| UX-07 | P1 | Entrar na conta perde o destino da tarefa | Retornar ao destino interno autorizado após login; perfis incompatíveis seguem para seu painel | URLs externas rejeitadas e login contextual dos dois perfis | DONE |
+
+Três ações principais: escolher tarefa/item, revisar ou editar, concluir. Não retirar revisão de pontos, confirmação de entrega ou validação do servidor. Paginação nesta rodada limita elementos renderizados; consultas continuam completas para compatibilidade e filtros globais. Sem novos serviços, dependências ou regras comerciais. Nenhum bloqueio.

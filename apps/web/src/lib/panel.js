@@ -15,9 +15,15 @@ export const ORDER_GUIDANCE = {
 };
 export const normalizeSearch = value => String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 export const orderLink = (prefix, id) => `${prefix}/pedidos?pedido=${encodeURIComponent(id)}`;
+export function panelReturnTo(value, prefix) {
+  if (typeof value !== 'string' || value.includes('\\')) return prefix;
+  const pathname = value.split(/[?#]/)[0];
+  return (pathname === prefix || pathname.startsWith(`${prefix}/`)) && pathname !== `${prefix}/login` && !pathname.split('/').some(part => part === '..' || /%2e|%2f|%5c/i.test(part)) ? value : prefix;
+}
 export function setPanelParams(setParams, values, replace = true) {
   setParams(previous => {
     const next = new URLSearchParams(previous);
+    if (!('pagina' in values) && Object.keys(values).some(key => key !== 'pedido' && key !== 'clienteDetalhe')) next.delete('pagina');
     Object.entries(values).forEach(([key, value]) => value ? next.set(key, value) : next.delete(key));
     return next;
   }, { replace });

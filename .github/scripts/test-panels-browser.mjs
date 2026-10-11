@@ -24,6 +24,7 @@ try {
     for (const role of ['LOJISTA', 'CLIENTE']) {
       order.status = 'NOVO';
       const page = await browser.newPage({ viewport: { width, height: 900 } });
+      page.setDefaultTimeout(30000);
       const errors = [];
       let savedProduct;
       page.on('pageerror', error => errors.push(error.message));
@@ -60,18 +61,17 @@ try {
         }
       }
       await page.goto(base + prefix);
-      const quick = page.getByRole('navigation', { name: 'Ações rápidas' });
-      await quick.getByRole('link').first().click();
+      await page.getByRole('region', { name: 'Próximo passo' }).getByRole('link').first().click();
       await page.locator('main h1').waitFor();
       const details = role === 'LOJISTA' ? page.getByRole('button', { name: 'Ver detalhes', exact: true }).first() : page.getByRole('button', { name: 'Detalhes', exact: true }).first();
-      await details.click();
+      if (role === 'LOJISTA') await details.click();
       const dialog = page.getByRole('dialog', { name: 'Detalhes do pedido' });
       await dialog.waitFor();
       await page.keyboard.press('Tab');
       assert.equal(await dialog.evaluate(el => el.contains(document.activeElement)), true);
       await page.keyboard.press('Escape');
       await dialog.waitFor({ state: 'hidden' });
-      assert.equal(await details.evaluate(el => document.activeElement === el), true);
+      if (role === 'LOJISTA') assert.equal(await details.evaluate(el => document.activeElement === el), true);
       if (role === 'LOJISTA') {
         await details.click();
         await dialog.getByRole('button', { name: /Iniciar preparo|Marcar como pronto|Confirmar entrega/ }).click();
@@ -150,6 +150,7 @@ try {
       await page.close();
     }
     const page = await browser.newPage({ viewport: { width, height: 900 } });
+      page.setDefaultTimeout(30000);
     for (const path of ['/admin/login', '/area-cliente/login']) {
       await page.goto(base + path);
       await page.getByLabel('E-mail', { exact: true }).fill('example@example.test');
@@ -160,7 +161,81 @@ try {
     }
     await page.close();
   }
+  for (const width of [390, 1440]) {
+    for (const role of ['LOJISTA', 'CLIENTE']) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      page.setDefaultTimeout(30000);
+      const orders = Array.from({ length: 25 }, (_, index) => ({ ...order, id: `order-${index}`, codigo: `ORDER-${String(index).padStart(2, '0')}`, clienteId: `customer-${index}`, status: index === 0 ? 'ENTREGUE' : 'NOVO' }));
+      const products = Array.from({ length: 25 }, (_, index) => ({ ...product, id: `product-${index}`, nome: `Product ${String(index).padStart(2, '0')}` }));
+      const customers = Array.from({ length: 25 }, (_, index) => ({ ...customer, id: `customer-${index}`, nome: `Customer ${String(index).padStart(2, '0')}`, historicoPedidos: [orders[index]] }));
+      const errors = [];
+      page.on('pageerror', error => errors.push(error.message));
+      await page.addInitScript(role => localStorage.setItem('vox_user', JSON.stringify({ role, nome: 'Test User', email: 'test@example.test', token: 'fixture-token' })), role);
+      await page.route('**/api/**', route => {
+        const path = new URL(route.request().url()).pathname.replace(/^\/api/, '');
+        const data = { ...responses(), '/pedidos': orders, '/pedidos/meus': orders, '/clientes': customers, '/produtos/admin': products }[path];
+        return route.fulfill({ json: data ?? [] });
+      });
+      await page.goto(base + (role === 'LOJISTA' ? '/admin' : '/area-cliente'));
+      await page.getByRole('region', { name: 'Próximo passo' }).waitFor();
+      if (width === 390) assert.equal(await page.getByRole('navigation', { name: 'Atalhos do painel' }).isVisible(), true);
+      if (role === 'CLIENTE') assert.equal(await page.getByRole('link', { name: 'Ver meu pedido', exact: true }).getAttribute('href'), '/area-cliente/pedidos?pedido=order-1', 'An open order takes priority over a newer completed purchase');
+      const routes = role === 'LOJISTA' ? ['/admin/pedidos', '/admin/produtos', '/admin/clientes'] : ['/area-cliente/pedidos'];
+      for (const route of routes) {
+        await page.goto(base + route);
+        const paging = page.getByRole('navigation', { name: /^Páginas de/ });
+        await paging.getByText(/1–12 de 25/).waitFor();
+        await paging.getByRole('button', { name: 'Próxima', exact: true }).click();
+        await paging.getByText(/13–24 de 25/).waitFor();
+        await page.reload();
+        await paging.getByText(/13–24 de 25/).waitFor();
+        const search = route.endsWith('produtos') ? page.getByLabel('Buscar produto') : route.endsWith('clientes') ? page.getByLabel('Buscar cliente') : role === 'LOJISTA' ? page.getByLabel('Buscar pedido ou cliente') : page.getByLabel('Buscar compra');
+        await search.fill(route.endsWith('produtos') ? 'Product 24' : route.endsWith('clientes') ? 'Customer 24' : 'ORDER-24');
+        await paging.getByText(/1–1 de 1/).waitFor();
+        assert.equal(new URL(page.url()).searchParams.has('pagina'), false, 'Search covers all records and restarts at page one');
+        if (route.endsWith('clientes')) {
+          await page.getByRole('button', { name: 'Ver detalhes de Customer 24', exact: true }).click();
+          await page.getByRole('dialog', { name: 'Detalhes do cliente' }).waitFor();
+          await page.reload();
+          await page.getByRole('dialog', { name: 'Detalhes do cliente' }).waitFor();
+          await page.keyboard.press('Escape');
+          assert.equal(await search.inputValue(), 'Customer 24');
+        }
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${route}: pagination stays within ${width}px`);
+      }
+      if (role === 'CLIENTE') {
+        await page.goto(base + '/area-cliente/beneficios');
+        await page.getByRole('button', { name: 'Resgatar', exact: true }).click();
+        await page.getByRole('button', { name: 'Confirmar resgate', exact: true }).waitFor();
+        await page.getByRole('button', { name: 'Ofertas da loja', exact: true }).click();
+        await page.getByRole('button', { name: 'Pontos e recompensas', exact: true }).click();
+        await page.getByRole('button', { name: 'Confirmar resgate', exact: true }).waitFor();
+      }
+      await page.goto(base + (role === 'LOJISTA' ? '/admin/conta' : '/area-cliente/conta'));
+      await page.getByLabel('Mostrar senhas', { exact: true }).check();
+      assert.equal(await page.getByLabel('Nova senha', { exact: true }).getAttribute('type'), 'text');
+      assert.deepEqual(errors, []);
+      await page.close();
+    }
+  }
+  for (const role of ['LOJISTA', 'CLIENTE']) {
+    const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
+      page.setDefaultTimeout(30000);
+    await page.route('**/api/**', route => {
+      const path = new URL(route.request().url()).pathname.replace(/^\/api/, '');
+      return route.fulfill({ json: path === '/auth/login' ? { token: 'fixture-token', user: { role, nome: 'Test User', email: 'test@example.test' } } : responses()[path] ?? [] });
+    });
+    const prefix = role === 'LOJISTA' ? '/admin' : '/area-cliente';
+    await page.goto(`${base}${prefix}/pedidos?pedido=${order.id}`);
+    await page.getByLabel('E-mail', { exact: true }).fill('test@example.test');
+    await page.getByLabel('Senha', { exact: true }).fill('fixture-password');
+    await page.getByRole('button', { name: role === 'LOJISTA' ? 'Entrar no painel' : 'Entrar na minha conta', exact: true }).click();
+    await page.getByRole('dialog', { name: 'Detalhes do pedido' }).waitFor();
+    assert.equal(new URL(page.url()).searchParams.get('pedido'), order.id, 'Login resumes the requested task');
+    await page.close();
+  }
   const page = await browser.newPage({ viewport: { width: 390, height: 900 } });
+      page.setDefaultTimeout(30000);
   await page.addInitScript(() => localStorage.setItem('vox_user', JSON.stringify({ nome: 'Maria', role: 'LOJISTA', token: 'fixture-token' })));
   await page.route('**/api/**', route => route.fulfill({ json: [] }));
   await page.goto(base + '/admin/pedidos');

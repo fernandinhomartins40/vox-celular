@@ -8,6 +8,7 @@ export default function PanelShell({ title, groups, loginPath }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const mobileItems = groups.flatMap(group => group.items).slice(0, 4);
   const [open, setOpen] = useState(false);
   const menuButton = useRef(null);
   const drawer = useRef(null);
@@ -50,6 +51,10 @@ export default function PanelShell({ title, groups, loginPath }) {
     <div className="panel-workspace" inert={open ? true : undefined}>
       <header className="panel-topbar"><button ref={menuButton} className="panel-menu-button" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon.menu /></button><strong>{title}</strong><Link to="/" className="panel-store-link">Ver loja <Icon.arrowUpRight /></Link></header>
       <main id="panel-content" tabIndex={-1} className="panel-content"><Outlet /></main>
+      <nav className="panel-mobile-nav" aria-label="Atalhos do painel">{mobileItems.map(({ to, label, icon, end, aliases = [] }) => {
+        const I = Icon[icon]; const aliasActive = aliases.includes(pathname);
+        return <NavLink key={to} to={to} end={end} aria-current={aliasActive ? 'page' : undefined} className={({ isActive }) => isActive || aliasActive ? 'is-active' : ''}><I /><span>{label === 'Visão geral' ? 'Início' : label === 'Meus benefícios' ? 'Benefícios' : label === 'Meus pedidos' ? 'Pedidos' : label === 'Minha conta' ? 'Conta' : label}</span></NavLink>;
+      })}</nav>
     </div>
   </div>;
 }

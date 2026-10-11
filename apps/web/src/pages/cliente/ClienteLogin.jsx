@@ -1,6 +1,7 @@
 import PanelAuthLayout from '../../components/panel/PanelAuthLayout';
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { panelReturnTo } from '../../lib/panel';
 import { useAuth } from '../../auth/useAuth.js';
 import { Icon } from '../../icons';
 import { PHONE_DIGITS } from '../../data';
@@ -8,6 +9,8 @@ import { PHONE_DIGITS } from '../../data';
 export default function ClienteLogin() {
   const { login, register, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const destination = panelReturnTo(location.state?.returnTo, '/area-cliente');
   const [form, setForm] = useState({ nome: '', email: '', senha: '', telefone: '' });
   const [creating, setCreating] = useState(false);
   const [erro, setErro] = useState('');
@@ -15,7 +18,7 @@ export default function ClienteLogin() {
   const [showSenha, setShowSenha] = useState(false);
 
   if (user?.role === 'CLIENTE') {
-    return <Navigate to="/area-cliente" replace />;
+    return <Navigate to={destination} replace />;
   }
 
   const submit = async (e) => {
@@ -24,7 +27,7 @@ export default function ClienteLogin() {
     setLoading(true);
     const result = creating ? await register(form.nome.trim(), form.email.trim(), form.senha, { telefone: form.telefone.trim() || undefined }) : await login(form.email.trim(), form.senha);
     setLoading(false);
-    if (result.ok) { navigate('/area-cliente', { replace: true }); }
+    if (result.ok) { navigate(destination, { replace: true }); }
     else { setErro(result.error || 'E-mail ou senha incorretos.'); }
   };
 

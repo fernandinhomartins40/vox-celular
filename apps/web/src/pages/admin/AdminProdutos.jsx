@@ -1,3 +1,5 @@
+import PanelPagination from '../../components/panel/PanelPagination';
+import { usePanelPagination } from '../../lib/usePanelPagination';
 import { useSearchParams } from 'react-router-dom';
 import { PanelSteps, PanelEmptyState } from '../../components/panel/PanelFlow';
 import { normalizeSearch, productStepError, setPanelParams } from '../../lib/panel';
@@ -130,6 +132,8 @@ export default function AdminProdutos() {
   const categoriasProduto = useMemo(() => [...new Set([...CATEGORIES.filter(c => c !== 'Todos'), ...produtos.map(p => p.categoria)])], [produtos]);
   const cats = ['Todos', ...categoriasProduto];
   const filtrados = produtos.filter(p => (filtro === 'Todos' || p.categoria === filtro) && normalizeSearch(`${p.nome} ${p.sub} ${p.categoria}`).includes(normalizeSearch(busca)) && (!estoqueFiltro || (estoqueFiltro === 'baixo' ? p.ativo !== false && p.estoque <= 5 : estoqueFiltro === 'zero' ? p.ativo !== false && p.estoque === 0 : p.ativo === false)));
+  const pagination = usePanelPagination(filtrados, 12);
+
   const currentImage = imageState.source || assetUrl(editando?.img || editando?.imgUrl);
 
   const updateProduto = (produto) => {
@@ -290,13 +294,14 @@ export default function AdminProdutos() {
         ))}
       </div>
 
+      {(busca || estoqueFiltro || filtro !== 'Todos') && filtrados.length > 0 && <button className="panel-secondary-button mb-4" onClick={() => setParams({})}>Limpar filtros</button>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filtrados.map(p => {
+        {pagination.items.map(p => {
           const discount = p.precoOriginal ? Math.round((1 - p.preco / p.precoOriginal) * 100) : 0;
           return (
             <div key={p.id} className={`bg-white border rounded-lg overflow-hidden transition ${p.ativo !== false ? 'border-[var(--line)]' : 'border-[var(--line)] opacity-50'}`}>
               <div className="relative aspect-square bg-[var(--paper)] overflow-hidden">
-                {p.img ? <img src={assetUrl(p.img)} alt={p.nome} className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-zinc-400 text-[12px]">Sem imagem</div>}
+                {p.img ? <img loading="lazy" src={assetUrl(p.img)} alt={p.nome} className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-zinc-400 text-[12px]">Sem imagem</div>}
                 {p.badge && (
                   <span className={`absolute top-2 left-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-display font-bold ${badgeStyle(p.badge)}`}>
                     {p.badge}
@@ -314,18 +319,18 @@ export default function AdminProdutos() {
                 <div className="font-display font-bold text-[15px] leading-tight mb-1">{p.nome}</div>
                 <div className="font-display font-bold text-[20px] text-[var(--ink)]">{formatBRL(p.preco)}</div>
                 <div className="text-[11px] text-zinc-500 mt-0.5 mb-3">Estoque: {p.estoque} un.</div>
-                <div className="flex gap-2">
+                <div className="panel-product-actions">
                   <button onClick={() => abrirEdit(p)}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 h-8 bg-[var(--royal-50)] text-[var(--royal-700)] rounded-lg text-[12px] font-medium hover:bg-[var(--royal-100)] transition">
                     <Icon.edit className="w-3.5 h-3.5" /> Editar
                   </button>
-                  <button disabled={updating[p.id]} aria-label={p.destaque ? `Remover destaque de ${p.nome}` : `Destacar ${p.nome}`} onClick={() => toggleDestaque(p.id)}
-                    className={`w-8 h-8 rounded-lg grid place-items-center transition ${p.destaque ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`} title="Destaque">
-                    <Icon.star className="w-3.5 h-3.5" />
+                  <button disabled={updating[p.id]} aria-pressed={Boolean(p.destaque)} aria-label={p.destaque ? `Remover destaque de ${p.nome}` : `Destacar ${p.nome}`} onClick={() => toggleDestaque(p.id)}
+                    className={`panel-secondary-button ${p.destaque ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`} title="Destaque">
+                    <Icon.star className="w-3.5 h-3.5" /> {p.destaque ? 'Em destaque' : 'Destacar'}
                   </button>
-                  <button disabled={updating[p.id]} aria-label={p.ativo !== false ? `Desativar ${p.nome}` : `Ativar ${p.nome}`} onClick={() => toggleAtivo(p.id)}
-                    className={`w-8 h-8 rounded-lg grid place-items-center transition ${p.ativo !== false ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`} title={p.ativo !== false ? 'Desativar' : 'Ativar'}>
-                    {p.ativo !== false ? <Icon.check className="w-3.5 h-3.5" /> : <Icon.close className="w-3.5 h-3.5" />}
+                  <button disabled={updating[p.id]} aria-pressed={p.ativo !== false} aria-label={p.ativo !== false ? `Desativar ${p.nome}` : `Ativar ${p.nome}`} onClick={() => toggleAtivo(p.id)}
+                    className={`panel-secondary-button ${p.ativo !== false ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`} title={p.ativo !== false ? 'Desativar' : 'Ativar'}>
+                    {p.ativo !== false ? <Icon.check className="w-3.5 h-3.5" /> : <Icon.close className="w-3.5 h-3.5" />} {p.ativo !== false ? 'Publicado' : 'Oculto'}
                   </button>
                 </div>
               </div>
@@ -336,6 +341,8 @@ export default function AdminProdutos() {
           <div className="col-span-full"><PanelEmptyState title="Nenhum produto encontrado" description={produtos.length ? 'Ajuste os filtros para encontrar seu produto.' : 'Cadastre o primeiro produto para exibir na loja.'} action={produtos.length ? 'Limpar filtros' : 'Novo produto'} onAction={produtos.length ? () => setParams({}) : abrirNovo} /></div>
         )}
       </div>
+
+      <PanelPagination pagination={pagination} label="produtos" />
 
       {modalMode && (
         <ProductFormModal
