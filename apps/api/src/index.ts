@@ -12,6 +12,7 @@ import { fidelidadeRouter } from './routes/fidelidade.js';
 import { configRouter } from './routes/config.js';
 import { promocoesRouter } from './routes/promocoes.js';
 import { lojaRouter } from './routes/loja.js';
+import { integracoesRouter } from './routes/integracoes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,6 +40,7 @@ app.use('/api/clientes', clientesRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/fidelidade', fidelidadeRouter);
 app.use('/api/config', configRouter);
+app.use('/api/integracoes', integracoesRouter);
 app.use('/api/promocoes', promocoesRouter);
 app.use('/api/loja', lojaRouter);
 

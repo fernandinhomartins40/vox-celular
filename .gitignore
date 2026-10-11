@@ -10,3 +10,4 @@ uploads
 
 # Credenciais de teste: documento exclusivamente local
 /CREDENCIAIS_TESTE.md
+secrets/

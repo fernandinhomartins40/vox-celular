@@ -24,6 +24,21 @@ model Loja {
   promocoes  Promocao[]
   recompensas RecompensaCatalogo[]
   config     LojaConfig?
+  integracoes IntegracaoMarketplace[]
+}
+
+model IntegracaoMarketplace {
+  id String @id @default(cuid())
+  lojaId String
+  canal String
+  ambiente String @default("producao")
+  credenciais String
+  campos String[]
+  status String @default("CONFIGURADO")
+  verificadoEm DateTime?
+  updatedAt DateTime @updatedAt
+  loja Loja @relation(fields: [lojaId], references: [id])
+  @@unique([lojaId, canal])
 }
 
 model LojaConfig {

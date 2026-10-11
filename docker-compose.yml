@@ -47,8 +47,9 @@ services:
       PORT: "3001"
       CORS_ORIGIN: ${CORS_ORIGIN:-https://www.voxcelular.com.br}
       UPLOADS_DIR: /app/uploads
+      MARKETPLACE_KEY_FILE: /app/secrets/marketplace.key
       NODE_ENV: production
-    volumes: [uploads:/app/uploads]
+    volumes: [uploads:/app/uploads, secrets:/app/secrets]
     networks: [vox-net]
     depends_on:
       db: {condition: service_healthy}
@@ -98,6 +99,8 @@ networks:
     driver: bridge
 
 volumes:
+  secrets:
+    name: voxcelular_secrets
   pgdata:
     name: voxcelular_pgdata
   uploads:

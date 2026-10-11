@@ -12,7 +12,7 @@ RUN npm exec --workspace=@vox/api -- prisma generate && npm run build --workspac
 FROM build AS migrate
 ENV NODE_ENV=production
 WORKDIR /app/apps/api
-RUN mkdir -p /app/uploads && chown node:node /app/uploads
+RUN mkdir -p /app/uploads /app/secrets && chown node:node /app/uploads /app/secrets
 USER node
 CMD ["node", "../../node_modules/prisma/build/index.js", "migrate", "deploy"]
 
@@ -20,7 +20,7 @@ FROM build AS production-deps
 RUN npm prune --omit=dev --workspace=@vox/api --include-workspace-root=false --ignore-scripts --no-audit --no-fund
 
 FROM node:22-alpine AS runner
-RUN apk add --no-cache openssl && mkdir -p /app/uploads && chown node:node /app/uploads
+RUN apk add --no-cache openssl && mkdir -p /app/uploads /app/secrets && chown node:node /app/uploads /app/secrets
 ENV NODE_ENV=production
 WORKDIR /app/apps/api
 COPY --from=production-deps /app/node_modules /app/node_modules

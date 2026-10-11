@@ -86,6 +86,13 @@ backup_current() {
     tar -tzf "$backup/uploads.tar.gz.partial" >/dev/null
     mv "$backup/uploads.tar.gz.partial" "$backup/uploads.tar.gz"
   fi
+  if docker volume inspect voxcelular_secrets >/dev/null 2>&1; then
+    docker run --rm --network none --memory 64m --cpus 0.5 --mount type=volume,source=voxcelular_secrets,target=/secrets,readonly \
+      --entrypoint tar "$WEB_IMAGE" -czf - -C /secrets . > "$backup/secrets.tar.gz.partial"
+    tar -tzf "$backup/secrets.tar.gz.partial" >/dev/null
+    mv "$backup/secrets.tar.gz.partial" "$backup/secrets.tar.gz"
+    chmod 600 "$backup/secrets.tar.gz"
+  fi
 }
 if docker inspect vox_db >/dev/null 2>&1; then
   [[ $(docker inspect vox_db --format '{{.State.Running}}') == true ]] || { echo 'Existing database must be running for backup.' >&2; exit 1; }

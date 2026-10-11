@@ -19,7 +19,7 @@ async function json(path, { token, body, method = 'GET', status = 200 } = {}) {
 }
 
 assert.equal(docker(['ps', '-aq', '--filter', 'name=^/?vox_']).trim(), '', 'Refuse to touch existing Vox containers');
-for (const volume of ['voxcelular_pgdata', 'voxcelular_uploads']) {
+for (const volume of ['voxcelular_pgdata', 'voxcelular_uploads', 'voxcelular_secrets']) {
   assert.equal(docker(['volume', 'ls', '-q', '--filter', `name=^${volume}$`]).trim(), '', 'Refuse existing persistent volumes');
 }
 compose('up', '-d', '--no-build', '--wait', '--wait-timeout', '120', 'db');
@@ -225,3 +225,24 @@ await json('/api/auth/me', { token: demoLogin.token, status: 401 });
 const renewed = await json('/api/auth/login', { method: 'POST', body: { email: 'teste.cliente@voxcelular.example', senha: 'ci-revoked-password-123', lojaId: 'ci-demo-store' } });
 assert.equal((await json('/api/auth/me', { token: renewed.token })).id, demoLogin.user.id);
 console.log('PASS: real migrations, checkout concurrency/idempotency, stock availability, password revocation, bootstrap/demo, auth/roles, upload, dashboard, persistence, backup restore and no OOM.');
+
+await json('/api/integracoes', { token: renewed.token, status: 403 });
+const integrationCatalog = await json('/api/integracoes', { token: admin.token });
+assert.equal(integrationCatalog.canais.length, 7);
+const secretFixture = 'ci-private-marketplace-token-not-a-real-credential';
+await json('/api/integracoes/mercadolivre', { method: 'PUT', token: admin.token, body: { ambiente: 'homologacao', credenciais: { accessToken: secretFixture, clientId: 'ci-app' } } });
+assert.ok(!sql('SELECT credenciais FROM "IntegracaoMarketplace";').includes(secretFixture), 'Database must contain authenticated ciphertext only');
+await json('/api/integracoes/mercadolivre', { method: 'PUT', token: admin.token, body: { ambiente: 'homologacao', credenciais: { accessToken: '', clientSecret: 'ci-secret' } } });
+const savedCredentials = await json('/api/integracoes', { token: admin.token });
+assert.deepEqual(savedCredentials.conexoes[0].campos.sort(), ['accessToken','clientId','clientSecret'].sort());
+assert.ok(!JSON.stringify(savedCredentials).includes(secretFixture));
+assert.equal((await json('/api/integracoes', { token: demoMerchant.token })).conexoes.length, 0);
+assert.ok(!JSON.stringify(await json('/api/loja')).includes(secretFixture));
+compose('restart', 'api');
+for (let i = 0; i < 30; i++) { try { if ((await fetch(base + '/api/ready')).ok) break; } catch {} await sleep(1000); }
+await json('/api/integracoes/mercadolivre', { method: 'PUT', token: admin.token, body: { ambiente: 'homologacao', credenciais: { clientSecret: 'updated-after-restart' } } });
+await json('/api/integracoes/mercadolivre', { method: 'DELETE', token: demoMerchant.token });
+assert.equal((await json('/api/integracoes', { token: admin.token })).conexoes.length, 1);
+await json('/api/integracoes/mercadolivre', { method: 'DELETE', token: admin.token });
+assert.equal((await json('/api/integracoes', { token: admin.token })).conexoes.length, 0);
+console.log('PASS: marketplace credential encryption, masked metadata, tenant isolation, secret-volume persistence and removal; no external requests.');
