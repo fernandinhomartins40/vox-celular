@@ -1,3 +1,4 @@
+import BrandLogo from './BrandLogo';
 import { useStoreContent } from './storeContent';
 import { Link } from 'react-router-dom';
 import { Icon } from '../icons';
@@ -10,10 +11,7 @@ export default function Footer({ config }) {
     <footer className="mt-24 ink-radiant text-zinc-300">
       <div className="max-w-7xl mx-auto px-4 lg:px-8 py-14 grid md:grid-cols-12 gap-8">
         <div className="md:col-span-5">
-          <div className="flex items-baseline gap-1 mb-3">
-            <span className="font-display font-black text-[28px] tracking-tight leading-none text-white">{header.brand}</span>
-            <span className="font-display font-black text-[28px] leading-none text-[var(--red-500)]">.</span>
-          </div>
+          <div className="mb-3"><BrandLogo brand={header.brand} inverse /></div>
           <div className="font-display text-[10px] tracking-[0.32em] text-zinc-500 mb-5">{f.tagline}</div>
           <p className="text-[14px] text-zinc-400 max-w-md leading-relaxed mb-6">
             {f.description}

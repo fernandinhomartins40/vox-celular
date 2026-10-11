@@ -1,3 +1,4 @@
+import BrandLogo from '../BrandLogo';
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth.js';
@@ -30,7 +31,7 @@ export default function PanelShell({ title, groups, loginPath }) {
     return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKey); trigger?.focus(); };
   }, [open]);
   const navigation = mobile => <>
-    <div className="panel-brand"><Link to="/" aria-label="VOX Celular — loja">VOX<span>.</span></Link><span>{title}</span>
+    <div className="panel-brand"><Link to="/" aria-label="VOX Celular — loja"><BrandLogo /></Link><span>{title}</span>
       {mobile && <button aria-label="Fechar menu" onClick={() => setOpen(false)}><Icon.close /></button>}
     </div>
     <nav aria-label={`Navegação — ${title}`} className="panel-navigation">

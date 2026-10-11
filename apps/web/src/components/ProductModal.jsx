@@ -29,7 +29,7 @@ function ProductModalContent({ product, onClose, onAdd }) {
       <div onClick={onClose} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-3xl max-h-[92vh] overflow-hidden grid sm:grid-cols-2">
         <div className="relative aspect-square sm:aspect-auto bg-[var(--paper)]">
-          <img src={product.img || '/favicon.svg'} alt={product.nome} className="absolute inset-0 w-full h-full object-cover"/>
+          <img src={product.img || '/brand/icon-192.png'} alt={product.nome} className="absolute inset-0 w-full h-full object-cover"/>
           {product.badge && (
             <div className={`absolute top-4 left-4 inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-display font-bold tracking-[0.18em] ${badgeStyle(product.badge)}`}>
               {product.badge}

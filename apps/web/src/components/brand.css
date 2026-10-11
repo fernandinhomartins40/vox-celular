@@ -1,0 +1,6 @@
+.brand-logo { display: block; width: 108px; height: auto; object-fit: contain; flex-shrink: 0; }
+.brand-logo-inverse { filter: brightness(0) invert(1); }
+.panel-brand .brand-logo { width: 86px; }
+.panel-auth-logo .brand-logo { width: 112px; }
+footer .brand-logo { width: 132px; }
+@media (max-width: 767px) { .store-brand .brand-logo { width: 90px; } }
