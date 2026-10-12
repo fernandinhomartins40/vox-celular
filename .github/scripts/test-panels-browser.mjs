@@ -16,6 +16,8 @@ const responses = () => ({
   '/loja': { id: 'fixture-store' }, '/config': {},
   '/privacidade/preferencias': { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' },
   '/auth/sessoes': [],
+  '/servicos': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null }],
+  '/servicos/solicitacoes': [],
   '/dashboard': { pedidosHoje: 1, pedidosMes: 1, faturamentoMes: 2299, faturamentoOntem: 0, ticketMedio: 2299, estoqueBaixo: 0, grafico: [{ dia: '10/10', valor: 0 }] },
   '/pedidos': [order], '/pedidos/meus': [order], '/produtos/admin': [product],
   '/clientes': [customer, { ...customer, id: 'fixture-second-customer', nome: 'João Souza', email: 'joao@example.test', totalGasto: '1000.00', historicoPedidos: [] }], '/promocoes': [],
@@ -40,12 +42,17 @@ try {
         if (path.startsWith('/fidelidade/resgatar/')) { points -= 100; receipts = [{ id: 'receipt-1', codigo: 'REWARD-123', recompensa: { titulo: reward.titulo }, createdAt: order.createdAt }]; data = { codigo: 'REWARD-123', saldo: points }; }
         if (path === '/fidelidade/pontos' && failPointsRefresh) { failPointsRefresh = false; await route.fulfill({ status: 503, json: { error: 'Refresh unavailable' } }); return; }
         if (path === '/auth/senha') data = { ok: true };
+        if (path === '/servicos/solicitacoes' && route.request().method() === 'POST') {
+          const body = route.request().postDataJSON();
+          assert.match(body.chaveIdempotencia, /^[0-9a-f-]{36}$/);
+          data = { ...body, id: 'service-request', protocolo: 'VOX-S-FIXTURE', status: 'RECEBIDA' };
+        }
         if (data === undefined) throw new Error(`Unexpected fixture API request: ${path}`);
         await route.fulfill({ json: data });
       });
       await page.route('https://fonts.googleapis.com/**', route => route.abort());
       const prefix = role === 'LOJISTA' ? '/admin' : '/area-cliente';
-      const routes = role === 'LOJISTA' ? ['', '/pedidos', '/produtos', '/clientes', '/configuracoes', '/conta'] : ['', '/pedidos', '/beneficios', '/fidelidade', '/promocoes', '/conta'];
+      const routes = role === 'LOJISTA' ? ['', '/pedidos', '/produtos', '/clientes', '/configuracoes', '/conta'] : ['', '/pedidos', '/beneficios', '/fidelidade', '/promocoes', '/conta', '/servicos'];
       for (const route of routes) {
         await page.goto(base + prefix + route);
         await page.locator('main h1').waitFor();
@@ -61,6 +68,17 @@ try {
           await mkdir(process.env.PANEL_SCREENSHOTS, { recursive: true });
           await page.screenshot({ path: `${process.env.PANEL_SCREENSHOTS}/${role}-${width}${route === '/conta' ? '-account' : ''}.png`, fullPage: true });
         }
+      }
+      if (role === 'CLIENTE') {
+        await page.goto(base + prefix + '/servicos');
+        await page.getByRole('combobox', { name: /^Serviço/ }).selectOption('service');
+        await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+        await page.getByLabel('Aparelho', { exact: true }).fill('Samsung Galaxy A55');
+        await page.getByLabel('O que está acontecendo?', { exact: true }).fill('A bateria descarrega rapidamente.');
+        await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+        await page.getByRole('heading', { name: 'Confira antes de enviar' }).waitFor();
+        await page.getByRole('button', { name: 'Enviar solicitação', exact: true }).click();
+        await page.getByRole('status').filter({ hasText: 'VOX-S-FIXTURE' }).waitFor();
       }
       await page.goto(base + prefix);
       await page.getByRole('region', { name: 'Próximo passo' }).getByRole('link').first().click();

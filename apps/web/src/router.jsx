@@ -20,6 +20,7 @@ import ClienteLayout from './pages/cliente/ClienteLayout';
 import ClienteHome from './pages/cliente/ClienteHome';
 import ClientePedidos from './pages/cliente/ClientePedidos';
 import ClienteFavoritos from './pages/cliente/ClienteFavoritos';
+import ClienteServicos from './pages/cliente/ClienteServicos';
 import ClienteBeneficios from './pages/cliente/ClienteBeneficios';
 
 export const router = createBrowserRouter([
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
       { index: true,          element: <ClienteHome /> },
       { path: 'pedidos',      element: <ClientePedidos /> },
       { path: 'favoritos',    element: <ClienteFavoritos /> },
+      { path: 'servicos',     element: <ClienteServicos /> },
       { path: 'beneficios',   element: <ClienteBeneficios /> },
       { path: 'fidelidade',   element: <ClienteBeneficios initialTab="pontos" /> },
       { path: 'promocoes',    element: <ClienteBeneficios initialTab="ofertas" /> },
