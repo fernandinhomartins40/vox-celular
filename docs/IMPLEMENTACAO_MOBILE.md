@@ -290,3 +290,5 @@ Conta abre /avisos, consulta API autenticada vinculada à revisão de sessão e 
 
 ### Avisos no painel web
 Rota protegida /area-cliente/avisos usa header/cards compartilhados, consulta API autenticada, atualização manual e estados de erro/carga/vazio. Links somente allowlist interna, datas Brasília e acesso às preferências. Carregamento por rota mantém página fora do bundle inicial. Build/lint passaram; teste visual específico e integração real da fila permanecem pendentes. Lista não comprova push entregue.
+
+Teste Chromium de avisos passou em 390/768/1440: link interno permitido, URL externa sem link, atualização para estado vazio sem manter dados antigos, sem overflow/erros JS. Usa respostas simuladas; não equivale à integração de fila/PostgreSQL ou push. Build web final passou e teste acrescentado ao workflow.

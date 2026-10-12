@@ -234,6 +234,8 @@ jobs:
           node .github/scripts/test-product-browser.mjs
       - name: AI merchant configuration in mobile tablet and desktop
         run: node .github/scripts/test-ai-config-browser.mjs
+      - name: Customer notices and safe destinations
+        run: node .github/scripts/test-notices-browser.mjs
       - name: Shared customer and merchant panels at mobile, tablet and desktop sizes
         run: node .github/scripts/test-panels-browser.mjs
       - name: PWA installation resources and safe offline behavior
