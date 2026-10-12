@@ -211,6 +211,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/productAttributes.test.js
       - name: Recommendation catalog constraints and unknown attributes
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/recommendations.test.js
+      - name: AI provider privacy and bounded output validation
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/aiProvider.test.js
       - name: Official operator sources and editorial guide validation
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/operatorGuides.test.js
       - name: Product search and customer contact regression tests
