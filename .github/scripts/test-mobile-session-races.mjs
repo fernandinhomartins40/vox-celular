@@ -70,4 +70,16 @@ holdWrite();
 await newAccount;
 assert.match((await writingRace).message, /sessão/);
 assert.equal(storage.get('vox.refresh'), 'newest-refresh', 'Serialized storage must leave the newest account credential last');
-console.log('Native refresh coalescing, queued writes, logout and SecureStore races passed.');
+let releaseBody;
+let bodyStarted;
+const parsing = new Promise(resolve => { bodyStarted = resolve; });
+globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => {
+  bodyStarted();
+  return new Promise(resolve => { releaseBody = () => resolve({ privateProfile: 'previous account' }); });
+} });
+const bodyRace = api.request('/auth/me', undefined, true).catch(error => error);
+await parsing;
+await api.saveSession(session('after-json'));
+releaseBody();
+assert.match((await bodyRace).message, /sessão mudou/, 'Account switch while parsing JSON must reject old private data');
+console.log('Native refresh coalescing, queued writes, logout, JSON parsing and SecureStore races passed.');

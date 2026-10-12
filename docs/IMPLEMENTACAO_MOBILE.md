@@ -185,3 +185,8 @@ Novos cadastros web/API/nativo exigem 12–72 caracteres e máximo de 72 bytes U
 
 ### Acompanhamento nativo dos pedidos
 Cada pedido permite expandir o histórico real da API, com etapa concluída/pendente, data quando informada e fuso de Brasília. Ausência de eventos não inventa etapas. Cancelamento usa canceladoEm, evitando apresentar pedido cancelado como recebido pelo status anterior. Lista atualiza ao focar a tela e mostra atividade durante atualização por gesto. Typecheck passou; bundles Android/iOS validados neste incremento. Teste físico de navegação e leitura assistiva permanece pendente.
+
+### Gerenciamento nativo de acessos
+Minha conta abre sessões reais da API, identifica o acesso atual, mostra início/expiração em Brasília e permite encerrar outro acesso mediante confirmação nativa. Só apresenta sucesso após DELETE confirmado. Atualiza ao focar a tela; erros oferecem acesso à conta. Não inventa aparelho/localização, pois esses metadados não são armazenados. Confirmação de uma lista antiga é recusada se a conta mudar antes de agir.
+
+Cliente de API também revalida a geração após parsing JSON, impedindo retorno de dados privados da conta anterior quando a troca acontece durante a leitura do corpo. Novo teste dessa corrida passou, assim como testes de sessão/storage e carrinho. Typecheck passou. Bundles Android/iOS conferidos; testes físicos continuam pendentes.

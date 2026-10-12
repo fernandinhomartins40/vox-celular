@@ -57,6 +57,7 @@ export async function request<T>(path: string, body?: unknown, authenticated = f
   if (authenticated && generation !== version) throw new Error('Sua sessão mudou. Tente novamente.');
   if (response.status === 401 && authenticated && !retried) { await renew(); if (generation !== version) throw new Error('Sua sessão mudou.'); return request<T>(path, body, authenticated, method, true); }
   const data = await response.json();
+  if (authenticated && generation !== version) throw new Error('Sua sessão mudou. Tente novamente.');
   if (!response.ok) throw new ApiError(typeof data.error === 'string' ? data.error : 'Não foi possível concluir. Confira os dados.', response.status);
   return data as T;
 }
