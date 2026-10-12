@@ -395,6 +395,13 @@ await json(serviceStatusPath, { method: 'PATCH', token: admin.token, body: { sta
 const completedService = (await json('/api/servicos/solicitacoes', { token: customer.token })).find(row => row.id === serviceRequest.id);
 assert.equal(completedService.historico.length, 4);
 assert.equal(completedService.status, 'CONCLUIDA');
+const serviceExport = await json('/api/privacidade/exportar', { token: customer.token });
+assert.ok(serviceExport.solicitacoesServico.some(row => row.id === serviceRequest.id));
+assert.equal(serviceExport.historicoServicos.filter(row => row.solicitacaoId === serviceRequest.id).length, 4);
+assert.equal(serviceExport.solicitacoesServico[0].chaveIdempotencia, undefined);
+const foreignServiceExport = await json('/api/privacidade/exportar', { token: renewed.token });
+assert.equal(foreignServiceExport.solicitacoesServico.length, 0);
+assert.equal(foreignServiceExport.historicoServicos.length, 0);
 await json(serviceStatusPath, { method: 'PATCH', token: admin.token, body: { status: 'EM_ANALISE', mensagem: 'Reabrir inválido' }, status: 409 });
 await json(`/api/servicos/${service.id}`, { method: 'PATCH', token: admin.token, body: { ativo: false } });
 await json('/api/servicos/solicitacoes', { method: 'POST', token: customer.token, body: { ...serviceRequestBody, chaveIdempotencia: 'b6d84030-d4e8-4f3a-bf4e-a26b82830010' }, status: 404 });

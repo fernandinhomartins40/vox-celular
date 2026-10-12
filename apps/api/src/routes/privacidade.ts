@@ -46,7 +46,7 @@ privacidadeRouter.get('/exportar', requireAuth, authLimits, async (req: AuthRequ
     res.write(JSON.stringify({ exportadoEm: snapshot.toISOString(), perfil: profile }).slice(0, -1));
     // Batches keep memory bounded. A cutoff prevents newly created rows from
     // continually extending an export. Data changed during export is not frozen.
-    const collections = ['pedidos', 'favoritos', 'historicoPontos', 'resgates', 'consentimentos', 'sessoes'] as const;
+    const collections = ['pedidos', 'favoritos', 'historicoPontos', 'resgates', 'consentimentos', 'sessoes', 'solicitacoesServico', 'historicoServicos'] as const;
     for (const collection of collections) {
       res.write(`,"${collection}":[`);
       let cursor: string | undefined, first = true;
@@ -54,6 +54,8 @@ privacidadeRouter.get('/exportar', requireAuth, authLimits, async (req: AuthRequ
         let rows: { id: string; [key: string]: unknown }[];
         const where = { clienteId: profile.id, createdAt: { lte: snapshot }, ...(cursor ? { id: { gt: cursor } } : {}) };
         if (collection === 'pedidos') rows = await prisma.pedido.findMany({ where: { ...where, lojaId: req.user!.lojaId }, orderBy: { id: 'asc' }, take: 100, select: { id: true, codigo: true, status: true, pagamento: true, total: true, createdAt: true, canceladoEm: true, itens: { select: { nome: true, qty: true, preco: true } }, timeline: { select: { status: true, data: true, ok: true, ordem: true } } } });
+        else if (collection === 'solicitacoesServico') rows = await prisma.solicitacaoServico.findMany({ where: { ...where, lojaId: req.user!.lojaId }, orderBy: { id: 'asc' }, take: 100, select: { id: true, protocolo: true, aparelho: true, problema: true, status: true, createdAt: true, updatedAt: true, servico: { select: { titulo: true } } } });
+        else if (collection === 'historicoServicos') rows = await prisma.historicoServico.findMany({ where: { solicitacao: { clienteId: profile.id, lojaId: req.user!.lojaId }, createdAt: { lte: snapshot }, ...(cursor ? { id: { gt: cursor } } : {}) }, orderBy: { id: 'asc' }, take: 100, select: { id: true, solicitacaoId: true, status: true, mensagem: true, createdAt: true } });
         else if (collection === 'historicoPontos') rows = await prisma.historicoPontos.findMany({ where, orderBy: { id: 'asc' }, take: 100, select: { id: true, pontos: true, tipo: true, descricao: true, createdAt: true } });
         else if (collection === 'resgates') rows = await prisma.resgateRecompensa.findMany({ where, orderBy: { id: 'asc' }, take: 100, select: { id: true, codigo: true, usadoEm: true, createdAt: true, recompensa: { select: { titulo: true, pontos: true } } } });
         else if (collection === 'consentimentos') rows = await prisma.consentimentoCliente.findMany({ where, orderBy: { id: 'asc' }, take: 100, select: { id: true, personalizacao: true, notificacoes: true, versaoAviso: true, createdAt: true } });
