@@ -119,3 +119,9 @@ Teste visual da agenda passou em 390/768/1440; exportação agora inclui início
 ### Validação da seleção de agendamento
 Testes de navegador passaram em 390/768/1440 com agendamento habilitado, escolha de vaga disponível, opção lotada desabilitada, envio de horarioId e recibo de horário reservado. API PostgreSQL do workflow 38301137522 passou a etapa de migrations/runtime e avançou para testes reais de navegador (deploy ainda não confirmado). Agenda do lojista reunida no mesmo grupo visual de Solicitações/Catálogo, com quebra de linha para telas pequenas. Build/lint aprovados.
 
+
+### Guias oficiais: persistência e revisão editorial
+GuiaOperadora por loja com tópico, resumo, passos, fonte e canal oficiais, revisão/validade e responsável autenticado. API lojista cria rascunho e atualiza documento completo; publicação pública exige vigente e publicado, sem expor identificador do revisor. Máximo 100 guias/loja. Validação HTTPS e fronteira exata do domínio para TIM/Vivo/Claro, sem usuário/senha/porta alternativa, prazo até 180 dias e revisão não futura. Conteúdo em texto simples, sem HTML arbitrário.
+
+Fontes oficiais confirmadas: https://www.tim.com.br/ajuda/tim-chip/esim ; https://vivo.com.br/para-voce/produtos-e-servicos/para-o-celular/esim ; https://www.claro.com.br/atendimento . Não foram copiados procedimentos completos nem criados guias públicos automaticamente. Build e testes de validação passaram localmente; CI real acrescenta persistência, rascunho, publicação, expiração e isolamento. CMS visual e jornada pública em três etapas ainda pendentes.
+

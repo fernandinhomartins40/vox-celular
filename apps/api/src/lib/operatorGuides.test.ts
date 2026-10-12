@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';
+import { officialOperatorUrl, operatorGuideSchema } from './operatorGuides.js';
+const guide = { operadora: 'TIM', topico: 'chip-esim', titulo: 'Ajuda com eSIM', resumo: 'Consulte as instruções oficiais.', passos: ['Consulte a compatibilidade na página oficial.'], fonte: 'https://www.tim.com.br/ajuda/tim-chip/esim', canalOficial: 'https://www.tim.com.br/ajuda', revisadoEm: new Date(Date.now() - 1000).toISOString(), validoAte: new Date(Date.now() + 86400000).toISOString(), publicado: true };
+assert.equal(operatorGuideSchema.safeParse(guide).success, true);
+for (const url of ['http://tim.com.br', 'https://tim.com.br.evil.example', 'https://evil-tim.com.br', 'https://tim.com.br@evil.example', 'https://user:secret@tim.com.br', 'https://tim.com.br:8443', 'javascript:alert(1)', 'https://vivo.com.br/']) assert.equal(officialOperatorUrl(url, 'TIM'), false);
+for (const patch of [{ fonte: 'https://example.com' }, { passos: [] }, { operadora: 'OUTRA' }, { validoAte: new Date(Date.now() - 500).toISOString() }, { revisadoEm: new Date(Date.now() + 86400000).toISOString() }]) assert.equal(operatorGuideSchema.safeParse({ ...guide, ...patch }).success, false);
+assert.equal(officialOperatorUrl('https://vivo.com.br/para-voce/ajuda', 'VIVO'), true);
+assert.equal(officialOperatorUrl('https://www.claro.com.br/atendimento', 'CLARO'), true);
+console.log('PASS: operator guide limits, official HTTPS domain boundaries, reviewed dates, expired publication and unsupported operators.');

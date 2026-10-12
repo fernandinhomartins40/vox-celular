@@ -175,6 +175,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/productAttributes.test.js
       - name: Recommendation catalog constraints and unknown attributes
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/recommendations.test.js
+      - name: Official operator sources and editorial guide validation
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/operatorGuides.test.js
       - name: Product search and customer contact regression tests
         run: node --test apps/web/src/lib/catalog.test.js apps/web/src/lib/panel.test.js
       - name: Product flows in Chromium against real API and PostgreSQL

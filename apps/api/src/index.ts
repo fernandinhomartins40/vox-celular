@@ -18,6 +18,7 @@ import { privacidadeRouter } from './routes/privacidade.js';
 import { assistenteRouter } from './routes/assistente.js';
 import { servicosRouter } from './routes/servicos.js';
 import { agendaRouter } from './routes/agenda.js';
+import { guiasRouter } from './routes/guias.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -53,6 +54,7 @@ app.use('/api/loja', lojaRouter);
 app.use('/api/assistente', assistenteRouter);
 app.use('/api/servicos', servicosRouter);
 app.use('/api/agenda', agendaRouter);
+app.use('/api/guias', guiasRouter);
 
 const server = app.listen(PORT, () => console.log(`API running on port ${PORT}`));
 let shuttingDown = false;

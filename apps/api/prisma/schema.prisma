@@ -27,6 +27,7 @@ model Loja {
   config     LojaConfig?
   integracoes IntegracaoMarketplace[]
   servicos Servico[]
+  guiasOperadora GuiaOperadora[]
   solicitacoesServico SolicitacaoServico[]
 }
 
@@ -121,6 +122,26 @@ model Cliente {
   consentimentos ConsentimentoCliente[]
   solicitacoesServico SolicitacaoServico[]
   @@index([lojaId, createdAt])
+}
+
+model GuiaOperadora {
+  id String @id @default(cuid())
+  lojaId String
+  operadora String
+  topico String
+  titulo String
+  resumo String
+  passos String[]
+  fonte String
+  canalOficial String
+  revisadoEm DateTime
+  validoAte DateTime
+  responsavelId String
+  publicado Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  loja Loja @relation(fields: [lojaId], references: [id])
+  @@index([lojaId, operadora, publicado, validoAte])
 }
 
 model Servico {

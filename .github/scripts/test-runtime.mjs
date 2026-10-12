@@ -427,3 +427,17 @@ await json(`/api/agenda/${slot.id}`, { method: 'PATCH', token: admin.token, body
 await json('/api/servicos/solicitacoes', { method: 'POST', token: customer.token, body: { ...serviceRequestBody, chaveIdempotencia: 'b6d84030-d4e8-4f3a-bf4e-a26b82830103', horarioId: slot.id }, status: 409 });
 assert.equal((await json(`/api/agenda?lojaId=${loja.id}&servicoId=${service.id}`)).length, 0);
 console.log('PASS: service scheduling enablement, overlap rejection, tenant scope, concurrent capacity protection, cancellation release and closed slots.');
+
+const operatorGuide = { operadora: 'TIM', topico: 'chip-esim', titulo: 'Orientações de eSIM', resumo: 'Consulte compatibilidade e instruções oficiais.', passos: ['Consulte a página oficial para seu aparelho.'], fonte: 'https://www.tim.com.br/ajuda/tim-chip/esim', canalOficial: 'https://www.tim.com.br/ajuda', revisadoEm: new Date(Date.now() - 1000).toISOString(), validoAte: new Date(Date.now() + 86400000).toISOString(), publicado: false };
+await json('/api/guias', { method: 'POST', token: customer.token, body: operatorGuide, status: 403 });
+await json('/api/guias', { method: 'POST', token: admin.token, body: { ...operatorGuide, fonte: 'https://tim.com.br.evil.example' }, status: 400 });
+const guide = await json('/api/guias', { method: 'POST', token: admin.token, body: operatorGuide, status: 201 });
+assert.ok(!(await json(`/api/guias?lojaId=${loja.id}`)).some(row => row.id === guide.id));
+await json(`/api/guias/${guide.id}`, { method: 'PUT', token: admin.token, body: { ...operatorGuide, publicado: true } });
+const publishedGuide = (await json(`/api/guias?lojaId=${loja.id}`)).find(row => row.id === guide.id);
+assert.equal(publishedGuide.fonte, operatorGuide.fonte);
+assert.equal(publishedGuide.responsavelId, undefined);
+assert.equal((await json('/api/guias?lojaId=ci-other-store')).length, 0);
+sql(`UPDATE "GuiaOperadora" SET "validoAte"=NOW()-INTERVAL '1 minute' WHERE id='${guide.id}';`);
+assert.ok(!(await json(`/api/guias?lojaId=${loja.id}`)).some(row => row.id === guide.id));
+console.log('PASS: operator guides persist with official sources, customer write rejection, private drafts, publishing, tenant scope and expired public content removal.');
