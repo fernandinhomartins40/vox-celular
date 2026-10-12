@@ -55,7 +55,7 @@ export default function ClienteLogin() {
                 </div>
                 <div className="relative">
                   <input
-                    id="login-password" type={showSenha ? 'text' : 'password'} required minLength={6} autoComplete={creating ? 'new-password' : 'current-password'}
+                    id="login-password" type={showSenha ? 'text' : 'password'} required minLength={creating ? 12 : 6} maxLength={creating ? 72 : undefined} autoComplete={creating ? 'new-password' : 'current-password'}
                     value={form.senha} onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
                     placeholder="••••••"
                     className="w-full px-4 py-3 pr-11 bg-[var(--paper)] border border-[var(--line)] rounded-xl focus:outline-none focus:border-[var(--royal-700)] text-[14px] transition"
@@ -65,6 +65,7 @@ export default function ClienteLogin() {
                     <Icon.eye className="w-4 h-4" />
                   </button>
                 </div>
+                {creating && <p className="text-xs text-zinc-500 mt-2">Use de 12 a 72 caracteres.</p>}
               </div>
 
               {creating && <details><summary className="text-sm cursor-pointer">Adicionar telefone (opcional)</summary><label htmlFor="customer-phone" className="block mt-3 text-sm">Telefone para contato</label><input id="customer-phone" type="tel" autoComplete="tel" value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} className="w-full border rounded-xl p-3" /><p className="text-xs text-zinc-500 mt-1">Ajuda a loja a combinar os detalhes do seu pedido.</p></details>}

@@ -5,13 +5,14 @@ import { prisma } from '../lib/prisma.js';
 import { createSession, hashRefresh, readRefresh, refreshCookie, refreshValue, sessionResponse, webOrigin } from '../lib/sessions.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
+import { newPasswordSchema } from '../lib/passwordPolicy.js';
 
 export const authRouter = Router();
 authRouter.use(['/login', '/register', '/refresh', '/senha'], authLimits);
 
 authRouter.patch('/senha', requireAuth, async (req: AuthRequest, res) => {
-  const parsed = z.object({ senhaAtual: z.string().min(1).max(72), novaSenha: z.string().min(12).max(72) }).safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ error: 'Use uma nova senha entre 12 e 72 caracteres.' }); return; }
+  const parsed = z.object({ senhaAtual: z.string().min(1).max(72), novaSenha: newPasswordSchema }).safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Use uma nova senha de 12 a 72 caracteres. Se usar muitos acentos ou emojis, reduza o tamanho.' }); return; }
   try {
     const user = await prisma.usuario.findUnique({ where: { id: req.user!.userId } });
     if (!user || !(await bcrypt.compare(parsed.data.senhaAtual, user.senhaHash))) {
@@ -34,7 +35,7 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   nome: z.string().min(2),
   email: z.string().email(),
-  senha: z.string().min(6),
+  senha: newPasswordSchema,
   telefone: z.string().optional(),
   cidade: z.string().optional(),
   lojaId: z.string(),
@@ -61,7 +62,7 @@ authRouter.post('/login', async (req, res) => {
 authRouter.post('/register', async (req, res) => {
   if (req.body?.plataforma === 'web' && !webOrigin(req)) { res.status(403).json({ error: 'Origem não autorizada.' }); return; }
   const parse = registerSchema.safeParse(req.body);
-  if (!parse.success) { res.status(400).json({ error: parse.error.errors }); return; }
+  if (!parse.success) { res.status(400).json({ error: parse.error.errors.some(issue => issue.path[0] === 'senha') ? 'Use uma senha de 12 a 72 caracteres. Se usar muitos acentos ou emojis, reduza o tamanho.' : 'Confira seu nome, e-mail e os dados do cadastro.' }); return; }
 
   const { nome, email, senha, telefone, cidade, lojaId } = parse.data;
 

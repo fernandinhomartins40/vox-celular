@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import bcrypt from 'bcryptjs';
+import { newPasswordSchema } from './passwordPolicy.js';
+assert.equal(newPasswordSchema.safeParse('a'.repeat(11)).success, false);
+assert.equal(newPasswordSchema.safeParse('a'.repeat(12)).success, true);
+assert.equal(newPasswordSchema.safeParse('a'.repeat(72)).success, true);
+assert.equal(newPasswordSchema.safeParse('a'.repeat(73)).success, false);
+assert.equal(newPasswordSchema.safeParse('á'.repeat(36)).success, true);
+assert.equal(newPasswordSchema.safeParse('á'.repeat(37)).success, false);
+assert.equal(newPasswordSchema.safeParse('😀'.repeat(18)).success, true);
+assert.equal(newPasswordSchema.safeParse('😀'.repeat(19)).success, false);
+const first = 'a'.repeat(72) + 'x';
+const second = 'a'.repeat(72) + 'y';
+assert.equal(await bcrypt.compare(second, await bcrypt.hash(first, 4)), true, 'bcrypt truncation makes these distinct inputs equivalent');
+assert.equal(newPasswordSchema.safeParse(first).success, false);
+assert.equal(newPasswordSchema.safeParse(second).success, false);
+console.log('Password length, UTF-8 boundaries and bcrypt truncation prevention passed.');

@@ -59,6 +59,10 @@ await json('/api/auth/senha', { token: testOperator.token, method: 'PATCH', stat
 await json('/api/auth/senha', { token: testOperator.token, method: 'PATCH', body: { senhaAtual: 'ci-test-operator-password', novaSenha: 'ci-new-test-password' } });
 await json('/api/auth/login', { method: 'POST', status: 401, body: { email: testOperator.user.email, senha: 'ci-test-operator-password' } });
 await json('/api/auth/login', { method: 'POST', body: { email: testOperator.user.email, senha: 'ci-new-test-password' } });
+for (const senha of ['short-pass', 'á'.repeat(37)]) {
+  await json('/api/auth/register', { method: 'POST', status: 400, body: { nome: 'Invalid password', email: 'ci-invalid-password@example.com', senha, lojaId: loja.id, plataforma: 'native' } });
+}
+assert.equal(sql(`SELECT count(*) FROM "Usuario" WHERE email='ci-invalid-password@example.com'`), '0', 'Rejected registration must not create an account');
 const customer = await json('/api/auth/register', { method: 'POST', status: 201, body: {
   nome: 'CI Customer', email: 'ci-customer@example.com', senha: 'ci-customer-password', lojaId: loja.id,
 } });

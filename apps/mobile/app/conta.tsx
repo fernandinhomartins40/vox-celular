@@ -7,6 +7,10 @@ export default function Account() {
   const [user, setUser] = useState<NativeUser | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
@@ -23,11 +27,12 @@ export default function Account() {
     setBusy(true); setError('');
     try {
       if (!email.trim() || !password) throw new Error('Informe seu e-mail e sua senha.');
+      if (creating && (name.trim().length < 2 || password.length < 12 || password.length > 72 || confirmation !== password)) throw new Error('Informe seu nome, use uma senha de 12 a 72 caracteres e confirme a mesma senha.');
       const store = await request<{ id: string }>('/loja');
-      const session = await request<Session>('/auth/login', { email: email.trim(), senha: password, lojaId: store.id, plataforma: 'native' });
+      const session = await request<Session>(creating ? '/auth/register' : '/auth/login', { email: email.trim(), senha: password, lojaId: store.id, plataforma: 'native', ...(creating ? { nome: name.trim(), telefone: phone.trim() } : {}) });
       await saveSession(session);
       if (session.user.role !== 'CLIENTE') { await logout(); throw new Error('Este aplicativo é para clientes. Use o painel web para administrar a loja.'); }
-      setUser(session.user); setPassword('');
+      setUser(session.user); setPassword(''); setConfirmation(''); setName(''); setPhone(''); setCreating(false);
     } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível entrar.'); }
     finally { setBusy(false); }
   }
@@ -42,10 +47,15 @@ export default function Account() {
     {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {busy && <ActivityIndicator color="#0036cc" accessibilityLabel="Consultando sua conta" />}
     {user ? <View style={styles.card}><Text style={styles.heading}>{user.nome}</Text><Text style={styles.text}>{user.email}</Text><Link href="/pedidos" style={styles.link}>Consultar meus pedidos</Link><Link href="/servicos" style={styles.link}>Serviços e atendimentos</Link><Link href="/favoritos" style={styles.link}>Meus favoritos e comparação</Link><Link href="/privacidade" style={styles.link}>Privacidade e preferências</Link><Pressable accessibilityRole="button" disabled={busy} onPress={exit} style={styles.button}><Text style={styles.buttonText}>Sair da conta</Text></Pressable></View> : <View style={styles.card}>
-      <Text style={styles.text}>Entre com sua conta de cliente da Vox.</Text><Text nativeID="emailLabel" style={styles.label}>E-mail</Text><TextInput accessibilityLabel="E-mail" autoComplete="email" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} value={email} onChangeText={setEmail} style={styles.input} editable={!busy} />
-      <Text style={styles.label}>Senha</Text><TextInput accessibilityLabel="Senha" autoComplete="current-password" secureTextEntry={!showPassword} value={password} onChangeText={setPassword} style={styles.input} editable={!busy} onSubmitEditing={login} />
+      <Text accessibilityRole="header" style={styles.heading}>{creating ? 'Criar minha conta' : 'Entrar na Vox'}</Text>
+      <Text style={styles.text}>{creating ? 'Cadastre-se para acompanhar compras e atendimentos. As preferências de personalização e notificações começam desativadas.' : 'Use sua conta de cliente da Vox.'}</Text>
+      {creating && <><Text style={styles.label}>Seu nome</Text><TextInput accessibilityLabel="Seu nome" autoComplete="name" value={name} onChangeText={setName} maxLength={100} style={styles.input} editable={!busy} /><Text style={styles.label}>Telefone (opcional)</Text><TextInput accessibilityLabel="Telefone opcional" autoComplete="tel" keyboardType="phone-pad" value={phone} onChangeText={setPhone} maxLength={30} style={styles.input} editable={!busy} /></>}
+      <Text nativeID="emailLabel" style={styles.label}>E-mail</Text><TextInput accessibilityLabel="E-mail" autoComplete="email" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} value={email} onChangeText={setEmail} maxLength={254} style={styles.input} editable={!busy} />
+      <Text style={styles.label}>Senha</Text><TextInput accessibilityLabel="Senha" autoComplete={creating ? 'new-password' : 'current-password'} secureTextEntry={!showPassword} value={password} onChangeText={setPassword} style={styles.input} editable={!busy} maxLength={creating ? 72 : undefined} onSubmitEditing={creating ? undefined : login} />
+      {creating && <><Text style={styles.text}>Use de 12 a 72 caracteres.</Text><Text style={styles.label}>Confirme sua senha</Text><TextInput accessibilityLabel="Confirme sua senha" autoComplete="new-password" secureTextEntry={!showPassword} value={confirmation} onChangeText={setConfirmation} maxLength={72} style={styles.input} editable={!busy} onSubmitEditing={login} /></>}
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: showPassword }} disabled={busy} onPress={() => setShowPassword(value => !value)} style={styles.linkButton}><Text style={styles.link}>{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</Text></Pressable>
-      <Pressable accessibilityRole="button" disabled={busy} onPress={login} style={[styles.button, busy && { opacity: 0.5 }]}><Text style={styles.buttonText}>{busy ? 'Aguarde…' : 'Entrar'}</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={login} style={[styles.button, busy && { opacity: 0.5 }]}><Text style={styles.buttonText}>{busy ? 'Aguarde…' : creating ? 'Criar conta' : 'Entrar'}</Text></Pressable>
+      <Pressable accessibilityRole="button" disabled={busy} onPress={() => { setCreating(value => !value); setPassword(''); setConfirmation(''); setError(''); }} style={styles.linkButton}><Text style={styles.link}>{creating ? 'Já tenho conta · Entrar' : 'Sou novo · Criar conta'}</Text></Pressable>
     </View>}
   </ScrollView></KeyboardAvoidingView>;
 }

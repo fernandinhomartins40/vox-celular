@@ -203,6 +203,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/imageStorage.test.js
       - name: Authentication abuse limits and bounded memory
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/authLimits.test.js
+      - name: Password policy and bcrypt UTF-8 boundaries
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/passwordPolicy.test.js
       - name: Structured catalog data and source validation
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/productAttributes.test.js
       - name: Recommendation catalog constraints and unknown attributes
