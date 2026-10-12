@@ -14,7 +14,7 @@ nunca colocar chaves de provedor, senhas ou refresh tokens nelas.
 Refresh token usa Expo SecureStore e access token fica em memória. Não há AsyncStorage
 para credenciais. Carrinho e chave de confirmação pendente usam AsyncStorage, sem credenciais. O catálogo consulta os preços/estoque reais e não confirma compras offline.
 Cadastro e login de cliente, restauração de sessão, lista de pedidos, favoritos com comparação, preferências de privacidade, serviços com agenda, carrinho com confirmação e ajuda das operadoras têm telas nativas ligadas à API.
-Esses fluxos ainda precisam de teste funcional em emulador/aparelho. 
+Esses fluxos ainda precisam de teste funcional em emulador/aparelho.
 detalhes/timeline de pedidos, assistente, exportação de dados e push
 continuam em implementação; a existência do workspace não prova esses recursos concluídos.
 
