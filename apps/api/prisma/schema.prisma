@@ -26,6 +26,8 @@ model Loja {
   recompensas RecompensaCatalogo[]
   config     LojaConfig?
   integracoes IntegracaoMarketplace[]
+  servicos Servico[]
+  solicitacoesServico SolicitacaoServico[]
 }
 
 model IntegracaoMarketplace {
@@ -117,7 +119,53 @@ model Cliente {
   versaoPrivacidade String?
   preferenciasAtualizadasEm DateTime?
   consentimentos ConsentimentoCliente[]
+  solicitacoesServico SolicitacaoServico[]
   @@index([lojaId, createdAt])
+}
+
+model Servico {
+  id String @id @default(cuid())
+  lojaId String
+  titulo String
+  descricao String
+  preco Decimal? @db.Decimal(10,2)
+  ativo Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  loja Loja @relation(fields: [lojaId], references: [id])
+  solicitacoes SolicitacaoServico[]
+  @@index([lojaId, ativo])
+}
+
+model SolicitacaoServico {
+  id String @id @default(cuid())
+  lojaId String
+  clienteId String
+  servicoId String
+  chaveIdempotencia String
+  protocolo String @unique
+  aparelho String
+  problema String
+  status String @default("RECEBIDA")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  loja Loja @relation(fields: [lojaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  servico Servico @relation(fields: [servicoId], references: [id])
+  historico HistoricoServico[]
+  @@unique([clienteId, chaveIdempotencia])
+  @@index([lojaId, createdAt])
+  @@index([clienteId, createdAt])
+}
+
+model HistoricoServico {
+  id String @id @default(cuid())
+  solicitacaoId String
+  status String
+  mensagem String
+  createdAt DateTime @default(now())
+  solicitacao SolicitacaoServico @relation(fields: [solicitacaoId], references: [id])
+  @@index([solicitacaoId, createdAt])
 }
 
 model Produto {

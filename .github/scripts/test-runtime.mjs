@@ -374,3 +374,28 @@ assert.ok(!(await json('/api/assistente/recomendar', { method: 'POST', body: ass
 await json(`/api/produtos/${assistantDevice.id}`, { method: 'PATCH', token: admin.token, body: { ativo: true, estoque: 0 } });
 assert.ok(!(await json('/api/assistente/recomendar', { method: 'POST', body: assistantNeeds })).resultados.some(row => row.produto.id === assistantDevice.id));
 console.log('PASS: public recommendations from real PostgreSQL, bounded results, strict criteria, missing store, hidden and exhausted devices.');
+
+await json('/api/servicos', { method: 'POST', token: renewed.token, body: {}, status: 403 });
+const service = await json('/api/servicos', { method: 'POST', token: admin.token, status: 201, body: { titulo: 'Diagnóstico', descricao: 'Análise técnica do aparelho', preco: null, ativo: true } });
+assert.equal(service.preco, null, 'Unknown price must not become a free-service promise');
+assert.ok((await json(`/api/servicos?lojaId=${loja.id}`)).some(row => row.id === service.id));
+assert.equal((await json('/api/servicos?lojaId=ci-other-store')).length, 0);
+const serviceRequestBody = { servicoId: service.id, chaveIdempotencia: 'b6d84030-d4e8-4f3a-bf4e-a26b82830009', aparelho: 'Samsung Galaxy A55', problema: 'A bateria descarrega rapidamente.' };
+await json('/api/servicos/solicitacoes', { method: 'POST', body: serviceRequestBody, status: 401 });
+const serviceRequest = await json('/api/servicos/solicitacoes', { method: 'POST', token: renewed.token, body: serviceRequestBody, status: 201 });
+assert.equal((await json('/api/servicos/solicitacoes', { method: 'POST', token: renewed.token, body: serviceRequestBody })).id, serviceRequest.id);
+assert.match(serviceRequest.protocolo, /^VOX-S-/);
+assert.equal(serviceRequest.status, 'RECEBIDA');
+const serviceStatusPath = `/api/servicos/solicitacoes/${serviceRequest.id}/status`;
+await json(serviceStatusPath, { method: 'PATCH', token: renewed.token, body: { status: 'CONCLUIDA', mensagem: 'Invasão' }, status: 403 });
+await json(serviceStatusPath, { method: 'PATCH', token: admin.token, body: { status: 'CONCLUIDA', mensagem: 'Etapa inválida' }, status: 409 });
+for (const status of ['EM_ANALISE', 'EM_EXECUCAO', 'CONCLUIDA']) await json(serviceStatusPath, { method: 'PATCH', token: admin.token, body: { status, mensagem: `Atualização: ${status}` } });
+await json(serviceStatusPath, { method: 'PATCH', token: admin.token, body: { status: 'CONCLUIDA', mensagem: 'Reenvio' } });
+const completedService = (await json('/api/servicos/solicitacoes', { token: renewed.token })).find(row => row.id === serviceRequest.id);
+assert.equal(completedService.historico.length, 4);
+assert.equal(completedService.status, 'CONCLUIDA');
+await json(serviceStatusPath, { method: 'PATCH', token: admin.token, body: { status: 'EM_ANALISE', mensagem: 'Reabrir inválido' }, status: 409 });
+await json(`/api/servicos/${service.id}`, { method: 'PATCH', token: admin.token, body: { ativo: false } });
+await json('/api/servicos/solicitacoes', { method: 'POST', token: renewed.token, body: { ...serviceRequestBody, chaveIdempotencia: 'b6d84030-d4e8-4f3a-bf4e-a26b82830010' }, status: 404 });
+assert.ok(!(await json(`/api/servicos?lojaId=${loja.id}`)).some(row => row.id === service.id));
+console.log('PASS: persistent service catalog, nullable prices, customer requests, idempotent protocol, tenant scope, status transitions and append-only history.');
