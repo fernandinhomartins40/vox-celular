@@ -513,3 +513,15 @@ await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.tok
 assert.equal(sql(`SELECT status FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'service:${notificationService.id}:%'`), 'CANCELADA');
 await json(notifyPath, { method: 'PATCH', token: admin.token, body: { status: 'EM_EXECUCAO', mensagem: 'Another private fixture' } });
 assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'service:${notificationService.id}:%'`), '1', 'Revoked consent prevents new events');
+const notifyProduct = await json('/api/produtos', { method: 'POST', token: admin.token, status: 201, body: { nome: 'Disposable notification fixture', sub: 'CI', categoria: 'Acessórios', preco: 12, descricao: 'CI notification fixture', estoque: 2, ativo: true } });
+await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: true, versaoAviso: '2026-10-12' } });
+const notifyOrder = await json('/api/pedidos', { method: 'POST', token: customer.token, status: 201, body: { checkoutKey: '72bd5565-4803-4a88-8e48-749ec60ed699', itens: [{ produtoId: notifyProduct.id, qty: 1 }] } });
+await Promise.all(Array.from({ length: 2 }, () => json(`/api/pedidos/${notifyOrder.id}/status`, { method: 'PATCH', token: admin.token, body: { status: 'EM_PREPARO' } })));
+assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'order:${notifyOrder.id}:%'`), '1', 'Concurrent same-status updates must enqueue one event');
+assert.equal(sql(`SELECT destino FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'order:${notifyOrder.id}:%'`), '/pedidos');
+assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'order:${notifyOrder.id}:%' AND mensagem LIKE '%Disposable%'`), '0');
+await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' } });
+assert.equal(sql(`SELECT status FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'order:${notifyOrder.id}:%'`), 'CANCELADA');
+await json(`/api/pedidos/${notifyOrder.id}/status`, { method: 'PATCH', token: admin.token, body: { status: 'PRONTO' } });
+assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'order:${notifyOrder.id}:%'`), '1');
+console.log('PASS: order outbox concurrency, generic contents and revoked consent.');
