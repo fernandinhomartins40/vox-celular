@@ -21,7 +21,7 @@ const posts = [];
 let result = 'network';
 let uuid = 0;
 globalThis.__cartUuid = () => `aaaaaaaa-aaaa-4aaa-8aaa-${String(++uuid).padStart(12, '0')}`;
-globalThis.__cartApi = { ApiError, sessionRevision: () => revision, request: async (path, body) => {
+globalThis.__cartApi = { ApiError, requireCapability: async () => {}, sessionRevision: () => revision, request: async (path, body) => {
   if (path === '/auth/me') return account;
   assert.equal(path, '/pedidos');
   const persisted = JSON.parse(saved.get('vox.cart.v1'));
@@ -34,7 +34,7 @@ globalThis.__cartApi = { ApiError, sessionRevision: () => revision, request: asy
 const raw = (await readFile('apps/mobile/src/cart.ts', 'utf8'))
   .replace("import AsyncStorage from '@react-native-async-storage/async-storage';", 'const AsyncStorage = globalThis.__cartStorage;')
   .replace("import { randomUUID } from 'expo-crypto';", 'const randomUUID = globalThis.__cartUuid;')
-  .replace("import { ApiError, NativeUser, request, sessionRevision } from './api';", 'const { ApiError, request, sessionRevision } = globalThis.__cartApi;');
+  .replace("import { ApiError, NativeUser, request, sessionRevision, requireCapability } from './api';", 'const { ApiError, request, sessionRevision, requireCapability } = globalThis.__cartApi;');
 const source = stripTypeScriptTypes(raw);
 const load = suffix => import(`data:text/javascript;base64,${Buffer.from(source + `\n// ${suffix}`).toString('base64')}`);
 const cart = await load('initial');

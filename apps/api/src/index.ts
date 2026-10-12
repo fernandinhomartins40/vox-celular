@@ -30,6 +30,7 @@ app.use('/uploads', express.static(uploadsDir, { maxAge: '1y', immutable: true, 
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+app.get('/api/meta', (_req, res) => res.set('Cache-Control', 'no-store').json({ contrato: 1, capacidades: ['checkout-preco-confirmado', 'resgate-idempotente'] }));
 app.get('/api/ready', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;

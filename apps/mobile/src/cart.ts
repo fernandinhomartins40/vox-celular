@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
-import { ApiError, NativeUser, request, sessionRevision } from './api';
+import { ApiError, NativeUser, request, sessionRevision, requireCapability } from './api';
 
 export type CartItem = { produtoId: string; qty: number };
 export type PricedItem = CartItem & { precoCentavos: number };
@@ -58,6 +58,7 @@ export function confirmCart(pricedItems: PricedItem[]): Promise<Receipt> {
   return exclusive(async () => {
     const cart = await read();
     const revision = sessionRevision();
+    await requireCapability('checkout-preco-confirmado');
     const user = await request<NativeUser>('/auth/me', undefined, true);
     if (revision !== sessionRevision()) throw new Error('Sua sessão mudou. Verifique a conta antes de confirmar.');
     if (user.role !== 'CLIENTE' || user.lojaId !== cart.storeId) throw new Error('Entre com uma conta de cliente desta loja.');

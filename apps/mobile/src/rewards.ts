@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
-import { ApiError, NativeUser, request, sessionRevision } from './api';
+import { ApiError, NativeUser, request, sessionRevision, requireCapability } from './api';
 type Pending = { userId: string; rewardId: string; chaveResgate: string; pontosEsperados: number };
 const key = 'vox.reward.pending.v1';
 let queue: Promise<unknown> = Promise.resolve();
@@ -15,6 +15,7 @@ export async function pendingReward(): Promise<Pending | null> {
 export function redeemReward(rewardId: string, points?: number) {
   const operation = queue.then(async () => {
     const revision = sessionRevision();
+    await requireCapability('resgate-idempotente');
     const user = await request<NativeUser>('/auth/me', undefined, true);
     if (user.role !== 'CLIENTE' || revision !== sessionRevision()) throw new Error('Confira sua conta de cliente antes de continuar.');
     let pending = await pendingReward();

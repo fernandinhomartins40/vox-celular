@@ -66,3 +66,9 @@ export async function logout() {
   finally { const version = ++generation; accessToken = null; renewing = undefined; await persistRefresh(null, version); }
 }
 export function assetUrl(path: string) { return path.startsWith('https://') ? path : `${base.replace(/\/api\/?$/, '')}${path}`; }
+export async function requireCapability(capability: string) {
+  try {
+    const meta = await request<{ contrato: number; capacidades: string[] }>('/meta');
+    if (meta.contrato !== 1 || !Array.isArray(meta.capacidades) || !meta.capacidades.includes(capability)) throw new Error('Unsupported contract');
+  } catch { throw new Error('Esta operação precisa de uma atualização do servidor. Tente novamente mais tarde.'); }
+}
