@@ -5,6 +5,7 @@ import { ProtectedAdmin, ProtectedCliente } from './auth/RouteGuards.jsx';
 import LandingPage from './LandingPage';
 import InstalarApp from './pages/InstalarApp';
 import Assistente from './pages/Assistente';
+import Ajuda from './pages/Ajuda';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
   { path: '/instalar', element: <InstalarApp /> },
   { path: '/assistente', element: <Assistente /> },
+  { path: '/ajuda', element: <Ajuda /> },
 
   { path: '/admin/landing-preview', element: <ProtectedAdmin><LandingPreview /></ProtectedAdmin> },
   { path: '/admin/login', element: <AdminLogin /> },

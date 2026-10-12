@@ -43,7 +43,7 @@ async function request(path, options = {}, retried = false, generation = session
   // Only public routes skip renewal. Password/profile/logout need a session
   // even after a full page reload; store discovery must allow a new login.
   const authEndpoint = ['/auth/login', '/auth/register', '/auth/refresh', '/loja'].includes(path)
-    || path.startsWith('/loja?') || path.startsWith('/produtos?') || path.startsWith('/promocoes?') || path === '/assistente/recomendar';
+    || path.startsWith('/loja?') || path.startsWith('/produtos?') || path.startsWith('/promocoes?') || path.startsWith('/guias?') || path === '/assistente/recomendar';
   let token = getToken();
   if (!token && !authEndpoint && localStorage.getItem('vox_user')) token = await renew();
   if (!authEndpoint) assertSession(generation);

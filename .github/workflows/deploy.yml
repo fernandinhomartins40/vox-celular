@@ -196,6 +196,8 @@ jobs:
         run: node .github/scripts/test-session-races.mjs
       - name: Three-step product selection on mobile, tablet and desktop
         run: node .github/scripts/test-assistant-browser.mjs
+      - name: Three-step official operator help
+        run: node .github/scripts/test-help-browser.mjs
       - name: Landing page editor and faithful live previews
         run: node .github/scripts/test-landing-editor.mjs
       - name: Container status on failure

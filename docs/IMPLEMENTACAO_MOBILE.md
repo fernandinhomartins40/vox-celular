@@ -125,3 +125,7 @@ GuiaOperadora por loja com tópico, resumo, passos, fonte e canal oficiais, revi
 
 Fontes oficiais confirmadas: https://www.tim.com.br/ajuda/tim-chip/esim ; https://vivo.com.br/para-voce/produtos-e-servicos/para-o-celular/esim ; https://www.claro.com.br/atendimento . Não foram copiados procedimentos completos nem criados guias públicos automaticamente. Build e testes de validação passaram localmente; CI real acrescenta persistência, rascunho, publicação, expiração e isolamento. CMS visual e jornada pública em três etapas ainda pendentes.
 
+
+### Central pública de ajuda
+Rota /ajuda no rodapé: operadora → assunto → guia e canal oficial, sem cadastro obrigatório. Nove tópicos previstos; somente guias publicados/vigentes retornados pela API, com fonte/revisão/validade e passos em texto. Sem guia, informa ausência e oferece atendimento oficial. A tela filtra validade também no cliente e atualiza a referência de tempo a cada minuto. Link para serviços da Vox e contato humano preservados. Build/lint e testes em 390/768/1440 passaram, cobrindo fonte, ausência de guia, retorno e layout. CMS visual e conteúdo revisado de todos os tópicos ainda pendentes; não há procedimentos inventados em substituição a conteúdo ausente.
+
