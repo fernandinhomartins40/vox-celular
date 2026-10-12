@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
-import { assetUrl, request } from '../src/api';
-import { addToCart } from '../src/cart';
-import FavoriteButton from '../src/FavoriteButton';
+import { assetUrl, request } from '../../src/api';
+import { addToCart } from '../../src/cart';
+import FavoriteButton from '../../src/FavoriteButton';
 type Attributes = { tipo?: string; verificado?: boolean; ramGB?: number; armazenamentoGB?: number; bateriaMah?: number };
 type Product = { id: string; nome: string; lojaId: string; categoria: string; preco: number; estoque: number; imgUrl: string; atributosTecnicos?: Attributes };
 type Result = { produto: Product; motivos: string[]; fonte: string | null; observacao: string };

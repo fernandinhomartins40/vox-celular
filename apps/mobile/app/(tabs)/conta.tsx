@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
-import { hasSavedSession, logout, NativeUser, request, saveSession, Session } from '../src/api';
+import { hasSavedSession, logout, NativeUser, request, saveSession, Session } from '../../src/api';
 
 export default function Account() {
   const [user, setUser] = useState<NativeUser | null>(null);

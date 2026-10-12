@@ -1,8 +1,8 @@
-import CartButton from '../src/CartButton';
-import FavoriteButton from '../src/FavoriteButton';
+import CartButton from '../../src/CartButton';
+import FavoriteButton from '../../src/FavoriteButton';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { request, assetUrl } from '../src/api';
+import { request, assetUrl } from '../../src/api';
 import { Link } from 'expo-router';
 type Product = { id: string; lojaId: string; nome: string; sub: string; preco: number; estoque: number; imgUrl: string };
 export default function Catalog() {

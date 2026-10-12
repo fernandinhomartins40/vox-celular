@@ -1,6 +1,7 @@
 # Aplicativo nativo Vox Celular
 
 Workspace React Native/Expo Router, com telas nativas e a mesma API Express da web.
+Navegação principal: Início, Loja, Assistente, Ajuda e Conta. Carrinho no cabeçalho; serviços em Ajuda e dados pessoais em Conta.
 Implementação inicial; não publicado nem validado em dispositivo real.
 
 Na raiz do repositório: `npm ci`. Para desenvolvimento: `npm run start --workspace @vox/mobile`.

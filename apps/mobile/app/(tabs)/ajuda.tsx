@@ -1,6 +1,7 @@
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { request } from '../src/api';
+import { request } from '../../src/api';
 
 type Operator = 'TIM' | 'VIVO' | 'CLARO';
 type Guide = { id: string; operadora: Operator; topico: string; titulo: string; resumo: string; passos: string[]; fonte: string; canalOficial: string; revisadoEm: string; validoAte: string };
@@ -29,7 +30,7 @@ export default function Help() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível abrir o atendimento oficial.'); }
   }
   const matching = (guides || []).filter(row => row.operadora === operator && row.topico === topic && Date.parse(row.validoAte) > now);
-  return <ScrollView contentContainerStyle={styles.screen}>
+  return <ScrollView contentContainerStyle={styles.screen}><Link href="/servicos" style={{ color: '#0036cc', paddingVertical: 16, fontWeight: '600' }}>Serviços, agendamento e meus atendimentos</Link>
     <Text accessibilityRole="header" style={styles.heading}>Ajuda com sua operadora</Text><Text style={styles.subtitle}>{!operator ? '1. Escolha sua operadora' : !topic ? '2. Escolha o assunto' : '3. Consulte o guia e o canal oficial'}</Text>
     {error && <View><Text accessibilityRole="alert" style={styles.error}>{error}</Text><Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={styles.button}><Text style={styles.buttonText}>Tentar novamente</Text></Pressable></View>}
     {!operator ? (Object.keys(channels) as Operator[]).map(value => <Pressable key={value} accessibilityRole="button" onPress={() => { setOperator(value); setTopic(''); }} style={styles.card}><Text style={styles.name}>{value}</Text></Pressable>) : !topic ? Object.entries(topics).map(([value, label]) => <Pressable key={value} accessibilityRole="button" onPress={() => setTopic(value)} style={styles.card}><Text style={styles.name}>{label}</Text></Pressable>) : <>
