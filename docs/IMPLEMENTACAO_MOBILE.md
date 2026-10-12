@@ -257,3 +257,5 @@ POST /assistente/recomendar-ia integra configuração criptografada e orçamento
 
 ### Opção de IA externa na web
 Segundo passo do assistente oferece checkbox opcional desmarcado, explicando envio de uso/dados técnicos ao DeepSeek/Qwen e ausência de identidade/histórico/pagamento. Sem marcar usa /recomendar; marcado usa /recomendar-ia com autorização explícita. Ajustar escolhas desmarca novamente. Resultado exibe aviso da API para IA ou fallback. Build/lint passaram; teste browser desta autorização e chamada real ainda pendentes. Não há autorização persistida no perfil nem personalização por histórico neste incremento.
+
+Teste Chromium do assistente em 390/768/1440 passou após opção externa: default sem envio externo, payload autorizado estrito, fallback visível e autorização desmarcada ao ajustar escolhas. Regressões existentes de orçamento, critérios técnicos, preço atualizado e catálogo vazio também passaram. Respostas simuladas, sem chamada paga ou validação de modelo real.
