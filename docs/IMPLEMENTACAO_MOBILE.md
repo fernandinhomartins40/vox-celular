@@ -214,3 +214,6 @@ Loja oferece busca por nome/subtítulo/categoria sem distinguir acentos, categor
 
 ### Troca de senha nativa
 Conta oferece senha atual, nova senha e confirmação, com exibição opcional e validação inicial. Usa PATCH autenticado existente; confirma alteração somente após resposta, limpa campos e sessão local sem tentar renovar credenciais já invalidadas pelo tokenVersion. Falha ao limpar storage é informada sem esconder sucesso do servidor. Conta reconsulta ao receber foco para refletir saída/alteração de acesso. Typecheck e testes de corridas de sessão passaram; bundles Android/iOS validados. Teste físico e verificação de alteração real no PostgreSQL seguem pendentes; não houve escrita direta na VPS.
+
+### Consentimentos vinculados à sessão nativa
+Cliente de API oferece requestForSession para vincular leitura/gravação à revisão que preparou a tela. Privacidade reconsulta ao focar e grava somente na mesma sessão que carregou as escolhas; troca de conta recusa antes de enviar e após resposta. Teste executa código real com fetch simulado e comprova zero gravações de consentimento da tela antiga sob nova conta; sessão atual permitida. Typecheck, testes de corridas e bundles Android/iOS validados; verificação física continua pendente.

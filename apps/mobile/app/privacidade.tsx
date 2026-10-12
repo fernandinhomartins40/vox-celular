@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { Link } from 'expo-router';
-import { request } from '../src/api';
+import { Link, useFocusEffect } from 'expo-router';
+import { requestForSession, sessionRevision } from '../src/api';
 
 type Preferences = { personalizacao: boolean; notificacoes: boolean; versaoAviso: string };
 export default function Privacy() {
@@ -12,20 +12,22 @@ export default function Privacy() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [reload, setReload] = useState(0);
-  useEffect(() => {
+  const listedRevision = useRef(-1);
+  useFocusEffect(useCallback(() => {
     let active = true;
     setLoading(true); setError(''); setMessage('');
-    request<Preferences>('/privacidade/preferencias', undefined, true)
-      .then(data => { if (active) { setSaved(data); setDraft(data); } })
+    const revision = sessionRevision();
+    requestForSession<Preferences>(revision, '/privacidade/preferencias')
+      .then(data => { if (active) { listedRevision.current = revision; setSaved(data); setDraft(data); } })
       .catch(e => { if (active) { setSaved(null); setDraft(null); setError(e instanceof Error ? e.message : 'Não foi possível consultar suas preferências.'); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [reload]);
+  }, [reload]));
   async function save() {
     if (!draft || busy) return;
     setBusy(true); setError(''); setMessage('');
     try {
-      const result = await request<Preferences>('/privacidade/preferencias', { personalizacao: draft.personalizacao, notificacoes: draft.notificacoes, versaoAviso: draft.versaoAviso }, true, 'PUT');
+      const result = await requestForSession<Preferences>(listedRevision.current, '/privacidade/preferencias', { personalizacao: draft.personalizacao, notificacoes: draft.notificacoes, versaoAviso: draft.versaoAviso }, 'PUT');
       setSaved(result); setDraft(result); setMessage('Suas preferências foram salvas.');
     } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível salvar. Suas preferências anteriores continuam valendo.'); }
     finally { setBusy(false); }

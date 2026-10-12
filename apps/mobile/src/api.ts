@@ -66,6 +66,12 @@ export async function logout() {
   finally { await clearLocalSession(); }
 }
 export async function clearLocalSession() { const version = ++generation; accessToken = null; renewing = undefined; await persistRefresh(null, version); }
+export async function requestForSession<T>(revision: number, path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {
+  if (revision !== generation) throw new Error('Sua conta mudou. Atualize esta tela antes de continuar.');
+  const result = await request<T>(path, body, true, method);
+  if (revision !== generation) throw new Error('Sua conta mudou. Atualize esta tela antes de continuar.');
+  return result;
+}
 export function assetUrl(path: string) { return path.startsWith('https://') ? path : `${base.replace(/\/api\/?$/, '')}${path}`; }
 export async function requireCapability(capability: string) {
   try {
