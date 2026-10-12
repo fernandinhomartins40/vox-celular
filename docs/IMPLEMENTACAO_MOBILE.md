@@ -129,3 +129,9 @@ Fontes oficiais confirmadas: https://www.tim.com.br/ajuda/tim-chip/esim ; https:
 ### Central pública de ajuda
 Rota /ajuda no rodapé: operadora → assunto → guia e canal oficial, sem cadastro obrigatório. Nove tópicos previstos; somente guias publicados/vigentes retornados pela API, com fonte/revisão/validade e passos em texto. Sem guia, informa ausência e oferece atendimento oficial. A tela filtra validade também no cliente e atualiza a referência de tempo a cada minuto. Link para serviços da Vox e contato humano preservados. Build/lint e testes em 390/768/1440 passaram, cobrindo fonte, ausência de guia, retorno e layout. CMS visual e conteúdo revisado de todos os tópicos ainda pendentes; não há procedimentos inventados em substituição a conteúdo ausente.
 
+
+### CMS dos guias
+Painel Guias de ajuda cria/edita rascunhos, operadora/tópico, resumo, passos por linha, fonte/canal oficiais e revisão/validade. Prévia textual em tempo real, publicação confirmada pelo revisor; edição de conteúdo desmarca publicação no formulário. API valida domínio/datas, não confia no checkbox. Build/lint passaram e teste visual em 390 passou para rota, prévia e necessidade de reconferência. Cobertura 768/1440 do novo editor ainda aguarda repetição e CI.
+
+Bloqueio externo de deploy identificado pela annotation do job 114988009243 (run 38302292365): GitHub Actions não iniciou por falhas recentes de pagamento ou spending limit da conta. Necessário corrigir Settings → Billing & plans no GitHub. Não há substituição por deploy manual SSH. Desenvolvimento e validação local continuam; não declarar estes commits implantados.
+

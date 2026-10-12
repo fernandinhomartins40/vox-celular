@@ -16,6 +16,7 @@ import AdminConfiguracoes from './pages/admin/AdminConfiguracoes';
 import AdminIntegracoes from './pages/admin/AdminIntegracoes';
 import AdminConta from './pages/admin/AdminConta';
 import AdminServicos from './pages/admin/AdminServicos';
+import AdminGuias from './pages/admin/AdminGuias';
 import PanelAccount from './components/panel/PanelAccount';
 import ClienteLogin from './pages/cliente/ClienteLogin';
 import ClienteLayout from './pages/cliente/ClienteLayout';
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
       { path: 'configuracoes/integracoes', element: <AdminIntegracoes /> },
       { path: 'conta',          element: <AdminConta /> },
       { path: 'servicos',       element: <AdminServicos /> },
+      { path: 'guias',          element: <AdminGuias /> },
     ],
   },
 

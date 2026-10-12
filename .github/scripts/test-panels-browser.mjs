@@ -20,6 +20,7 @@ const responses = () => ({
   '/agenda': [{ id: 'available-slot', inicio: '2026-11-01T13:00:00.000Z', fim: '2026-11-01T14:00:00.000Z', vagas: 1 }, { id: 'full-slot', inicio: '2026-11-02T13:00:00.000Z', fim: '2026-11-02T14:00:00.000Z', vagas: 0 }],
   '/servicos/admin': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null, ativo: true }],
   '/agenda/admin': [],
+  '/guias/admin': [],
   '/servicos/solicitacoes': [],
   '/dashboard': { pedidosHoje: 1, pedidosMes: 1, faturamentoMes: 2299, faturamentoOntem: 0, ticketMedio: 2299, estoqueBaixo: 0, grafico: [{ dia: '10/10', valor: 0 }] },
   '/pedidos': [order], '/pedidos/meus': [order], '/produtos/admin': [product],
@@ -61,7 +62,7 @@ try {
       });
       await page.route('https://fonts.googleapis.com/**', route => route.abort());
       const prefix = role === 'LOJISTA' ? '/admin' : '/area-cliente';
-      const routes = role === 'LOJISTA' ? ['', '/pedidos', '/produtos', '/clientes', '/configuracoes', '/conta', '/servicos'] : ['', '/pedidos', '/beneficios', '/fidelidade', '/promocoes', '/conta', '/servicos'];
+      const routes = role === 'LOJISTA' ? ['', '/pedidos', '/produtos', '/clientes', '/configuracoes', '/conta', '/servicos', '/guias'] : ['', '/pedidos', '/beneficios', '/fidelidade', '/promocoes', '/conta', '/servicos'];
       for (const route of routes) {
         await page.goto(base + prefix + route);
         await page.locator('main h1').waitFor();
@@ -89,6 +90,15 @@ try {
         await page.getByLabel('Descrição', { exact: true }).fill('Avaliação e troca após orçamento aprovado.');
         await page.getByRole('button', { name: 'Salvar serviço', exact: true }).click();
         await page.getByRole('status').filter({ hasText: 'Serviço salvo.' }).waitFor();
+        await page.goto(base + prefix + '/guias');
+        await page.getByRole('button', { name: 'Novo guia', exact: true }).click();
+        await page.getByLabel('Título', { exact: true }).fill('Ajuda com chip');
+        await page.getByLabel('Resumo', { exact: true }).fill('Consulte as orientações oficiais.');
+        await page.getByRole('checkbox').check();
+        await page.getByRole('textbox', { name: /^Resumo/ }).fill('Texto revisado com as orientações oficiais.');
+        assert.equal(await page.getByRole('checkbox').isChecked(), false, 'Content changes require publication review');
+        await page.getByRole('region', { name: 'Prévia do guia' }).getByText('Texto revisado com as orientações oficiais.', { exact: true }).waitFor();
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `Guide editor overflow at ${width}`);
       }
       if (role === 'CLIENTE') {
         await page.goto(base + prefix + '/servicos');

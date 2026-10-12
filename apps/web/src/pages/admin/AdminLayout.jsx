@@ -24,7 +24,8 @@ const groups = [
         "label": "Clientes",
         "icon": "users"
       },
-      { "to": "/admin/servicos", "label": "Serviços", "icon": "package" }
+      { "to": "/admin/servicos", "label": "Serviços", "icon": "package" },
+      { "to": "/admin/guias", "label": "Guias de ajuda", "icon": "settings" }
     ]
   },
   {
