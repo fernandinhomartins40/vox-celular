@@ -162,3 +162,6 @@ Tela nativa /ajuda: operadora → tópico → guias publicados/vigentes da mesma
 
 ### Favoritos e comparação nativos
 Catálogo permite salvar favoritos pela API autenticada; Minha conta abre lista atualizada com remoção e comparação de até três produtos. Especificações ausentes ou não verificadas aparecem como não informadas. Limite de seleção também protegido no atualizador de estado. Falhas de sessão oferecem acesso à conta; falha inicial não mantém indicador indefinidamente. Cabeçalhos nativos em português para favoritos e ajuda. Typecheck e export Android/iOS passaram; sem comprovação de execução em aparelho ou deploy, que permanece dependente do GitHub Actions.
+
+### Preferências de privacidade nativas
+Minha conta abre controles nativos de personalização e consentimento para notificações, consultados pela API autenticada. Alterações ficam como rascunho até confirmação PUT; payload explícito evita enviar campos extras rejeitados pelo contrato estrito. Aviso distingue consentimento de permissão do aparelho e informa que entrega push ainda não está ativada. Não presume autorização inicial, não afirma sucesso offline, e falha de sessão oferece retorno à conta. Typecheck e export Android/iOS passaram; execução física e push continuam pendentes.
