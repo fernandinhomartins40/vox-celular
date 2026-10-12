@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { Icon } from '../icons';
 import { PHONE_DIGITS } from '../data';
 import { formatBRL, badgeStyle } from '../utils';
+import { api } from '../lib/api';
+import { useAuth } from '../auth/useAuth';
+import { Link } from 'react-router-dom';
 
 export default function ProductModal(props) {
   if (!props.product) return null;
@@ -9,6 +12,15 @@ export default function ProductModal(props) {
 }
 
 function ProductModalContent({ product, onClose, onAdd }) {
+  const { user } = useAuth();
+  const [favoriteMessage, setFavoriteMessage] = useState('');
+  const [savingFavorite, setSavingFavorite] = useState(false);
+  async function saveFavorite() {
+    setSavingFavorite(true); setFavoriteMessage('');
+    try { await api.put(`/favoritos/${encodeURIComponent(product.id)}`, {}); setFavoriteMessage('Salvo nos seus favoritos.'); }
+    catch (error) { setFavoriteMessage(error.message); }
+    finally { setSavingFavorite(false); }
+  }
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const closeTimer = useRef(null);
@@ -53,6 +65,8 @@ function ProductModalContent({ product, onClose, onAdd }) {
           </div>
 
           <p className="text-[14px] text-zinc-600 leading-relaxed mb-5 mt-3">{product.descricao}</p>
+          {user?.role === 'CLIENTE' ? <button disabled={savingFavorite} onClick={saveFavorite} className="text-blue-700 underline mb-3">{savingFavorite ? 'Salvando…' : 'Salvar nos favoritos'}</button> : <Link to="/area-cliente/login" className="text-blue-700 underline block mb-3">Entrar para salvar favoritos</Link>}
+          {favoriteMessage && <p role="status" className="text-sm mb-3">{favoriteMessage} <Link to="/area-cliente/favoritos" className="underline">Ver favoritos</Link></p>}
 
           <div className="grid grid-cols-2 gap-2 mb-6">
             {(product.specs ?? []).map((s, i) => (

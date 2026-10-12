@@ -259,3 +259,23 @@ assert.equal((await json('/api/integracoes', { token: admin.token })).conexoes.l
 await json('/api/integracoes/mercadolivre', { method: 'DELETE', token: admin.token });
 assert.equal((await json('/api/integracoes', { token: admin.token })).conexoes.length, 0);
 console.log('PASS: marketplace credential encryption, masked metadata, tenant isolation, secret-volume persistence and removal; no external requests.');
+
+// Favorites are account/tenant scoped and never reserve stock.
+await json('/api/favoritos', { status: 401 });
+await json('/api/favoritos', { token: admin.token, status: 403 });
+const favoriteProduct = 'vox-demo-v1-ci-demo-store-produto-1';
+const stockBeforeFavorite = sql(`SELECT estoque FROM "Produto" WHERE id='${favoriteProduct}'`);
+for (let i = 0; i < 2; i++) await json(`/api/favoritos/${favoriteProduct}`, { method: 'PUT', token: renewed.token, body: {} });
+assert.equal(sql(`SELECT count(*) FROM "Favorito" WHERE "produtoId"='${favoriteProduct}'`), '1');
+assert.equal(sql(`SELECT estoque FROM "Produto" WHERE id='${favoriteProduct}'`), stockBeforeFavorite);
+const favorites = await json('/api/favoritos', { token: renewed.token });
+assert.equal(favorites.length, 1);
+assert.equal(favorites[0].id, favoriteProduct);
+assert.equal(typeof favorites[0].preco, 'number');
+await json(`/api/favoritos/${product.id}`, { method: 'PUT', token: renewed.token, body: {}, status: 404 });
+sql(`UPDATE "Produto" SET ativo=false WHERE id='${favoriteProduct}'`);
+assert.equal((await json('/api/favoritos', { token: renewed.token })).length, 0);
+sql(`UPDATE "Produto" SET ativo=true WHERE id='${favoriteProduct}'`);
+for (let i = 0; i < 2; i++) await json(`/api/favoritos/${favoriteProduct}`, { method: 'DELETE', token: renewed.token });
+assert.equal((await json('/api/favoritos', { token: renewed.token })).length, 0);
+console.log('PASS: favorites authentication, idempotency, tenant isolation, current prices, hidden products and no inventory side effects.');

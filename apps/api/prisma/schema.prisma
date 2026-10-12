@@ -108,6 +108,7 @@ model Cliente {
   usuario    Usuario  @relation(fields: [usuarioId], references: [id])
   pedidos    Pedido[]
   historicoP HistoricoPontos[]
+  favoritos Favorito[]
   @@index([lojaId, createdAt])
 }
 
@@ -132,6 +133,7 @@ model Produto {
   loja          Loja     @relation(fields: [lojaId], references: [id])
   itensPedido   ItemPedido[]
   promocoes     Promocao[]
+  favoritos     Favorito[]
   @@index([lojaId, ativo, destaque])
 }
 
@@ -165,6 +167,16 @@ enum StatusPedido {
   EM_PREPARO
   PRONTO
   ENTREGUE
+}
+
+model Favorito {
+  clienteId String
+  produtoId String
+  createdAt DateTime @default(now())
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  @@id([clienteId, produtoId])
+  @@index([produtoId])
 }
 
 model ItemPedido {

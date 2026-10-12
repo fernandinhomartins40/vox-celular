@@ -55,7 +55,7 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
             <div className="font-display text-[10px] tracking-[0.25em] text-[var(--red-500)] font-bold uppercase">Seu pedido</div>
             <div className="font-display font-bold text-[26px] leading-none mt-1">Carrinho ({items.length})</div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-zinc-100 grid place-items-center">
+          <button onClick={onClose} aria-label="Fechar carrinho" className="w-10 h-10 rounded-full hover:bg-zinc-100 grid place-items-center">
             <Icon.close className="w-5 h-5" />
           </button>
         </div>
