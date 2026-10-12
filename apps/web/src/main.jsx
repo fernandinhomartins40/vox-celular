@@ -5,6 +5,13 @@ import { AuthProvider } from './auth/AuthContext';
 import { router } from './router';
 import './index.css';
 
+// Waiting updates activate after existing tabs close, protecting active checkout.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {});
+  });
+}
+
 // Bootstrap: fetch lojaId from API and cache it for auth/register flows
 const storedLojaId = localStorage.getItem('vox_loja_id');
 const envLojaId = import.meta.env.VITE_LOJA_ID;
