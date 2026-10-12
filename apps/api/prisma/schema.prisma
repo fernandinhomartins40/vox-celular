@@ -31,6 +31,25 @@ model Loja {
   solicitacoesServico SolicitacaoServico[]
   orcamentosIa OrcamentoIa[]
   configuracaoIa ConfiguracaoIa?
+  notificacoes NotificacaoCliente[]
+}
+
+model NotificacaoCliente {
+  id String @id @default(cuid())
+  lojaId String
+  clienteId String
+  chaveEvento String
+  titulo String
+  mensagem String
+  destino String
+  status String @default("PENDENTE")
+  tentativas Int @default(0)
+  createdAt DateTime @default(now())
+  proximaTentativaEm DateTime @default(now())
+  loja Loja @relation(fields: [lojaId], references: [id])
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  @@unique([clienteId, chaveEvento])
+  @@index([status, proximaTentativaEm])
 }
 
 model ConfiguracaoIa {
@@ -161,6 +180,7 @@ model Cliente {
   versaoPrivacidade String?
   preferenciasAtualizadasEm DateTime?
   consentimentos ConsentimentoCliente[]
+  filaNotificacoes NotificacaoCliente[]
   solicitacoesServico SolicitacaoServico[]
   @@index([lojaId, createdAt])
 }
