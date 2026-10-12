@@ -281,3 +281,6 @@ Mudança válida de status enfileira aviso genérico na mesma transação do his
 PATCH de status serializa por pedido e compara estado anterior dentro da transação. Só mudança efetiva enfileira aviso genérico para /pedidos, mediante consentimento atual; repetição do status não gera evento. Conteúdo não inclui itens/preço/pagamento. Histórico e aviso ficam na mesma transação. Build API passou. Testes PostgreSQL específicos de concorrência/eventos de pedido e transporte push seguem pendentes; não afirma entrega.
 
 Cobertura PostgreSQL dos eventos de pedido adicionada ao runtime CI: fixture descartável, duas mudanças simultâneas para mesmo status, evento único, destino correto, texto sem nome de produto, cancelamento pela revogação e ausência de novos eventos. Sintaxe validada localmente; não declarar integração aprovada antes de executar CI.
+
+### Consulta dos avisos do cliente
+GET /api/notificacoes exige cliente autenticado e filtra cliente/loja no servidor, até 100 registros recentes, campos públicos explícitos e no-store. Não mostra avisos cancelados ou quando consentimento atual está retirado. Não marca fila como entregue: inbox e transporte push são independentes. Build passou; testes CI adicionados para autenticação, papel, revogação, isolamento e campos privados ausentes. Execução PostgreSQL, interface e push ainda pendentes.

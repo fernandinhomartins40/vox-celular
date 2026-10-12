@@ -525,3 +525,12 @@ assert.equal(sql(`SELECT status FROM "NotificacaoCliente" WHERE "chaveEvento" LI
 await json(`/api/pedidos/${notifyOrder.id}/status`, { method: 'PATCH', token: admin.token, body: { status: 'PRONTO' } });
 assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'order:${notifyOrder.id}:%'`), '1');
 console.log('PASS: order outbox concurrency, generic contents and revoked consent.');
+await json('/api/notificacoes', { status: 401 });
+await json('/api/notificacoes', { token: admin.token, status: 403 });
+assert.deepEqual(await json('/api/notificacoes', { token: customer.token }), [], 'Revoked consent must hide notifications');
+await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: true, versaoAviso: '2026-10-12' } });
+await json(`/api/pedidos/${notifyOrder.id}/status`, { method: 'PATCH', token: admin.token, body: { status: 'ENTREGUE' } });
+const personalNotices = await json('/api/notificacoes', { token: customer.token });
+assert.ok(personalNotices.some(row => row.destino === '/pedidos'));
+assert.ok(personalNotices.every(row => row.clienteId === undefined && row.lojaId === undefined && row.chaveEvento === undefined && row.tentativas === undefined));
+assert.deepEqual(await json('/api/notificacoes', { token: otherCustomer.token }), [], 'Other client cannot see notifications');
