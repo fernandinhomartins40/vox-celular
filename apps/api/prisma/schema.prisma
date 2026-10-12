@@ -129,6 +129,8 @@ model Produto {
   ativo         Boolean  @default(true)
   destaque      Boolean  @default(false)
   specs         String[]
+  atributosTecnicos Json @default("{}")
+  atributosVerificadosEm DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

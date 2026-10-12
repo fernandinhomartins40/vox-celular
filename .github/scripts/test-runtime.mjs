@@ -304,3 +304,12 @@ const webRefreshResponse = await fetch(base + '/api/auth/refresh', { method: 'PO
 assert.equal(webRefreshResponse.status, 200);
 assert.ok(webRefreshResponse.headers.get('set-cookie'));
 console.log('PASS: short access tokens, hashed rotating refresh, replay rejection, logout revocation, web HttpOnly cookie and origin enforcement.');
+
+await json(`/api/produtos/${product.id}`, { method: 'PATCH', token: admin.token, body: { atributosTecnicos: { verificado: true } }, status: 400 });
+const technicalProduct = await json(`/api/produtos/${product.id}`, { method: 'PATCH', token: admin.token, body: { atributosTecnicos: { tipo: 'celular', marca: 'CI brand', modelo: 'CI model', ramGB: 8, fonte: 'https://example.com/ci-specification', verificado: true } } });
+assert.equal(technicalProduct.atributosTecnicos.ramGB, 8);
+assert.ok(technicalProduct.atributosVerificadosEm);
+assert.equal((await json(`/api/produtos?lojaId=${loja.id}`)).find(p => p.id === product.id).atributosTecnicos.modelo, 'CI model');
+const uncheckedProduct = await json(`/api/produtos/${product.id}`, { method: 'PATCH', token: admin.token, body: { atributosTecnicos: { tipo: 'celular', verificado: false } } });
+assert.equal(uncheckedProduct.atributosVerificadosEm, null);
+console.log('PASS: real catalog attribute persistence, public serialization, source requirement and verification timestamp.');

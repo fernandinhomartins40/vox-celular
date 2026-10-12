@@ -5,6 +5,7 @@ import { unlink } from 'node:fs/promises';
 import { normalizedImage, storeImage } from '../lib/imageStorage.js';
 import { prisma } from '../lib/prisma.js';
 import { requireLojista, AuthRequest } from '../middleware/auth.js';
+import { productAttributesSchema } from '../lib/productAttributes.js';
 
 export const produtosRouter = Router();
 
@@ -27,6 +28,7 @@ const productPayloadSchema = z.object({
   ativo: z.boolean().optional(),
   destaque: z.boolean().optional(),
   specs: z.array(z.string().trim()).optional(),
+  atributosTecnicos: productAttributesSchema.optional(),
   image: imageSchema,
 });
 
@@ -107,6 +109,7 @@ produtosRouter.post('/', requireLojista, async (req: AuthRequest, res) => {
       ativo: ativo ?? true,
       destaque: destaque ?? false,
       specs: compactSpecs(specs) ?? [],
+      atributosVerificadosEm: data.atributosTecnicos?.verificado ? new Date() : null,
       imgUrl: '',
     },
   });
@@ -137,12 +140,15 @@ produtosRouter.patch('/:id', requireLojista, async (req: AuthRequest, res) => {
   let imgUrl: string | null = null;
   try {
     const { image, specs, badge, ...data } = parse.data;
+    const normalizedAttributes = (value: unknown) => JSON.stringify(Object.entries((value || {}) as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)));
+    const sameAttributes = normalizedAttributes(data.atributosTecnicos) === normalizedAttributes(produto.atributosTecnicos);
     imgUrl = await saveProductImage(req.user!.lojaId, produto.id, image?.dataUrl);
 
     const updated = await prisma.produto.update({
       where: { id: produtoId },
       data: {
         ...data,
+        ...(data.atributosTecnicos !== undefined ? { atributosVerificadosEm: data.atributosTecnicos.verificado ? (sameAttributes ? produto.atributosVerificadosEm : new Date()) : null } : {}),
         ...(badge !== undefined ? { badge: badge || null } : {}),
         ...(specs !== undefined ? { specs: compactSpecs(specs) } : {}),
         ...(imgUrl ? { imgUrl } : {}),

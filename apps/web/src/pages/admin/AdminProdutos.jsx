@@ -25,6 +25,7 @@ const emptyForm = {
   ativo: true,
   destaque: false,
   specsText: '',
+  atributosTecnicos: {},
 };
 
 const emptyImage = {
@@ -58,6 +59,7 @@ function produtoToForm(produto) {
     ativo: produto.ativo !== false,
     destaque: Boolean(produto.destaque),
     specsText: Array.isArray(produto.specs) ? produto.specs.join('\n') : '',
+    atributosTecnicos: produto.atributosTecnicos || {},
   };
 }
 
@@ -253,6 +255,7 @@ export default function AdminProdutos() {
         ativo: Boolean(form.ativo),
         destaque: Boolean(form.destaque),
         specs: form.specsText.split('\n').map(s => s.trim()).filter(Boolean),
+        atributosTecnicos: form.atributosTecnicos,
         ...(imageDataUrl ? { image: { dataUrl: imageDataUrl } } : {}),
       };
 
@@ -393,6 +396,13 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
         {formError && <p tabIndex={-1} role="alert" className="panel-inline-notice">{formError}</p>}
         {activeTab === 'basico' && <div className="space-y-4">
           <TextField label="Nome do produto" value={form.nome} onChange={nome => setForm(v => ({ ...v, nome }))} />
+          <details><summary>Características para comparação e assistente</summary><div className="space-y-4 mt-4">
+            <p className="text-sm text-slate-500">Preencha apenas dados confirmados. Deixe em branco o que não souber.</p>
+            <label className="block">Tipo de produto<select className="block w-full border rounded-xl p-3" value={form.atributosTecnicos.tipo || ''} onChange={e => setForm(v => { const tech = { ...v.atributosTecnicos, verificado: false }; if (e.target.value) tech.tipo = e.target.value; else delete tech.tipo; return { ...v, atributosTecnicos: tech }; })}><option value="">Não informado</option><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="acessorio">Acessório</option><option value="outro">Outro</option></select></label>
+            {[['marca', 'Marca'], ['modelo', 'Modelo'], ['fonte', 'Fonte oficial das características (HTTPS)']].map(([key, label]) => <TextField key={key} label={label} value={form.atributosTecnicos[key] || ''} onChange={value => setForm(v => { const tech = { ...v.atributosTecnicos, verificado: false }; if (value) tech[key] = value; else delete tech[key]; return { ...v, atributosTecnicos: tech }; })} />)}
+            {[['ramGB', 'Memória RAM (GB)'], ['armazenamentoGB', 'Armazenamento (GB)'], ['bateriaMah', 'Bateria (mAh)']].map(([key, label]) => <TextField key={key} label={label} type="number" value={form.atributosTecnicos[key] ?? ''} onChange={value => setForm(v => { const tech = { ...v.atributosTecnicos, verificado: false }; if (value !== '') tech[key] = Number(value); else delete tech[key]; return { ...v, atributosTecnicos: tech }; })} />)}
+            <ToggleField label="Conferi estas características na fonte informada" checked={Boolean(form.atributosTecnicos.verificado)} onChange={verificado => setForm(v => ({ ...v, atributosTecnicos: { ...v.atributosTecnicos, verificado } }))} />
+          </div></details>
           <SelectField label="Categoria" value={form.categoria} options={categorias} onChange={categoria => setForm(v => ({ ...v, categoria }))} />
           <TextAreaField label="Descrição" rows={3} value={form.descricao} onChange={descricao => setForm(v => ({ ...v, descricao }))} />
           <div className="panel-product-image">
