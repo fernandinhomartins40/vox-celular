@@ -10,5 +10,5 @@ export async function enqueueClientNotification(tx: Prisma.TransactionClient, in
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${customer.usuarioId}))`;
   const consent = await tx.cliente.findFirst({ where: { id: event.clienteId, lojaId: event.lojaId, notificacoes: true }, select: { id: true } });
   if (!consent) return null;
-  return tx.notificacaoCliente.upsert({ where: { clienteId_chaveEvento: { clienteId: event.clienteId, chaveEvento: event.chaveEvento } }, create: event, update: {} });
+  return tx.notificacaoCliente.upsert({ where: { clienteId_chaveEvento: { clienteId: event.clienteId, chaveEvento: event.chaveEvento } }, create: { ...event, expiresAt: new Date(Date.now() + 7 * 86400000) }, update: {} });
 }

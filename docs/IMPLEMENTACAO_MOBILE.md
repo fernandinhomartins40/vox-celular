@@ -292,3 +292,6 @@ Conta abre /avisos, consulta API autenticada vinculada à revisão de sessão e 
 Rota protegida /area-cliente/avisos usa header/cards compartilhados, consulta API autenticada, atualização manual e estados de erro/carga/vazio. Links somente allowlist interna, datas Brasília e acesso às preferências. Carregamento por rota mantém página fora do bundle inicial. Build/lint passaram; teste visual específico e integração real da fila permanecem pendentes. Lista não comprova push entregue.
 
 Teste Chromium de avisos passou em 390/768/1440: link interno permitido, URL externa sem link, atualização para estado vazio sem manter dados antigos, sem overflow/erros JS. Usa respostas simuladas; não equivale à integração de fila/PostgreSQL ou push. Build web final passou e teste acrescentado ao workflow.
+
+### Validade dos avisos
+Novos eventos expiram após sete dias; deduplicação não renova validade. Consulta autenticada filtra expiresAt futuro. Migração aditiva preserva registros existentes, com validade inicial já expirada para evitar notificações antigas reapresentadas. Prisma generate/build passaram; teste CI acrescentado para aviso vencido oculto, ainda não executado em banco. Worker deverá usar a mesma validade; retenção/limpeza física ainda pendentes.

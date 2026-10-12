@@ -46,6 +46,7 @@ model NotificacaoCliente {
   tentativas Int @default(0)
   createdAt DateTime @default(now())
   proximaTentativaEm DateTime @default(now())
+  expiresAt DateTime @default(now())
   loja Loja @relation(fields: [lojaId], references: [id])
   cliente Cliente @relation(fields: [clienteId], references: [id])
   @@unique([clienteId, chaveEvento])
