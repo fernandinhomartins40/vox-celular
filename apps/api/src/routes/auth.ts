@@ -119,6 +119,20 @@ authRouter.post('/logout', requireAuth, async (req: AuthRequest, res) => {
   } catch { res.status(503).json({ error: 'Não foi possível encerrar a sessão no servidor.' }); }
 });
 
+authRouter.get('/sessoes', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const rows = await prisma.sessao.findMany({ where: { usuarioId: req.user!.userId, tokenVersion: req.user!.tokenVersion ?? 0, expiresAt: { gt: new Date() } }, select: { id: true, createdAt: true, expiresAt: true }, orderBy: { createdAt: 'desc' }, take: 10 });
+    res.set('Cache-Control', 'no-store').json(rows.map(row => ({ ...row, atual: row.id === req.user!.sessionId })));
+  } catch { res.status(503).json({ error: 'Não foi possível consultar as sessões.' }); }
+});
+authRouter.delete('/sessoes/:id', requireAuth, async (req: AuthRequest, res) => {
+  if (req.params.id === req.user!.sessionId) { res.status(409).json({ error: 'Use Sair da conta para encerrar o acesso atual.' }); return; }
+  try {
+    await prisma.sessao.deleteMany({ where: { id: String(req.params.id), usuarioId: req.user!.userId } });
+    res.json({ ok: true });
+  } catch { res.status(503).json({ error: 'Não foi possível encerrar o acesso.' }); }
+});
+
 authRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {
   const usuario = await prisma.usuario.findUnique({
     where: { id: req.user!.userId },

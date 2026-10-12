@@ -46,7 +46,7 @@ privacidadeRouter.get('/exportar', requireAuth, authLimits, async (req: AuthRequ
     res.write(JSON.stringify({ exportadoEm: snapshot.toISOString(), perfil: profile }).slice(0, -1));
     // Batches keep memory bounded. A cutoff prevents newly created rows from
     // continually extending an export. Data changed during export is not frozen.
-    const collections = ['pedidos', 'favoritos', 'historicoPontos', 'resgates', 'consentimentos'] as const;
+    const collections = ['pedidos', 'favoritos', 'historicoPontos', 'resgates', 'consentimentos', 'sessoes'] as const;
     for (const collection of collections) {
       res.write(`,"${collection}":[`);
       let cursor: string | undefined, first = true;
@@ -57,6 +57,7 @@ privacidadeRouter.get('/exportar', requireAuth, authLimits, async (req: AuthRequ
         else if (collection === 'historicoPontos') rows = await prisma.historicoPontos.findMany({ where, orderBy: { id: 'asc' }, take: 100, select: { id: true, pontos: true, tipo: true, descricao: true, createdAt: true } });
         else if (collection === 'resgates') rows = await prisma.resgateRecompensa.findMany({ where, orderBy: { id: 'asc' }, take: 100, select: { id: true, codigo: true, usadoEm: true, createdAt: true, recompensa: { select: { titulo: true, pontos: true } } } });
         else if (collection === 'consentimentos') rows = await prisma.consentimentoCliente.findMany({ where, orderBy: { id: 'asc' }, take: 100, select: { id: true, personalizacao: true, notificacoes: true, versaoAviso: true, createdAt: true } });
+        else if (collection === 'sessoes') rows = await prisma.sessao.findMany({ where: { usuarioId: req.user!.userId, createdAt: { lte: snapshot }, ...(cursor ? { id: { gt: cursor } } : {}) }, orderBy: { id: 'asc' }, take: 100, select: { id: true, createdAt: true, expiresAt: true } });
         else rows = (await prisma.favorito.findMany({ where: { clienteId: profile.id, createdAt: { lte: snapshot }, ...(cursor ? { produtoId: { gt: cursor } } : {}) }, orderBy: { produtoId: 'asc' }, take: 100, select: { produtoId: true, createdAt: true, produto: { select: { nome: true } } } })).map(row => ({ id: row.produtoId, ...row }));
         for (const row of rows) {
           if (closed) break;

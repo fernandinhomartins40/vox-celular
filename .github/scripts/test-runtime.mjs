@@ -286,6 +286,16 @@ assert.ok(!sql('SELECT token FROM "Sessao";').includes(sessionLogin.refreshToken
 const claims = JSON.parse(Buffer.from(sessionLogin.token.split('.')[1], 'base64url'));
 assert.equal(claims.exp - claims.iat, 900);
 const rotated = await json('/api/auth/refresh', { method: 'POST', body: { plataforma: 'native', refreshToken: sessionLogin.refreshToken } });
+const sessionList = await json('/api/auth/sessoes', { token: rotated.token });
+assert.ok(sessionList.some(row => row.atual));
+assert.ok(!JSON.stringify(sessionList).includes('token'));
+await json(`/api/auth/sessoes/${sessionList.find(row => row.atual).id}`, { method: 'DELETE', token: rotated.token, status: 409 });
+const anotherSession = await json('/api/auth/login', { method: 'POST', body: { email: env.ADMIN_EMAIL, senha: env.ADMIN_PASSWORD, plataforma: 'native' } });
+const anotherClaims = JSON.parse(Buffer.from(anotherSession.token.split('.')[1], 'base64url'));
+await json(`/api/auth/sessoes/${anotherClaims.sessionId}`, { method: 'DELETE', token: renewed.token });
+await json('/api/auth/me', { token: anotherSession.token });
+await json(`/api/auth/sessoes/${anotherClaims.sessionId}`, { method: 'DELETE', token: rotated.token });
+await json('/api/auth/me', { token: anotherSession.token, status: 401 });
 assert.notEqual(rotated.refreshToken, sessionLogin.refreshToken);
 await json('/api/auth/refresh', { method: 'POST', body: { plataforma: 'native', refreshToken: sessionLogin.refreshToken }, status: 401 });
 await json('/api/auth/me', { token: rotated.token });

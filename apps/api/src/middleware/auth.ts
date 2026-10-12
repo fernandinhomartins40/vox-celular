@@ -3,7 +3,7 @@ import { verifyToken } from '../lib/jwt.js';
 import { prisma } from '../lib/prisma.js';
 
 export interface AuthRequest extends Request {
-  user?: { userId: string; lojaId: string; role: string; sessionId?: string };
+  user?: { userId: string; lojaId: string; role: string; sessionId?: string; tokenVersion?: number };
 }
 
 export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
