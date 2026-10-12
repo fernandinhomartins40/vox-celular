@@ -146,6 +146,8 @@ jobs:
         run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
       - name: Validate TypeScript
         run: npm run typecheck --workspace=@vox/mobile
+      - name: Validate native session races
+        run: node .github/scripts/test-mobile-session-races.mjs
       - name: Check Expo dependency compatibility
         working-directory: apps/mobile
         run: npx expo install --check

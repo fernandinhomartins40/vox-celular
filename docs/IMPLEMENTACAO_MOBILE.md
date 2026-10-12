@@ -165,3 +165,10 @@ Catálogo permite salvar favoritos pela API autenticada; Minha conta abre lista 
 
 ### Preferências de privacidade nativas
 Minha conta abre controles nativos de personalização e consentimento para notificações, consultados pela API autenticada. Alterações ficam como rascunho até confirmação PUT; payload explícito evita enviar campos extras rejeitados pelo contrato estrito. Aviso distingue consentimento de permissão do aparelho e informa que entrega push ainda não está ativada. Não presume autorização inicial, não afirma sucesso offline, e falha de sessão oferece retorno à conta. Typecheck e export Android/iOS passaram; execução física e push continuam pendentes.
+
+### Serviços e agendamento nativos
+Tela /servicos integrada ao catálogo, agenda opcional e solicitações reais: escolher serviço → informar aparelho/problema e horário opcional → revisar/confirmar. Preço nulo aparece como sob orçamento; envio não autoriza reparos nem pagamento. Horários de Brasília, vaga confirmada exclusivamente no protocolo da API. Histórico autenticado exibe estados e mensagens da loja. UUID via expo-crypto compatível SDK 57; tentativas com os mesmos dados na tela reaproveitam a chave, bloqueio imediato de envio duplo. Ainda não há recuperação de tentativa após fechar o aplicativo; esta limitação permanece a resolver. Não testa reserva real em produção.
+
+Dependências conferidas por expo install --check; typecheck e export Android/iOS passaram. Android SDK/emulador não encontrados no caminho local padrão/PATH; somente Java detectado. Nenhuma alegação de APK/IPA ou teste físico. Referência do UUID: https://docs.expo.dev/versions/latest/sdk/crypto/ .
+
+Teste .github/scripts/test-mobile-session-races.mjs executa o código real do cliente de API com fetch e SecureStore simulados: uma renovação concorrente, escrita antiga bloqueada após trocar conta, logout não restaurado por resposta atrasada e fila de storage preservando credencial mais recente. Passou localmente e adicionado ao job verify-mobile. Não representa execução do storage nativo no aparelho.

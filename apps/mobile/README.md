@@ -13,9 +13,9 @@ nunca colocar chaves de provedor, senhas ou refresh tokens nelas.
 
 Refresh token usa Expo SecureStore e access token fica em memória. Não há AsyncStorage
 para credenciais. O catálogo consulta os preços/estoque reais e não confirma compras offline.
-Login de cliente, restauração de sessão, lista de pedidos, favoritos com comparação, preferências de privacidade e ajuda das operadoras têm telas nativas ligadas à API.
+Login de cliente, restauração de sessão, lista de pedidos, favoritos com comparação, preferências de privacidade, serviços com agenda e ajuda das operadoras têm telas nativas ligadas à API.
 Esses fluxos ainda precisam de teste funcional em emulador/aparelho. Cadastro, carrinho,
-detalhes/timeline de pedidos, serviços, assistente, exportação de dados e push
+detalhes/timeline de pedidos, assistente, exportação de dados e push
 continuam em implementação; a existência do workspace não prova esses recursos concluídos.
 
 Identificadores Android/iOS propostos: `br.com.voxcelular.cliente`.
