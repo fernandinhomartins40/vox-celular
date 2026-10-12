@@ -6,6 +6,10 @@ const base = process.env.PANEL_BASE ?? 'http://127.0.0.1:3196';
 const browser = await chromium.launch({ headless: true });
 try {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  // Browser offline emulation may leave worker-owned requests connected.
+  // Interrupt requests at the context layer too, including SW network fetches.
+  let networkDown = false;
+  await context.route('**/*', route => networkDown ? route.abort('internetdisconnected') : route.continue());
   const page = await context.newPage();
   await page.goto(base + '/instalar');
   await page.getByRole('heading', { name: 'A Vox na sua tela inicial' }).waitFor();
@@ -25,11 +29,13 @@ try {
     const cache = await caches.open('vox-offline-v1');
     return (await cache.keys()).map(request => new URL(request.url).pathname).sort();
   }), ['/brand/icon-192.png', '/offline.html']);
+  networkDown = true;
   await context.setOffline(true);
   await page.goto(base + '/area-cliente/pedidos');
   await page.getByRole('heading', { name: 'Vamos reconectar?' }).waitFor();
   await page.getByText('Nenhuma compra é confirmada sem conexão com a loja.').waitFor();
   assert.equal(await page.evaluate(async () => { try { await fetch('/api/ready'); return false; } catch { return true; } }), true);
+  networkDown = false;
   await context.setOffline(false);
   await page.getByRole('button', { name: 'Tentar novamente' }).click();
   await page.waitForURL('**/area-cliente/login');
