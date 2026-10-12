@@ -1,4 +1,4 @@
-import { LandingPreview, LandingPage, InstalarApp, Assistente, Ajuda, AdminLogin, AdminLayout, AdminDashboard, AdminPedidos, AdminProdutos, AdminClientes, AdminConfiguracoes, AdminIntegracoes, AdminConta, AdminServicos, AdminGuias, AdminIa, PanelAccount, ClienteLogin, ClienteLayout, ClienteHome, ClientePedidos, ClienteFavoritos, ClienteServicos, ClienteBeneficios } from './routePages';
+import { LandingPreview, LandingPage, InstalarApp, Assistente, Ajuda, AdminLogin, AdminLayout, AdminDashboard, AdminPedidos, AdminProdutos, AdminClientes, AdminConfiguracoes, AdminIntegracoes, AdminConta, AdminServicos, AdminGuias, AdminIa, PanelAccount, ClienteLogin, ClienteLayout, ClienteHome, ClientePedidos, ClienteFavoritos, ClienteServicos, ClienteAvisos, ClienteBeneficios } from './routePages';
 import { createBrowserRouter } from 'react-router-dom';
 import { ProtectedAdmin, ProtectedCliente } from './auth/RouteGuards.jsx';
 
@@ -36,6 +36,7 @@ export const router = createBrowserRouter([
       { index: true,          element: <ClienteHome /> },
       { path: 'pedidos',      element: <ClientePedidos /> },
       { path: 'favoritos',    element: <ClienteFavoritos /> },
+      { path: 'avisos', element: <ClienteAvisos /> },
       { path: 'servicos',     element: <ClienteServicos /> },
       { path: 'beneficios',   element: <ClienteBeneficios /> },
       { path: 'fidelidade',   element: <ClienteBeneficios initialTab="pontos" /> },

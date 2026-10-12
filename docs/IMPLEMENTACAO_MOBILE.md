@@ -287,3 +287,6 @@ GET /api/notificacoes exige cliente autenticado e filtra cliente/loja no servido
 
 ### Avisos no aplicativo nativo
 Conta abre /avisos, consulta API autenticada vinculada à revisão de sessão e atualiza ao focar. Lista limitada pelo servidor, datas de Brasília, estados de carga/falha/vazio e link às preferências. Destinos validados por chave própria em allowlist de pedidos/serviços/benefícios; não abre URL arbitrária da resposta. Interface distingue lista de avisos de entrega push. Typecheck e bundles Android/iOS validados; teste físico e integração real com fila permanecem pendentes.
+
+### Avisos no painel web
+Rota protegida /area-cliente/avisos usa header/cards compartilhados, consulta API autenticada, atualização manual e estados de erro/carga/vazio. Links somente allowlist interna, datas Brasília e acesso às preferências. Carregamento por rota mantém página fora do bundle inicial. Build/lint passaram; teste visual específico e integração real da fila permanecem pendentes. Lista não comprova push entregue.

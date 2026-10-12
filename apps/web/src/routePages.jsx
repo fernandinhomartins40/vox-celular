@@ -23,4 +23,5 @@ export const ClienteHome = lazy(() => import('./pages/cliente/ClienteHome'));
 export const ClientePedidos = lazy(() => import('./pages/cliente/ClientePedidos'));
 export const ClienteFavoritos = lazy(() => import('./pages/cliente/ClienteFavoritos'));
 export const ClienteServicos = lazy(() => import('./pages/cliente/ClienteServicos'));
+export const ClienteAvisos = lazy(() => import('./pages/cliente/ClienteAvisos'));
 export const ClienteBeneficios = lazy(() => import('./pages/cliente/ClienteBeneficios'));
