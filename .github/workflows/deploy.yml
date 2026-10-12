@@ -130,6 +130,34 @@ jobs:
           cache-from: type=gha,scope=vox-web
           cache-to: type=gha,mode=max,scope=vox-web
 
+  verify-mobile:
+    name: Validate native Android and iOS bundles
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install only native workspace dependencies
+        run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
+      - name: Validate TypeScript
+        run: npm run typecheck --workspace=@vox/mobile
+      - name: Check Expo dependency compatibility
+        working-directory: apps/mobile
+        run: npx expo install --check
+      - name: Export Android and iOS bundles without signing
+        working-directory: apps/mobile
+        run: npx expo export --platform all --max-workers 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vox-native-bundles
+          path: apps/mobile/dist
+          retention-days: 7
+
   verify:
     name: Test production images with real PostgreSQL
     needs: [prepare, build-api, build-web]

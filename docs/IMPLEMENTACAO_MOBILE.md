@@ -141,3 +141,11 @@ Páginas carregadas sob demanda com React lazy/Suspense declarados fora dos comp
 
 Painéis completos também passaram em 390/768/1440 após divisão, incluindo editor de guias, serviços e agendamento.
 
+
+### Aplicativo nativo iniciado
+Workspace apps/mobile com Expo 57.0.28, React Native 0.86.3 e Expo Router compatível. Catálogo em componentes nativos (FlatList/Image/Text), consulta mesma API HTTPS e dados reais. Infra de sessão: refresh no SecureStore, access em memória, rotação, timeout e proteção de geração contra respostas atrasadas; fila de escrita no storage evita renovação antiga sobrescrever sessão nova. Login visual e demais áreas ainda não implementados. Identificadores propostos br.com.voxcelular.cliente, sem alegar disponibilidade nas lojas.
+
+Validação local: tipos, expo install --check e export Android/iOS passaram (bundles Hermes aproximadamente 2,7/2,4 MB). Não são APK/IPA assinados nem testes físicos. Workflow único ganhou job independente de validação nativa, export e artefato sete dias; resultado CI pendente pelo bloqueio de cobrança. Dockerfiles web/API instalam apenas seus workspaces, mantendo Expo fora das imagens VPS.
+
+Auditoria npm identificou proxy-addr vulnerável; atualização compatível para 2.0.8 realizada. Build API e web/lint passaram após atualização. Outros avisos de dependências/toolchains permanecem a investigar; nenhuma alegação de audit limpo. Referências oficiais: https://docs.expo.dev/router/installation/ e https://docs.expo.dev/versions/latest/sdk/securestore/ .
+
