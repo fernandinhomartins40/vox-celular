@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { aiCostMicroUsd, canReserveAiCost } from './aiCost.js';
+assert.equal(aiCostMicroUsd(3000, 800, 300000, 1200000), 1860);
+assert.equal(aiCostMicroUsd(1, 0, 1, 0), 1, 'Fractional micro-USD rounds upward');
+assert.equal(aiCostMicroUsd(0, 0, 300000, 1200000), 0);
+assert.equal(aiCostMicroUsd(1000000000, 1000000000, 1000000000, 1000000000), 2000000000000);
+for (const value of [-1, NaN, Infinity, 0.5, 1000000001]) assert.throws(() => aiCostMicroUsd(value, 1, 1, 1));
+assert.equal(canReserveAiCost(100, 60, 30, 10), true);
+assert.equal(canReserveAiCost(100, 60, 30, 11), false);
+assert.equal(canReserveAiCost(0, 0, 0, 1), false);
+assert.throws(() => canReserveAiCost(100, -1, 0, 1));
+assert.equal(canReserveAiCost(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, 1, 0), false);
+console.log('AI integer cost rounding and reservation boundaries passed.');
