@@ -135,3 +135,9 @@ Painel Guias de ajuda cria/edita rascunhos, operadora/tópico, resumo, passos po
 
 Bloqueio externo de deploy identificado pela annotation do job 114988009243 (run 38302292365): GitHub Actions não iniciou por falhas recentes de pagamento ou spending limit da conta. Necessário corrigir Settings → Billing & plans no GitHub. Não há substituição por deploy manual SSH. Desenvolvimento e validação local continuam; não declarar estes commits implantados.
 
+
+### Carregamento por rota do PWA
+Páginas carregadas sob demanda com React lazy/Suspense declarados fora dos componentes. Painel mantém navegação durante carregamento do conteúdo; estado de carregamento acessível. Build principal agora 192,57 kB (61,01 kB gzip), acompanhado por runtime compartilhado e chunks específicos, em vez de reunir todas as páginas no único arquivo de aproximadamente 527 kB. Não comparar esse único arquivo como total de transferência: landing ainda usa seu chunk e dependências. CSS específico do painel/editor também separado pelo build. Build/lint aprovados; assistente e ajuda passaram em três tamanhos após mudança. Não há benchmark físico mobile nem redução de RAM VPS comprovada por esta alteração. Fonte técnica: https://react.dev/reference/react/lazy .
+
+Painéis completos também passaram em 390/768/1440 após divisão, incluindo editor de guias, serviços e agendamento.
+

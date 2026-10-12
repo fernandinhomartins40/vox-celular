@@ -1,5 +1,5 @@
 import BrandLogo from '../BrandLogo';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth.js';
 import { Icon } from '../../icons';
@@ -51,7 +51,7 @@ export default function PanelShell({ title, groups, loginPath }) {
     {open && <div className="panel-menu-overlay"><div className="panel-backdrop" onClick={() => setOpen(false)} /><aside role="dialog" aria-modal="true" aria-label="Menu de navegação" className="panel-drawer" ref={drawer}>{navigation(true)}</aside></div>}
     <div className="panel-workspace" inert={open ? true : undefined}>
       <header className="panel-topbar"><button ref={menuButton} className="panel-menu-button" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}><Icon.menu /></button><strong>{title}</strong><Link to="/" className="panel-store-link">Ver loja <Icon.arrowUpRight /></Link></header>
-      <main id="panel-content" tabIndex={-1} className="panel-content"><Outlet /></main>
+      <main id="panel-content" tabIndex={-1} className="panel-content"><Suspense fallback={<p role="status" className="panel-feedback">Carregando a página…</p>}><Outlet /></Suspense></main>
       <nav className="panel-mobile-nav" aria-label="Atalhos do painel">{mobileItems.map(({ to, label, icon, end, aliases = [] }) => {
         const I = Icon[icon]; const aliasActive = aliases.includes(pathname);
         return <NavLink key={to} to={to} end={end} aria-current={aliasActive ? 'page' : undefined} className={({ isActive }) => isActive || aliasActive ? 'is-active' : ''}><I /><span>{label === 'Visão geral' ? 'Início' : label === 'Meus benefícios' ? 'Benefícios' : label === 'Meus pedidos' ? 'Pedidos' : label === 'Minha conta' ? 'Conta' : label}</span></NavLink>;

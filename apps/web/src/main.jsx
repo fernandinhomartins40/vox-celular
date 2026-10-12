@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
@@ -26,7 +26,9 @@ if (!storedLojaId && !envLojaId) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
-      <RouterProvider router={router} />
+      <Suspense fallback={<div role="status" aria-live="polite" className="min-h-screen bg-slate-50 text-slate-900 grid place-items-center p-6"><p>Carregando a página…</p></div>}>
+        <RouterProvider router={router} />
+      </Suspense>
     </AuthProvider>
   </StrictMode>,
 );
