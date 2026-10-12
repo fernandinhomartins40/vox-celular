@@ -149,3 +149,9 @@ Validação local: tipos, expo install --check e export Android/iOS passaram (bu
 
 Auditoria npm identificou proxy-addr vulnerável; atualização compatível para 2.0.8 realizada. Build API e web/lint passaram após atualização. Outros avisos de dependências/toolchains permanecem a investigar; nenhuma alegação de audit limpo. Referências oficiais: https://docs.expo.dev/router/installation/ e https://docs.expo.dev/versions/latest/sdk/securestore/ .
 
+
+### Conta e pedidos nativos
+Telas nativas Minha conta/Meus pedidos ligadas à autenticação plataforma native e API existente. Login somente para cliente, email/senha com teclado/autocomplete adequados, mostrar/ocultar senha, limpeza da senha após login, restauração por SecureStore e logout com revogação no servidor quando rede confirma. Falha de rede na saída informa limitação e limpa credencial local. Pedidos consultam titular autenticado, itens/status/pagamento reais; não simulam liquidação. Navegação Stack nativa sem WebView.
+
+Typecheck e export Android/iOS passaram após incremento. Isso prova tipos e bundling, não execução real de login em aparelhos. Cadastro, carrinho, timeline/detalhes completos, cinco áreas finais e demais funcionalidades ainda pendentes no nativo. Não foram usados tokens reais ou gravações em produção para validar telas.
+

@@ -16,7 +16,9 @@ function persistRefresh(token: string | null, version: number) {
   storageQueue = operation.catch(() => {});
   return operation;
 }
-type Session = { token: string; refreshToken: string; user: { id: string; nome: string; role: string; lojaId: string; email: string } };
+export type NativeUser = { id: string; nome: string; role: string; lojaId: string; email: string };
+export type Session = { token: string; refreshToken: string; user: NativeUser };
+export async function hasSavedSession() { return Boolean(await SecureStore.getItemAsync(refreshKey)); }
 export async function saveSession(session: Session) {
   const version = ++generation;
   renewing = undefined;
