@@ -155,3 +155,7 @@ Telas nativas Minha conta/Meus pedidos ligadas à autenticação plataforma nati
 
 Typecheck e export Android/iOS passaram após incremento. Isso prova tipos e bundling, não execução real de login em aparelhos. Cadastro, carrinho, timeline/detalhes completos, cinco áreas finais e demais funcionalidades ainda pendentes no nativo. Não foram usados tokens reais ou gravações em produção para validar telas.
 
+
+### Ajuda nativa das operadoras
+Tela nativa /ajuda: operadora → tópico → guias publicados/vigentes da mesma API. Não exige sessão, cita fonte/revisão/validade, usa canal oficial quando falta guia e não inventa passos. Links externos abrem pelo sistema somente após conferir HTTPS e domínio exato/subdomínio da operadora, sem credenciais/porta alternativa. Validade reavaliada a cada minuto; texto e controles nativos acessíveis. Typecheck e bundles Android/iOS passaram. Ainda falta validação funcional/foco/voltar em aparelho e cobertura de todos os conteúdos revisados, sem alegar publicação em lojas.
+
