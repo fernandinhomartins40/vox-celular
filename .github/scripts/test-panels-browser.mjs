@@ -16,7 +16,8 @@ const responses = () => ({
   '/loja': { id: 'fixture-store' }, '/config': {},
   '/privacidade/preferencias': { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' },
   '/auth/sessoes': [],
-  '/servicos': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null }],
+  '/servicos': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null, agendamento: true }],
+  '/agenda': [{ id: 'available-slot', inicio: '2026-11-01T13:00:00.000Z', fim: '2026-11-01T14:00:00.000Z', vagas: 1 }, { id: 'full-slot', inicio: '2026-11-02T13:00:00.000Z', fim: '2026-11-02T14:00:00.000Z', vagas: 0 }],
   '/servicos/admin': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null, ativo: true }],
   '/agenda/admin': [],
   '/servicos/solicitacoes': [],
@@ -52,6 +53,7 @@ try {
         if (path === '/servicos/solicitacoes' && route.request().method() === 'POST') {
           const body = route.request().postDataJSON();
           assert.match(body.chaveIdempotencia, /^[0-9a-f-]{36}$/);
+          assert.equal(body.horarioId, 'available-slot');
           data = { ...body, id: 'service-request', protocolo: 'VOX-S-FIXTURE', status: 'RECEBIDA' };
         }
         if (data === undefined) throw new Error(`Unexpected fixture API request: ${path}`);
@@ -92,12 +94,16 @@ try {
         await page.goto(base + prefix + '/servicos');
         await page.getByRole('combobox', { name: /^Serviço/ }).selectOption('service');
         await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+        const schedule = page.getByRole('combobox', { name: /^Horário de atendimento/ });
+        await schedule.selectOption('available-slot');
+        assert.equal(await schedule.locator('option[value="full-slot"]').evaluate(option => option.disabled), true);
         await page.getByLabel('Aparelho', { exact: true }).fill('Samsung Galaxy A55');
         await page.getByLabel('O que está acontecendo?', { exact: true }).fill('A bateria descarrega rapidamente.');
         await page.getByRole('button', { name: 'Continuar', exact: true }).click();
         await page.getByRole('heading', { name: 'Confira antes de enviar' }).waitFor();
         await page.getByRole('button', { name: 'Enviar solicitação', exact: true }).click();
         await page.getByRole('status').filter({ hasText: 'VOX-S-FIXTURE' }).waitFor();
+        await page.getByRole('status').filter({ hasText: 'Horário reservado:' }).waitFor();
       }
       await page.goto(base + prefix);
       await page.getByRole('region', { name: 'Próximo passo' }).getByRole('link').first().click();
