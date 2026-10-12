@@ -354,3 +354,23 @@ assert.equal((await json('/api/privacidade/preferencias', { token: renewed.token
 assert.equal((await json('/api/privacidade/exportar', { token: renewed.token })).consentimentos.length, 2);
 await json('/api/privacidade/preferencias', { method: 'PUT', token: renewed.token, body: { ...preferenceChoice, versaoAviso: 'unknown-version' }, status: 400 });
 console.log('PASS: default-denied preferences, customer authorization, consent version, idempotent audit trail, withdrawal and own-data export.');
+
+const assistantDevice = await json('/api/produtos', { method: 'POST', token: admin.token, status: 201, body: {
+  nome: 'CI assistant device', sub: '256 GB', categoria: 'Celulares', preco: 1600, descricao: 'CI disposable device', estoque: 4, ativo: true,
+  atributosTecnicos: { tipo: 'celular', ramGB: 8, armazenamentoGB: 256, verificado: true, fonte: 'https://manufacturer.example/device' },
+} });
+const assistantNeeds = { lojaId: loja.id, tipo: 'celular', orcamento: 1700, uso: 'trabalho', ramMinima: 8, armazenamentoMinimo: 256 };
+const suggestions = await json('/api/assistente/recomendar', { method: 'POST', body: assistantNeeds });
+assert.equal(suggestions.modo, 'regras');
+assert.ok(suggestions.resultados.some(row => row.produto.id === assistantDevice.id));
+assert.ok(suggestions.resultados.length <= 3);
+for (const row of suggestions.resultados) assert.ok(row.produto.lojaId === loja.id && row.produto.estoque > 0 && row.produto.preco <= assistantNeeds.orcamento);
+assert.equal((await json('/api/assistente/recomendar', { method: 'POST', body: { ...assistantNeeds, orcamento: 1 } })).resultados.length, 0);
+assert.equal((await json('/api/assistente/recomendar', { method: 'POST', body: { ...assistantNeeds, tipo: 'tablet' } })).resultados.length, 0);
+await json('/api/assistente/recomendar', { method: 'POST', body: { ...assistantNeeds, lojaId: 'missing-store' }, status: 404 });
+await json('/api/assistente/recomendar', { method: 'POST', body: { ...assistantNeeds, prompt: 'invent a device' }, status: 400 });
+await json(`/api/produtos/${assistantDevice.id}`, { method: 'PATCH', token: admin.token, body: { ativo: false } });
+assert.ok(!(await json('/api/assistente/recomendar', { method: 'POST', body: assistantNeeds })).resultados.some(row => row.produto.id === assistantDevice.id));
+await json(`/api/produtos/${assistantDevice.id}`, { method: 'PATCH', token: admin.token, body: { ativo: true, estoque: 0 } });
+assert.ok(!(await json('/api/assistente/recomendar', { method: 'POST', body: assistantNeeds })).resultados.some(row => row.produto.id === assistantDevice.id));
+console.log('PASS: public recommendations from real PostgreSQL, bounded results, strict criteria, missing store, hidden and exhausted devices.');

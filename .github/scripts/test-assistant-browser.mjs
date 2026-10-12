@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require = createRequire(`${process.env.PANEL_TOOLS ?? `${process.env.RUNNER_TEMP}/vox-browser`}/package.json`);
+const { chromium } = require('playwright');
+const base = process.env.PANEL_BASE ?? 'http://127.0.0.1:3196';
+const browser = await chromium.launch({ headless: true });
+try {
+  for (const width of [390, 768, 1440]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    let submitted;
+    let currentPrice = 1800;
+    const device = { id: 'device', lojaId: 'store', nome: 'Aparelho da loja', sub: '128 GB', preco: 1700, estoque: 4, atributosTecnicos: {} };
+    await page.route('**/api/**', async route => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/api/loja') return route.fulfill({ json: { id: 'store' } });
+      if (path === '/api/produtos') return route.fulfill({ json: [{ ...device, preco: currentPrice }] });
+      if (path === '/api/assistente/recomendar') {
+        submitted = route.request().postDataJSON();
+        return route.fulfill({ json: { modo: 'regras', aviso: 'Seleção pelas regras do catálogo, sem inteligência artificial.', resultados: submitted.tipo === 'tablet' ? [] : [{ produto: device, motivos: ['Dentro do orçamento informado.'], observacao: 'Características não conferidas.', fonte: null }], mensagem: 'Não encontramos opções que atendam aos critérios.' } });
+      }
+      throw new Error(`Unexpected assistant fixture: ${path}`);
+    });
+    await page.goto(`${base}/assistente`);
+    await page.getByLabel('Valor máximo em reais').fill('2000');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByLabel('Uso principal').selectOption('trabalho');
+    await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
+    await page.getByRole('heading', { name: 'Suas opções' }).waitFor();
+    assert.equal(submitted.orcamento, 2000);
+    assert.equal(submitted.uso, 'trabalho');
+    assert.equal(submitted.ramMinima, undefined);
+    assert.equal(await page.getByRole('cell', { name: 'Não informado', exact: true }).count(), 3);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).click();
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('vox_cart'))?.[0]?.preco === 1800);
+    assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('vox_cart'))[0].qty), 1);
+    await page.reload();
+    await page.getByLabel('Valor máximo em reais').fill('2000');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
+    currentPrice = 2100;
+    await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: 'ultrapassa seu orçamento' }).waitFor();
+    assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('vox_cart'))[0].qty), 1);
+    await page.getByRole('button', { name: 'Ajustar escolhas', exact: true }).click();
+    assert.equal(await page.getByLabel('Valor máximo em reais').inputValue(), '2000');
+    await page.getByLabel('O que procura?').selectOption('tablet');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
+    await page.getByText('Não encontramos opções que atendam aos critérios.', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).count(), 0);
+    assert.equal(new URL(await page.getByRole('link', { name: 'Pedir ajuda à Vox' }).getAttribute('href')).hostname, 'wa.me');
+    await page.close();
+  }
+  console.log('PASS: public three-step assistant, retained criteria, unknown specifications, fresh cart prices, budget changes and empty tablet results at three viewports. Browser fixtures only.');
+} finally { await browser.close(); }

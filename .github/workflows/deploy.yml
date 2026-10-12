@@ -173,6 +173,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/authLimits.test.js
       - name: Structured catalog data and source validation
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/productAttributes.test.js
+      - name: Recommendation catalog constraints and unknown attributes
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/recommendations.test.js
       - name: Product search and customer contact regression tests
         run: node --test apps/web/src/lib/catalog.test.js apps/web/src/lib/panel.test.js
       - name: Product flows in Chromium against real API and PostgreSQL
@@ -190,6 +192,8 @@ jobs:
         run: node .github/scripts/test-privacy-browser.mjs
       - name: Verify session renewal races
         run: node .github/scripts/test-session-races.mjs
+      - name: Three-step product selection on mobile, tablet and desktop
+        run: node .github/scripts/test-assistant-browser.mjs
       - name: Landing page editor and faithful live previews
         run: node .github/scripts/test-landing-editor.mjs
       - name: Container status on failure

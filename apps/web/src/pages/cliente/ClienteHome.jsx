@@ -62,6 +62,7 @@ export default function ClienteHome() {
       {!loading && ultimoPedido?.status !== 'ENTREGUE' && ultimoPedido && <PanelNextAction title={ultimoPedido.status === 'PRONTO' ? 'Seu pedido está pronto' : 'Acompanhe seu pedido'} description={`${ultimoPedido.codigo ?? ultimoPedido.id}: ${STATUS_LABEL[ultimoPedido.status] ?? ultimoPedido.status}. Veja os detalhes ou combine com a loja.`} action="Ver meu pedido" to={orderLink('/area-cliente', ultimoPedido.id)} />}
       {!loading && !ultimoPedido && !failed.includes('pedidos') && <PanelNextAction title="Encontre seu próximo celular" description="Escolha na loja e fale com a equipe. Suas compras registradas aparecem aqui." action="Ver produtos" to="/#produtos" />}
       <PanelQuickActions items={[
+        { to: '/assistente', label: 'Escolher aparelho', description: 'Orçamento, necessidades e comparação', icon: 'search' },
         ...(!ultimoPedido || ultimoPedido.status === 'ENTREGUE' ? [{ to: '/area-cliente/pedidos', label: 'Consultar compras', description: 'Pedidos e detalhes da compra', icon: 'package' }] : []),
         { to: '/area-cliente/beneficios', label: 'Usar meus pontos', description: 'Saldo e recompensas juntos', icon: 'award' },
         { to: '/area-cliente/beneficios?aba=ofertas', label: 'Ver ofertas', description: 'Oportunidades da loja', icon: 'tag' },
