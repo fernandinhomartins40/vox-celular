@@ -4,7 +4,8 @@ import { api } from '../../lib/api';
 import { formatBRL } from '../../utils';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
-import ServiceSchedule, { serviceSlotLabel } from '../../components/ServiceSchedule';
+import ServiceSchedule from '../../components/ServiceSchedule';
+import { serviceSlotLabel } from '../../lib/serviceSchedule';
 
 const labels = { RECEBIDA: 'Recebida', EM_ANALISE: 'Em análise', AGUARDANDO_CLIENTE: 'Aguardando você', EM_EXECUCAO: 'Em execução', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada' };
 export default function ClienteServicos() {
