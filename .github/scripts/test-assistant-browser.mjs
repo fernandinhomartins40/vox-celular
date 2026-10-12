@@ -9,11 +9,12 @@ try {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     let submitted;
     let currentPrice = 1800;
-    const device = { id: 'device', lojaId: 'store', nome: 'Aparelho da loja', sub: '128 GB', preco: 1700, estoque: 4, atributosTecnicos: {} };
+    let currentAttributes = {};
+    const device = { id: 'device', lojaId: 'store', nome: 'Aparelho da loja', categoria: 'Celulares', sub: '128 GB', preco: 1700, estoque: 4, atributosTecnicos: {} };
     await page.route('**/api/**', async route => {
       const path = new URL(route.request().url()).pathname;
       if (path === '/api/loja') return route.fulfill({ json: { id: 'store' } });
-      if (path === '/api/produtos') return route.fulfill({ json: [{ ...device, preco: currentPrice }] });
+      if (path === '/api/produtos') return route.fulfill({ json: [{ ...device, preco: currentPrice, atributosTecnicos: currentAttributes }] });
       if (path === '/api/assistente/recomendar') {
         submitted = route.request().postDataJSON();
         return route.fulfill({ json: { modo: 'regras', aviso: 'Seleção pelas regras do catálogo, sem inteligência artificial.', resultados: submitted.tipo === 'tablet' ? [] : [{ produto: device, motivos: ['Dentro do orçamento informado.'], observacao: 'Características não conferidas.', fonte: null }], mensagem: 'Não encontramos opções que atendam aos critérios.' } });
@@ -44,6 +45,19 @@ try {
     assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('vox_cart'))[0].qty), 1);
     await page.getByRole('button', { name: 'Ajustar escolhas', exact: true }).click();
     assert.equal(await page.getByLabel('Valor máximo em reais').inputValue(), '2000');
+    currentPrice = 1800;
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByText('Já sabe a memória que precisa? (opcional)', { exact: true }).click();
+    await page.getByLabel('RAM mínima').selectOption('8');
+    await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
+    await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: 'informações técnicas mudaram' }).waitFor();
+    assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('vox_cart'))[0].qty), 1);
+    currentAttributes = { tipo: 'celular', ramGB: 8, verificado: true, fonte: 'https://manufacturer.example/specs' };
+    await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).click();
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('vox_cart'))[0].qty === 2);
+    await page.reload();
+    await page.getByLabel('Valor máximo em reais').fill('2000');
     await page.getByLabel('O que procura?').selectOption('tablet');
     await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();

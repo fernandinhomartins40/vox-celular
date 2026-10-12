@@ -34,6 +34,14 @@ export default function Assistente() {
       const current = rows.find(row => row.id === product.id);
       if (!current || current.estoque < 1) throw new Error('Este aparelho ficou indisponível. Atualize as opções.');
       if (current.preco > Number(needs.orcamento)) throw new Error('O preço mudou e ultrapassa seu orçamento. Atualize as opções.');
+      const attributes = current.atributosTecnicos || {};
+      const type = attributes.tipo || ({ Celulares: 'celular', Tablets: 'tablet' })[current.categoria];
+      if (type !== needs.tipo) throw new Error('O cadastro deste aparelho mudou. Atualize as opções.');
+      for (const [requirement, attribute] of [['ramMinima', 'ramGB'], ['armazenamentoMinimo', 'armazenamentoGB']]) {
+        if (needs[requirement] && (!attributes.verificado || !attributes.fonte || !attributes[attribute] || attributes[attribute] < Number(needs[requirement]))) {
+          throw new Error('As informações técnicas mudaram e não confirmam seus critérios. Atualize as opções.');
+        }
+      }
       if (cart.some(item => item.lojaId !== current.lojaId)) throw new Error('Finalize ou esvazie o carrinho da outra loja antes de continuar.');
       setResult(previous => ({ ...previous, resultados: previous.resultados.map(row => row.produto.id === current.id ? { ...row, produto: current } : row) }));
       setCart(previous => [...previous.filter(item => item.id !== current.id), { ...current, img: assetUrl(current.imgUrl), qty: Math.min(current.estoque, (previous.find(item => item.id === current.id)?.qty || 0) + 1) }]);
