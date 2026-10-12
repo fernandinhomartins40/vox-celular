@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { formatBRL } from '../../utils';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
+import ServiceSchedule, { serviceSlotLabel } from '../../components/ServiceSchedule';
 
 const labels = { RECEBIDA: 'Recebida', EM_ANALISE: 'Em análise', AGUARDANDO_CLIENTE: 'Aguardando você', EM_EXECUCAO: 'Em execução', CONCLUIDA: 'Concluída', CANCELADA: 'Cancelada' };
 export default function ClienteServicos() {
@@ -16,6 +17,7 @@ export default function ClienteServicos() {
   const [form, setForm] = useState({ servicoId: '', aparelho: '', problema: '' });
   const [attempt, setAttempt] = useState(null);
   const [receipt, setReceipt] = useState(null);
+  const [slot, setSlot] = useState(null);
   async function load() {
     setError('');
     try {
@@ -28,13 +30,13 @@ export default function ClienteServicos() {
     Promise.all([api.get(`/servicos?lojaId=${encodeURIComponent(user.lojaId)}`), api.get('/servicos/solicitacoes')]).then(([catalog, history]) => { if (active) { setServices(catalog); setRequests(history); } }).catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
   }, [user.lojaId]);
-  function change(field, value) { setForm(previous => ({ ...previous, [field]: value })); setAttempt(null); setError(''); }
+  function change(field, value) { setForm(previous => ({ ...previous, [field]: value })); if (field === 'servicoId') setSlot(null); setAttempt(null); setError(''); }
   async function send(event) {
     event.preventDefault(); setBusy(true); setError('');
     const key = attempt || crypto.randomUUID(); setAttempt(key);
     try {
-      const row = await api.post('/servicos/solicitacoes', { ...form, chaveIdempotencia: key });
-      setReceipt(row); setRequests(previous => [row, ...previous.filter(item => item.id !== row.id)]);
+      const row = await api.post('/servicos/solicitacoes', { ...form, ...(slot ? { horarioId: slot.id } : {}), chaveIdempotencia: key });
+      setReceipt({ ...row, horario: slot }); setRequests(previous => [{ ...row, horario: slot }, ...previous.filter(item => item.id !== row.id)]); setSlot(null);
       setForm({ servicoId: '', aparelho: '', problema: '' }); setAttempt(null); setStep(1);
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
@@ -45,10 +47,12 @@ export default function ClienteServicos() {
     <PanelPageHeader title="Meus serviços" description="Solicite ajuda para seu aparelho e acompanhe a resposta da loja." />
     {error && <PanelError message={error} />}
     {services === null ? <><PanelLoading /><button className="text-blue-700 py-3" onClick={load}>Tentar novamente</button></> : <>
-      {receipt && <div role="status" className="panel-feedback mb-6"><strong>Solicitação enviada</strong><p className="break-all">Protocolo: {receipt.protocolo}</p><p>A loja vai analisar. Nenhum pagamento ou agendamento foi confirmado.</p></div>}
+      {receipt && <div role="status" className="panel-feedback mb-6"><strong>Solicitação enviada</strong><p className="break-all">Protocolo: {receipt.protocolo}</p><p>{receipt.horario ? `Horário reservado: ${serviceSlotLabel(receipt.horario)}. Orçamento e pagamento não confirmados.` : 'A loja vai analisar. Nenhum pagamento ou agendamento foi confirmado.'}</p></div>}
       {services.length ? <section className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-7 mb-6">
         <h2 className="font-bold text-xl">Solicitar um serviço</h2><ol aria-label="Etapas da solicitação" className="flex flex-wrap gap-4 my-4 text-sm">{['Escolha o serviço', 'Conte o problema', 'Revise e envie'].map((label, index) => <li key={label} aria-current={step === index + 1 ? 'step' : undefined} className={step === index + 1 ? 'font-bold text-blue-700' : 'text-slate-500'}>{index + 1}. {label}</li>)}</ol>
         <form onSubmit={step < 3 ? event => { event.preventDefault(); setStep(previous => previous + 1); } : send}>
+          {step === 2 && selected?.agendamento && <ServiceSchedule key={selected.id} lojaId={user.lojaId} servicoId={selected.id} selected={slot} onChange={value => { setSlot(value); setAttempt(null); }} />}
+          {step === 3 && slot && <p className="mb-4 font-semibold">Horário escolhido: {serviceSlotLabel(slot)}</p>}
           {step === 1 && <label>Serviço<select required value={form.servicoId} onChange={e => change('servicoId', e.target.value)} className={field}><option value="">Escolha uma opção</option>{services.map(service => <option key={service.id} value={service.id}>{service.titulo}</option>)}</select>{selected && <span className="block mt-3 text-sm text-slate-600">{selected.descricao}<br />{selected.preco === null ? 'Preço sob orçamento.' : `Preço informado: ${formatBRL(selected.preco)}. Confirme as condições com a loja.`}</span>}</label>}
           {step === 2 && <div className="grid gap-4"><label>Aparelho<input required minLength={2} maxLength={160} className={field} value={form.aparelho} onChange={e => change('aparelho', e.target.value)} placeholder="Ex.: Samsung Galaxy A55" /></label><label>O que está acontecendo?<textarea required minLength={5} maxLength={2000} rows={4} className={field} value={form.problema} onChange={e => change('problema', e.target.value)} placeholder="Descreva o problema com suas palavras." /></label><p className="text-sm text-slate-500">Não informe senhas, códigos de desbloqueio ou dados bancários.</p></div>}
           {step === 3 && <div className="space-y-3"><h3 className="font-bold">Confira antes de enviar</h3><p>{selected?.titulo}</p><p className="break-words">{form.aparelho}</p><p className="whitespace-pre-wrap break-words">{form.problema}</p><p className="text-sm text-slate-500">Esta é uma solicitação de análise. Orçamento, prazo e eventual agendamento serão confirmados pela loja.</p></div>}
