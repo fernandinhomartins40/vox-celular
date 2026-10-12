@@ -225,3 +225,8 @@ Build API e teste local com transporte simulado passaram para privacidade, endpo
 
 ### Cálculo monetário para orçamento de IA
 Módulo aiCost calcula custo em micro-USD com BigInt, tarifas configuráveis por milhão de tokens e arredondamento para cima, sem preços de provedor fixados no código. Valida entradas inteiras/limites e verifica espaço para gasto mais reservas pendentes sem overflow de soma. Testes de fronteira, fração monetária, limite exato e excedido passaram; build API passou e job CI acrescentado. Ainda é base matemática: não há reserva persistente/transacional, configuração por loja nem cobrança real validada. Não declara teto mensal aplicado até integração com banco/rota.
+
+### Reserva persistente do orçamento de IA
+Migração aditiva cria OrcamentoIa por loja/mês e ReservaIa com valores BigInt em micro-USD. Serviço reserva sob advisory lock transacional por loja/mês, considerando gasto e reservas já abertas. Liquidação é vinculada à loja, serializada e idempotente; falha ambígua contabiliza máximo reservado, sem liberar orçamento que pode ter sido cobrado. Reservas interrompidas permanecem ocupando orçamento até reconciliação: não expiram automaticamente. Configuração e integração com adaptadores/rotas ainda pendentes, portanto teto comercial não está ativado.
+
+Prisma generate e build API passaram, assim como teste matemático de custo. Teste PostgreSQL adicionado ao CI com fixture descartável, para concorrência, isolamento, liquidação única, custo incerto e meses separados. Não executado localmente nem em produção; validação do banco depende do CI. Nenhuma migração aplicada por SSH.

@@ -29,6 +29,32 @@ model Loja {
   servicos Servico[]
   guiasOperadora GuiaOperadora[]
   solicitacoesServico SolicitacaoServico[]
+  orcamentosIa OrcamentoIa[]
+}
+
+model OrcamentoIa {
+  id String @id @default(cuid())
+  lojaId String
+  mes String
+  limiteMicroUsd BigInt
+  gastoMicroUsd BigInt @default(0)
+  reservadoMicroUsd BigInt @default(0)
+  updatedAt DateTime @updatedAt
+  loja Loja @relation(fields: [lojaId], references: [id])
+  reservas ReservaIa[]
+  @@unique([lojaId, mes])
+}
+
+model ReservaIa {
+  id String @id @default(cuid())
+  orcamentoId String
+  valorMicroUsd BigInt
+  custoMicroUsd BigInt?
+  status String @default("RESERVADA")
+  createdAt DateTime @default(now())
+  encerradaEm DateTime?
+  orcamento OrcamentoIa @relation(fields: [orcamentoId], references: [id])
+  @@index([orcamentoId, status])
 }
 
 model IntegracaoMarketplace {

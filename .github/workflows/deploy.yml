@@ -215,6 +215,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/aiProvider.test.js
       - name: AI cost rounding and budget reservation boundaries
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/aiCost.test.js
+      - name: AI budget concurrency with real PostgreSQL
+        run: docker compose --profile tools run --rm --no-deps -e AI_BUDGET_TEST=ci-disposable migrate node dist/lib/aiBudget.test.js
       - name: Official operator sources and editorial guide validation
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/operatorGuides.test.js
       - name: Product search and customer contact regression tests
