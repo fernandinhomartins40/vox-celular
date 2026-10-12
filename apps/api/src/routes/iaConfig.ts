@@ -25,13 +25,13 @@ iaConfigRouter.get('/orcamento', async (req: AuthRequest, res) => {
       prisma.orcamentoIa.findUnique({ where: { lojaId_mes: { lojaId, mes } } }),
       prisma.configuracaoIa.findUnique({ where: { lojaId }, select: { limiteMicroUsd: true } }),
     ]);
-    res.set('Cache-Control', 'no-store').json({ mes, fuso: 'UTC', limiteMicroUsd: config ? Number(config.limiteMicroUsd) : null, gastoMicroUsd: Number(budget?.gastoMicroUsd ?? 0n), reservadoMicroUsd: Number(budget?.reservadoMicroUsd ?? 0n), ativo: false });
+    res.set('Cache-Control', 'no-store').json({ mes, fuso: 'UTC', limiteMicroUsd: config ? Number(config.limiteMicroUsd) : null, gastoMicroUsd: Number(budget?.gastoMicroUsd ?? 0n), reservadoMicroUsd: Number(budget?.reservadoMicroUsd ?? 0n), ativacaoAutomatica: false, consultaExternaDisponivel: Boolean(config) });
   } catch { res.status(503).json({ error: 'Não foi possível consultar o orçamento de IA.' }); }
 });
 iaConfigRouter.get('/', async (req: AuthRequest, res) => {
   try {
     const row = await prisma.configuracaoIa.findUnique({ where: { lojaId: req.user!.lojaId } });
-    res.set('Cache-Control', 'no-store').json(row ? { provedor: row.provedor, modelo: row.modelo, workspace: row.workspace, limiteMicroUsd: Number(row.limiteMicroUsd), tarifaEntradaMicroUsd: Number(row.tarifaEntradaMicroUsd), tarifaSaidaMicroUsd: Number(row.tarifaSaidaMicroUsd), chaveConfigurada: true, ativo: false } : null);
+    res.set('Cache-Control', 'no-store').json(row ? { provedor: row.provedor, modelo: row.modelo, workspace: row.workspace, limiteMicroUsd: Number(row.limiteMicroUsd), tarifaEntradaMicroUsd: Number(row.tarifaEntradaMicroUsd), tarifaSaidaMicroUsd: Number(row.tarifaSaidaMicroUsd), chaveConfigurada: true, ativacaoAutomatica: false, consultaExternaDisponivel: true } : null);
   } catch { res.status(503).json({ error: 'Não foi possível consultar a configuração de IA.' }); }
 });
 iaConfigRouter.put('/', async (req: AuthRequest, res) => {
@@ -48,6 +48,6 @@ iaConfigRouter.put('/', async (req: AuthRequest, res) => {
       const data = { provedor: parsed.data.provedor, modelo: parsed.data.provedor === 'deepseek' ? 'deepseek-flash' : 'qwen3.5-flash', workspace: parsed.data.provedor === 'qwen' ? parsed.data.workspace : null, credenciais: await encryptCredentials({ apiKey }, context), limiteMicroUsd: BigInt(parsed.data.limiteMicroUsd), tarifaEntradaMicroUsd: BigInt(parsed.data.tarifaEntradaMicroUsd), tarifaSaidaMicroUsd: BigInt(parsed.data.tarifaSaidaMicroUsd) };
       await tx.configuracaoIa.upsert({ where: { lojaId }, create: { lojaId, ...data }, update: data });
     });
-    res.set('Cache-Control', 'no-store').json({ ok: true, ativo: false });
+    res.set('Cache-Control', 'no-store').json({ ok: true, ativacaoAutomatica: false, consultaExternaDisponivel: true });
   } catch (error) { res.status(error instanceof Error && error.message === 'KEY_REQUIRED' ? 400 : 503).json({ error: error instanceof Error && error.message === 'KEY_REQUIRED' ? 'Informe a chave do provedor.' : 'Não foi possível salvar a configuração de IA.' }); }
 });

@@ -471,7 +471,8 @@ await json('/api/ia/config', { method: 'PUT', token: admin.token, body: { ...aiC
 await json('/api/ia/config', { method: 'PUT', token: admin.token, body: aiConfiguration });
 const safeAi = await json('/api/ia/config', { token: admin.token });
 assert.equal(safeAi.chaveConfigurada, true);
-assert.equal(safeAi.ativo, false);
+assert.equal(safeAi.ativacaoAutomatica, false);
+assert.equal(safeAi.consultaExternaDisponivel, true);
 assert.equal(safeAi.apiKey, undefined);
 assert.equal(safeAi.credenciais, undefined);
 const cipherAi = sql(`SELECT credenciais FROM "ConfiguracaoIa" WHERE "lojaId"='${loja.id}'`);

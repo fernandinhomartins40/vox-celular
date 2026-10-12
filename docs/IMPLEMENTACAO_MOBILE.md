@@ -262,3 +262,5 @@ Teste Chromium do assistente em 390/768/1440 passou após opção externa: defau
 
 ### Autorização externa no assistente nativo
 Segundo passo nativo oferece controle checkbox acessível, desmarcado inicialmente, com aviso sobre uso/dados técnicos enviados e identidade/histórico/pagamento não enviados. Consulta escolhe rota local ou externa conforme autorização, desmarcando ao ajustar escolhas. Resultado usa aviso real da API. Typecheck e bundles Android/iOS validados; teste físico de consentimento e chamadas reais ainda pendentes.
+
+Avisos da configuração atualizados após integração da rota: API distingue ativacaoAutomatica false de consultaExternaDisponivel, sem afirmar provedor validado. Painel explica que salvar não chama provedor, mas consultas explicitamente autorizadas podem fazê-lo conforme orçamento. Builds API/web, lint e sintaxe CI passaram. Chaves reais, sucesso no provedor e deploy continuam não comprovados.
