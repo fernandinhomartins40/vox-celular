@@ -23,7 +23,8 @@ const groups = [
         "to": "/admin/clientes",
         "label": "Clientes",
         "icon": "users"
-      }
+      },
+      { "to": "/admin/servicos", "label": "Serviços", "icon": "package" }
     ]
   },
   {

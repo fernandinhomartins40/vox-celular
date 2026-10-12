@@ -17,6 +17,7 @@ const responses = () => ({
   '/privacidade/preferencias': { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' },
   '/auth/sessoes': [],
   '/servicos': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null }],
+  '/servicos/admin': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null, ativo: true }],
   '/servicos/solicitacoes': [],
   '/dashboard': { pedidosHoje: 1, pedidosMes: 1, faturamentoMes: 2299, faturamentoOntem: 0, ticketMedio: 2299, estoqueBaixo: 0, grafico: [{ dia: '10/10', valor: 0 }] },
   '/pedidos': [order], '/pedidos/meus': [order], '/produtos/admin': [product],
@@ -42,6 +43,11 @@ try {
         if (path.startsWith('/fidelidade/resgatar/')) { points -= 100; receipts = [{ id: 'receipt-1', codigo: 'REWARD-123', recompensa: { titulo: reward.titulo }, createdAt: order.createdAt }]; data = { codigo: 'REWARD-123', saldo: points }; }
         if (path === '/fidelidade/pontos' && failPointsRefresh) { failPointsRefresh = false; await route.fulfill({ status: 503, json: { error: 'Refresh unavailable' } }); return; }
         if (path === '/auth/senha') data = { ok: true };
+        if (path === '/servicos' && route.request().method() === 'POST') {
+          const body = route.request().postDataJSON();
+          assert.equal(body.preco, null, 'Empty service price is a quote, not zero');
+          data = { ...body, id: 'new-service' };
+        }
         if (path === '/servicos/solicitacoes' && route.request().method() === 'POST') {
           const body = route.request().postDataJSON();
           assert.match(body.chaveIdempotencia, /^[0-9a-f-]{36}$/);
@@ -52,7 +58,7 @@ try {
       });
       await page.route('https://fonts.googleapis.com/**', route => route.abort());
       const prefix = role === 'LOJISTA' ? '/admin' : '/area-cliente';
-      const routes = role === 'LOJISTA' ? ['', '/pedidos', '/produtos', '/clientes', '/configuracoes', '/conta'] : ['', '/pedidos', '/beneficios', '/fidelidade', '/promocoes', '/conta', '/servicos'];
+      const routes = role === 'LOJISTA' ? ['', '/pedidos', '/produtos', '/clientes', '/configuracoes', '/conta', '/servicos'] : ['', '/pedidos', '/beneficios', '/fidelidade', '/promocoes', '/conta', '/servicos'];
       for (const route of routes) {
         await page.goto(base + prefix + route);
         await page.locator('main h1').waitFor();
@@ -68,6 +74,15 @@ try {
           await mkdir(process.env.PANEL_SCREENSHOTS, { recursive: true });
           await page.screenshot({ path: `${process.env.PANEL_SCREENSHOTS}/${role}-${width}${route === '/conta' ? '-account' : ''}.png`, fullPage: true });
         }
+      }
+      if (role === 'LOJISTA') {
+        await page.goto(base + prefix + '/servicos');
+        await page.getByRole('button', { name: 'Catálogo de serviços', exact: true }).click();
+        await page.getByRole('button', { name: 'Novo serviço', exact: true }).click();
+        await page.getByLabel('Nome do serviço', { exact: true }).fill('Troca de bateria');
+        await page.getByLabel('Descrição', { exact: true }).fill('Avaliação e troca após orçamento aprovado.');
+        await page.getByRole('button', { name: 'Salvar serviço', exact: true }).click();
+        await page.getByRole('status').filter({ hasText: 'Serviço salvo.' }).waitFor();
       }
       if (role === 'CLIENTE') {
         await page.goto(base + prefix + '/servicos');
