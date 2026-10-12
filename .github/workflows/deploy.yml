@@ -188,6 +188,8 @@ jobs:
         run: node .github/scripts/test-favorites-browser.mjs
       - name: Customer privacy choices and data download
         run: node .github/scripts/test-privacy-browser.mjs
+      - name: Verify session renewal races
+        run: node .github/scripts/test-session-races.mjs
       - name: Landing page editor and faithful live previews
         run: node .github/scripts/test-landing-editor.mjs
       - name: Container status on failure

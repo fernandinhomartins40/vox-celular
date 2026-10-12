@@ -12,27 +12,41 @@ function getToken() {
 }
 let accessToken = null;
 let renewing;
-export function setAccessToken(token) { accessToken = token || null; }
+let sessionGeneration = 0;
+export function setAccessToken(token) {
+  sessionGeneration += 1;
+  accessToken = token || null;
+  renewing = undefined;
+}
+function assertSession(generation) {
+  if (generation !== sessionGeneration) throw new Error('A sessão mudou. Entre novamente para continuar.');
+}
 async function renew() {
-  return renewing ??= (async () => {
+  if (renewing) return renewing;
+  const generation = sessionGeneration;
+  const pending = (async () => {
     try {
       const response = await fetch(`${BASE_URL}/auth/refresh`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plataforma: 'web' }) });
       if (!response.ok) throw new Error('Entre novamente para continuar.');
       const data = await response.json();
+      assertSession(generation);
       accessToken = data.token;
       localStorage.setItem('vox_user', JSON.stringify(data.user));
       return data.token;
-    } finally { renewing = null; }
+    } finally { if (generation === sessionGeneration) renewing = undefined; }
   })();
+  renewing = pending;
+  return pending;
 }
 
-async function request(path, options = {}, retried = false) {
+async function request(path, options = {}, retried = false, generation = sessionGeneration) {
   // Only public routes skip renewal. Password/profile/logout need a session
   // even after a full page reload; store discovery must allow a new login.
   const authEndpoint = ['/auth/login', '/auth/register', '/auth/refresh', '/loja'].includes(path)
     || path.startsWith('/produtos?') || path.startsWith('/promocoes?');
   let token = getToken();
   if (!token && !authEndpoint && localStorage.getItem('vox_user')) token = await renew();
+  if (!authEndpoint) assertSession(generation);
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers ?? {}),
@@ -40,8 +54,11 @@ async function request(path, options = {}, retried = false) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, credentials: 'include', headers });
+  if (!authEndpoint) assertSession(generation);
   if (res.status === 401 && !authEndpoint && !retried && localStorage.getItem('vox_user')) {
-    await renew(); return request(path, options, true);
+    await renew();
+    assertSession(generation);
+    return request(path, options, true, generation);
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
