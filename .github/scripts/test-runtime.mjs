@@ -495,3 +495,8 @@ assert.equal((await json('/api/ia/config', { token: admin.token })).chaveConfigu
 await json('/api/ia/config', { method: 'DELETE', token: admin.token });
 assert.equal(await json('/api/ia/config', { token: admin.token }), null);
 await json('/api/ia/config', { method: 'DELETE', token: admin.token });
+
+await json('/api/assistente/recomendar-ia', { method: 'POST', body: { necessidades: assistantNeeds, autorizaProcessamentoExterno: false }, status: 400 });
+const aiFallback = await json('/api/assistente/recomendar-ia', { method: 'POST', body: { necessidades: assistantNeeds, autorizaProcessamentoExterno: true } });
+assert.equal(aiFallback.modo, 'regras', 'No configuration must use explicit rules fallback');
+assert.match(aiFallback.aviso, /regras/);
