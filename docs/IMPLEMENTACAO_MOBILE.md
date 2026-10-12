@@ -273,3 +273,6 @@ Rota externa reutiliza somente IDs de consultas equivalentes por até cinco minu
 
 ### Base da fila consentida de notificações
 Migração aditiva NotificacaoCliente registra evento por cliente/loja, chave única de deduplicação, conteúdo curto, destino interno permitido, status/tentativas/próxima tentativa. Serviço interno enqueueClientNotification recebe transaction client para gravar junto à operação comercial, confere tenant e consentimento sob o mesmo advisory lock da alteração de preferências. Revogação cancela PENDENTE na mesma transação. Prisma generate e build passaram. Ainda não integrado a eventos comerciais nem worker/assinaturas/push; consentimento será revalidado na entrega. Teste concorrente PostgreSQL e retenção da fila continuam pendentes; não afirma entrega de notificações.
+
+### Eventos de atualização de atendimento
+Mudança válida de status enfileira aviso genérico na mesma transação do histórico, somente com consentimento ativo. Conteúdo não inclui diagnóstico/mensagem privada; destino /servicos. Repetição do status retorna antes de gravar novo evento. Testes CI acrescentados para evento único, ausência de texto privado, cancelamento pela revogação e bloqueio de eventos novos após retirada. Build e sintaxe passaram; teste PostgreSQL e entrega push ainda pendentes.

@@ -501,3 +501,15 @@ await json('/api/assistente/recomendar-ia', { method: 'POST', body: { necessidad
 const aiFallback = await json('/api/assistente/recomendar-ia', { method: 'POST', body: { necessidades: assistantNeeds, autorizaProcessamentoExterno: true } });
 assert.equal(aiFallback.modo, 'regras', 'No configuration must use explicit rules fallback');
 assert.match(aiFallback.aviso, /regras/);
+
+await json(`/api/servicos/${service.id}`, { method: 'PATCH', token: admin.token, body: { ativo: true } });
+await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: true, versaoAviso: '2026-10-12' } });
+const notificationService = await json('/api/servicos/solicitacoes', { method: 'POST', token: customer.token, body: { ...serviceRequestBody, chaveIdempotencia: 'b6d84030-d4e8-4f3a-bf4e-a26b82830999' }, status: 201 });
+const notifyPath = `/api/servicos/solicitacoes/${notificationService.id}/status`;
+for (let n = 0; n < 2; n++) await json(notifyPath, { method: 'PATCH', token: admin.token, body: { status: 'EM_ANALISE', mensagem: 'Private diagnosis fixture' } });
+assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'service:${notificationService.id}:%'`), '1');
+assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'service:${notificationService.id}:%' AND mensagem LIKE '%Private diagnosis%'`), '0');
+await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' } });
+assert.equal(sql(`SELECT status FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'service:${notificationService.id}:%'`), 'CANCELADA');
+await json(notifyPath, { method: 'PATCH', token: admin.token, body: { status: 'EM_EXECUCAO', mensagem: 'Another private fixture' } });
+assert.equal(sql(`SELECT count(*) FROM "NotificacaoCliente" WHERE "chaveEvento" LIKE 'service:${notificationService.id}:%'`), '1', 'Revoked consent prevents new events');

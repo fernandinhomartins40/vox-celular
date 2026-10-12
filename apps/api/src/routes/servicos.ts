@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { AuthRequest, requireAuth, requireLojista } from '../middleware/auth.js';
+import { enqueueClientNotification } from '../lib/notificationOutbox.js';
 
 export const servicosRouter = Router();
 const serviceSchema = z.object({ titulo: z.string().trim().min(2).max(100), descricao: z.string().trim().min(2).max(2000), preco: z.number().nonnegative().max(100000).nullable(), ativo: z.boolean(), agendamento: z.boolean().optional() }).strict();
@@ -81,7 +82,8 @@ servicosRouter.patch('/solicitacoes/:id/status', requireLojista, async (req: Aut
     const transitions: Record<string, string[]> = { RECEBIDA: ['EM_ANALISE', 'CANCELADA'], EM_ANALISE: ['AGUARDANDO_CLIENTE', 'EM_EXECUCAO', 'CANCELADA'], AGUARDANDO_CLIENTE: ['EM_ANALISE', 'EM_EXECUCAO', 'CANCELADA'], EM_EXECUCAO: ['AGUARDANDO_CLIENTE', 'CONCLUIDA', 'CANCELADA'] };
     if (!transitions[current.status]?.includes(parsed.data.status)) return 'conflict';
     if (current.horarioId && parsed.data.status === 'CANCELADA') await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${current.horarioId}))`;
-    await tx.solicitacaoServico.update({ where: { id }, data: { status: parsed.data.status, historico: { create: parsed.data } } });
+    const changed = await tx.solicitacaoServico.update({ where: { id }, data: { status: parsed.data.status, historico: { create: parsed.data } } });
+    await enqueueClientNotification(tx, { lojaId: req.user!.lojaId, clienteId: current.clienteId, chaveEvento: `service:${id}:${changed.updatedAt.toISOString()}:${parsed.data.status}`, titulo: 'Seu atendimento foi atualizado', mensagem: 'Há uma atualização no seu atendimento. Consulte os detalhes na sua conta Vox.', destino: '/servicos' });
     return 'ok';
   });
   res.status(result === 'missing' ? 404 : result === 'conflict' ? 409 : 200).json(result === 'ok' ? { ok: true } : { error: result === 'missing' ? 'Solicitação não encontrada.' : 'Esta mudança de status não está disponível.' });
