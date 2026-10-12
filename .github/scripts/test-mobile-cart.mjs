@@ -20,8 +20,9 @@ let account = { id: 'client-a', lojaId: 'store-a', role: 'CLIENTE' };
 const posts = [];
 let result = 'network';
 let uuid = 0;
+let compatible = true;
 globalThis.__cartUuid = () => `aaaaaaaa-aaaa-4aaa-8aaa-${String(++uuid).padStart(12, '0')}`;
-globalThis.__cartApi = { ApiError, requireCapability: async () => {}, sessionRevision: () => revision, request: async (path, body) => {
+globalThis.__cartApi = { ApiError, requireCapability: async () => { if (!compatible) throw new Error('Server incompatible'); }, sessionRevision: () => revision, request: async (path, body) => {
   if (path === '/auth/me') return account;
   assert.equal(path, '/pedidos');
   const persisted = JSON.parse(saved.get('vox.cart.v1'));
@@ -43,6 +44,11 @@ assert.equal((await cart.readCart()).items[0].qty, 2, 'Concurrent adds must not 
 await assert.rejects(cart.addToCart('store-b', 'other', 3), /outra loja/);
 await assert.rejects(cart.addToCart('store-a', 'phone', 2), /estoque/);
 const reviewed = [{ produtoId: 'phone', qty: 2, precoCentavos: 1000 }];
+compatible = false;
+await assert.rejects(cart.confirmCart(reviewed), /incompatible/);
+assert.equal(posts.length, 0, 'Incompatible server must prevent checkout dispatch');
+assert.equal((await cart.readCart()).pending, undefined);
+compatible = true;
 await assert.rejects(cart.confirmCart(reviewed), /Network/);
 const pending = (await cart.readCart()).pending;
 assert.ok(pending);

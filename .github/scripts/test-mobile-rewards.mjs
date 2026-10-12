@@ -7,7 +7,8 @@ globalThis.__rewardStorage = { getItem: async key => values.get(key) ?? null, se
 let userId = 'a';
 let failure = true;
 const requests = [];
-globalThis.__rewardApi = { ApiError: class extends Error {}, requireCapability: async () => {}, sessionRevision: () => 1, request: async (path, body) => {
+let compatible = false;
+globalThis.__rewardApi = { ApiError: class extends Error {}, requireCapability: async () => { if (!compatible) throw new Error('Server incompatible'); }, sessionRevision: () => 1, request: async (path, body) => {
   if (path === '/auth/me') return { id: userId, role: 'CLIENTE' };
   assert.equal(JSON.parse(values.get('vox.reward.pending.v1')).chaveResgate, body.chaveResgate);
   requests.push(body.chaveResgate);
@@ -20,6 +21,10 @@ const source = stripTypeScriptTypes((await readFile('apps/mobile/src/rewards.ts'
   .replace("import { ApiError, NativeUser, request, sessionRevision, requireCapability } from './api';", 'const { ApiError, request, sessionRevision, requireCapability } = globalThis.__rewardApi;'));
 const load = suffix => import(`data:text/javascript;base64,${Buffer.from(source + `\n//${suffix}`).toString('base64')}`);
 const initial = await load('initial');
+await assert.rejects(initial.redeemReward('reward', 10), /incompatible/);
+assert.equal(requests.length, 0, 'Incompatible server must prevent redemption dispatch');
+assert.equal(await initial.pendingReward(), null);
+compatible = true;
 await assert.rejects(initial.redeemReward('reward', 10), /Network/);
 assert.ok(await initial.pendingReward());
 const restarted = await load('restart');

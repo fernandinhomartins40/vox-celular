@@ -82,4 +82,12 @@ await parsing;
 await api.saveSession(session('after-json'));
 releaseBody();
 assert.match((await bodyRace).message, /sessão mudou/, 'Account switch while parsing JSON must reject old private data');
+for (const metadata of [{}, { contrato: 0, capacidades: ['resgate-idempotente'] }, { contrato: 1, capacidades: [] }, { contrato: 1, capacidades: 'resgate-idempotente' }]) {
+  globalThis.fetch = async () => ok(metadata);
+  await assert.rejects(api.requireCapability('resgate-idempotente'), /atualização do servidor/);
+}
+globalThis.fetch = async () => { throw new TypeError('Offline'); };
+await assert.rejects(api.requireCapability('resgate-idempotente'), /atualização do servidor/);
+globalThis.fetch = async () => ok({ contrato: 1, capacidades: ['resgate-idempotente'] });
+await api.requireCapability('resgate-idempotente');
 console.log('Native refresh coalescing, queued writes, logout, JSON parsing and SecureStore races passed.');

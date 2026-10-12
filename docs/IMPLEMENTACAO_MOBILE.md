@@ -203,3 +203,5 @@ Confirmação nativa persiste também o custo revisado em pontos; API recusa cus
 
 ### Compatibilidade comercial da API
 Endpoint público /api/meta informa contrato 1 e capacidades de checkout com preço revisado e resgate idempotente. Nativo consulta sem cache próprio antes de confirmar; ausência/incompatibilidade/falha impede envio, preservando tentativas existentes. Evita depender dessas proteções quando o servidor ainda está numa versão antiga. Build API, typecheck e testes locais de carrinho/resgates passaram. Ativação permanece vinculada ao deploy via Actions, sem publicação nativa presumida.
+
+Validação direta de capacidades: testes do cliente de API recusam metadados ausentes, contrato antigo, lista de capacidades vazia/inválida e rede indisponível; aceitam contrato/capacidade compatíveis. Testes comerciais verificam zero envios e nenhuma nova tentativa persistida quando o gate recusa. Todos passaram localmente com transporte/storage simulados, sem equivaler a teste de servidor em produção ou aparelho.
