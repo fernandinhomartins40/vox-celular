@@ -130,10 +130,12 @@ model Servico {
   descricao String
   preco Decimal? @db.Decimal(10,2)
   ativo Boolean @default(true)
+  agendamento Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   loja Loja @relation(fields: [lojaId], references: [id])
   solicitacoes SolicitacaoServico[]
+  horarios HorarioServico[]
   @@index([lojaId, ativo])
 }
 
@@ -142,6 +144,7 @@ model SolicitacaoServico {
   lojaId String
   clienteId String
   servicoId String
+  horarioId String?
   chaveIdempotencia String
   protocolo String @unique
   aparelho String
@@ -152,10 +155,26 @@ model SolicitacaoServico {
   loja Loja @relation(fields: [lojaId], references: [id])
   cliente Cliente @relation(fields: [clienteId], references: [id])
   servico Servico @relation(fields: [servicoId], references: [id])
+  horario HorarioServico? @relation(fields: [horarioId], references: [id])
   historico HistoricoServico[]
   @@unique([clienteId, chaveIdempotencia])
   @@index([lojaId, createdAt])
   @@index([clienteId, createdAt])
+  @@index([horarioId, status])
+}
+
+model HorarioServico {
+  id String @id @default(cuid())
+  servicoId String
+  inicio DateTime
+  fim DateTime
+  capacidade Int
+  ativo Boolean @default(true)
+  createdAt DateTime @default(now())
+  servico Servico @relation(fields: [servicoId], references: [id])
+  solicitacoes SolicitacaoServico[]
+  @@unique([servicoId, inicio])
+  @@index([servicoId, inicio, ativo])
 }
 
 model HistoricoServico {

@@ -17,6 +17,7 @@ import { favoritosRouter } from './routes/favoritos.js';
 import { privacidadeRouter } from './routes/privacidade.js';
 import { assistenteRouter } from './routes/assistente.js';
 import { servicosRouter } from './routes/servicos.js';
+import { agendaRouter } from './routes/agenda.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -51,6 +52,7 @@ app.use('/api/promocoes', promocoesRouter);
 app.use('/api/loja', lojaRouter);
 app.use('/api/assistente', assistenteRouter);
 app.use('/api/servicos', servicosRouter);
+app.use('/api/agenda', agendaRouter);
 
 const server = app.listen(PORT, () => console.log(`API running on port ${PORT}`));
 let shuttingDown = false;

@@ -407,3 +407,23 @@ await json(`/api/servicos/${service.id}`, { method: 'PATCH', token: admin.token,
 await json('/api/servicos/solicitacoes', { method: 'POST', token: customer.token, body: { ...serviceRequestBody, chaveIdempotencia: 'b6d84030-d4e8-4f3a-bf4e-a26b82830010' }, status: 404 });
 assert.ok(!(await json(`/api/servicos?lojaId=${loja.id}`)).some(row => row.id === service.id));
 console.log('PASS: persistent service catalog, nullable prices, customer requests, idempotent protocol, tenant scope, status transitions and append-only history.');
+
+await json(`/api/servicos/${service.id}`, { method: 'PATCH', token: admin.token, body: { ativo: true, agendamento: true } });
+const slotBody = { servicoId: service.id, inicio: new Date(Date.now() + 86400000).toISOString(), fim: new Date(Date.now() + 86400000 + 3600000).toISOString(), capacidade: 1 };
+await json('/api/agenda', { method: 'POST', token: customer.token, body: slotBody, status: 403 });
+const slot = await json('/api/agenda', { method: 'POST', token: admin.token, body: slotBody, status: 201 });
+await json('/api/agenda', { method: 'POST', token: admin.token, body: slotBody, status: 409 });
+assert.equal((await json(`/api/agenda?lojaId=${loja.id}&servicoId=${service.id}`))[0].vagas, 1);
+assert.equal((await json(`/api/agenda?lojaId=ci-other-store&servicoId=${service.id}`)).length, 0);
+const reservationResponses = await Promise.all(['b6d84030-d4e8-4f3a-bf4e-a26b82830101', 'b6d84030-d4e8-4f3a-bf4e-a26b82830102'].map(chaveIdempotencia => fetch(base + '/api/servicos/solicitacoes', {
+  method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${customer.token}` }, body: JSON.stringify({ ...serviceRequestBody, chaveIdempotencia, horarioId: slot.id }),
+})));
+assert.deepEqual(reservationResponses.map(response => response.status).sort(), [201, 409], 'Concurrent requests cannot overbook a slot');
+const booked = await reservationResponses.find(response => response.status === 201).json();
+assert.equal((await json(`/api/agenda?lojaId=${loja.id}&servicoId=${service.id}`))[0].vagas, 0);
+await json(`/api/servicos/solicitacoes/${booked.id}/status`, { method: 'PATCH', token: admin.token, body: { status: 'CANCELADA', mensagem: 'Cancelado a pedido do cliente.' } });
+assert.equal((await json(`/api/agenda?lojaId=${loja.id}&servicoId=${service.id}`))[0].vagas, 1);
+await json(`/api/agenda/${slot.id}`, { method: 'PATCH', token: admin.token, body: { ativo: false } });
+await json('/api/servicos/solicitacoes', { method: 'POST', token: customer.token, body: { ...serviceRequestBody, chaveIdempotencia: 'b6d84030-d4e8-4f3a-bf4e-a26b82830103', horarioId: slot.id }, status: 409 });
+assert.equal((await json(`/api/agenda?lojaId=${loja.id}&servicoId=${service.id}`)).length, 0);
+console.log('PASS: service scheduling enablement, overlap rejection, tenant scope, concurrent capacity protection, cancellation release and closed slots.');
