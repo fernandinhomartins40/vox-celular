@@ -30,6 +30,21 @@ model Loja {
   guiasOperadora GuiaOperadora[]
   solicitacoesServico SolicitacaoServico[]
   orcamentosIa OrcamentoIa[]
+  configuracaoIa ConfiguracaoIa?
+}
+
+model ConfiguracaoIa {
+  id String @id @default(cuid())
+  lojaId String @unique
+  provedor String
+  modelo String
+  workspace String?
+  credenciais String
+  limiteMicroUsd BigInt
+  tarifaEntradaMicroUsd BigInt
+  tarifaSaidaMicroUsd BigInt
+  updatedAt DateTime @updatedAt
+  loja Loja @relation(fields: [lojaId], references: [id])
 }
 
 model OrcamentoIa {
