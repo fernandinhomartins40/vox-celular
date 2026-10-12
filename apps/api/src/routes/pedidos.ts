@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { prisma } from '../lib/prisma.js';
 import { requireAuth, requireLojista, AuthRequest } from '../middleware/auth.js';
+import { enqueueClientNotification } from '../lib/notificationOutbox.js';
 
 export const pedidosRouter = Router();
 
@@ -161,6 +162,9 @@ pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res)
 
   try {
   const updated = await prisma.$transaction(async (tx) => {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${pedidoId}))`;
+  const before = await tx.pedido.findFirst({ where: { id: pedidoId, lojaId: req.user!.lojaId } });
+  if (!before) throw new Error('PEDIDO_ALTERADO');
   const changed = await tx.pedido.updateMany({
     where: { id: pedidoId, lojaId: req.user!.lojaId, canceladoEm: null, ...(expectedStatus ? { status: expectedStatus as 'NOVO' | 'EM_PREPARO' | 'PRONTO' | 'ENTREGUE' } : {}) },
     data: { status: status as 'NOVO' | 'EM_PREPARO' | 'PRONTO' | 'ENTREGUE' },
@@ -174,10 +178,12 @@ pedidosRouter.patch('/:id/status', requireLojista, async (req: AuthRequest, res)
     });
   }
 
-  return tx.pedido.findUnique({
+  const result = await tx.pedido.findUnique({
     where: { id: pedidoId },
     include: { itens: true, timeline: { orderBy: { ordem: 'asc' } } },
   });
+  if (result && before.status !== result.status) await enqueueClientNotification(tx, { lojaId: req.user!.lojaId, clienteId: result.clienteId, chaveEvento: `order:${pedidoId}:${result.updatedAt.toISOString()}:${result.status}`, titulo: 'Seu pedido foi atualizado', mensagem: 'Há uma atualização no seu pedido. Consulte os detalhes na sua conta Vox.', destino: '/pedidos' });
+  return result;
   });
   res.json(updated);
   } catch (error) {

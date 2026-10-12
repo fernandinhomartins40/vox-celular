@@ -276,3 +276,6 @@ Migração aditiva NotificacaoCliente registra evento por cliente/loja, chave ú
 
 ### Eventos de atualização de atendimento
 Mudança válida de status enfileira aviso genérico na mesma transação do histórico, somente com consentimento ativo. Conteúdo não inclui diagnóstico/mensagem privada; destino /servicos. Repetição do status retorna antes de gravar novo evento. Testes CI acrescentados para evento único, ausência de texto privado, cancelamento pela revogação e bloqueio de eventos novos após retirada. Build e sintaxe passaram; teste PostgreSQL e entrega push ainda pendentes.
+
+### Eventos de atualização de pedido
+PATCH de status serializa por pedido e compara estado anterior dentro da transação. Só mudança efetiva enfileira aviso genérico para /pedidos, mediante consentimento atual; repetição do status não gera evento. Conteúdo não inclui itens/preço/pagamento. Histórico e aviso ficam na mesma transação. Build API passou. Testes PostgreSQL específicos de concorrência/eventos de pedido e transporte push seguem pendentes; não afirma entrega.
