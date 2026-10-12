@@ -186,6 +186,8 @@ jobs:
         run: node .github/scripts/test-pwa-browser.mjs
       - name: Favorites, comparison and current cart prices
         run: node .github/scripts/test-favorites-browser.mjs
+      - name: Customer privacy choices and data download
+        run: node .github/scripts/test-privacy-browser.mjs
       - name: Landing page editor and faithful live previews
         run: node .github/scripts/test-landing-editor.mjs
       - name: Container status on failure

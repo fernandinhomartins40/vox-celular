@@ -111,6 +111,11 @@ model Cliente {
   pedidos    Pedido[]
   historicoP HistoricoPontos[]
   favoritos Favorito[]
+  personalizacao Boolean @default(false)
+  notificacoes Boolean @default(false)
+  versaoPrivacidade String?
+  preferenciasAtualizadasEm DateTime?
+  consentimentos ConsentimentoCliente[]
   @@index([lojaId, createdAt])
 }
 
@@ -264,4 +269,15 @@ enum TipoPontos {
   GANHO
   RESGATE
   BONUS
+}
+
+model ConsentimentoCliente {
+  id String @id @default(cuid())
+  clienteId String
+  personalizacao Boolean
+  notificacoes Boolean
+  versaoAviso String
+  createdAt DateTime @default(now())
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  @@index([clienteId, createdAt])
 }

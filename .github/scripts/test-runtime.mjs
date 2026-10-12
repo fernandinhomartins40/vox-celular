@@ -325,3 +325,16 @@ assert.ok(!JSON.stringify(personalExport).includes('refreshToken'));
 assert.ok(!JSON.stringify(personalExport).includes('ci-admin@example.com'));
 assert.ok(personalExport.historicoPontos.length > 0);
 console.log('PASS: personal-data export authentication, customer-only scope, own orders/history and no password or session secrets.');
+
+await json('/api/privacidade/preferencias', { token: admin.token, status: 403 });
+const initialPreferences = await json('/api/privacidade/preferencias', { token: renewed.token });
+assert.equal(initialPreferences.personalizacao, false);
+assert.equal(initialPreferences.notificacoes, false);
+const preferenceChoice = { personalizacao: true, notificacoes: true, versaoAviso: initialPreferences.versaoAviso };
+for (let i = 0; i < 2; i++) await json('/api/privacidade/preferencias', { method: 'PUT', token: renewed.token, body: preferenceChoice });
+assert.equal(sql(`SELECT count(*) FROM "ConsentimentoCliente" WHERE "clienteId"='${personalExport.perfil.id}'`), '1');
+await json('/api/privacidade/preferencias', { method: 'PUT', token: renewed.token, body: { ...preferenceChoice, personalizacao: false, notificacoes: false } });
+assert.equal((await json('/api/privacidade/preferencias', { token: renewed.token })).notificacoes, false);
+assert.equal((await json('/api/privacidade/exportar', { token: renewed.token })).consentimentos.length, 2);
+await json('/api/privacidade/preferencias', { method: 'PUT', token: renewed.token, body: { ...preferenceChoice, versaoAviso: 'unknown-version' }, status: 400 });
+console.log('PASS: default-denied preferences, customer authorization, consent version, idempotent audit trail, withdrawal and own-data export.');
