@@ -242,3 +242,5 @@ Rota /admin/configuracoes/ia e item no menu oferecem provedor, workspace Qwen, c
 
 ### Consulta do orçamento no painel
 GET /api/ia/config/orcamento exclusivo do lojista consulta mês corrente UTC por loja autenticada, gasto, reservas e teto da configuração. Painel apresenta valores USD e explica contabilização conservadora de falhas incertas, sem equiparar estimativa à fatura do provedor. Sem secret/ciphertext na resposta. Builds API/web e lint passaram; integração PostgreSQL e teste visual permanecem pendentes. Chamadas ainda não ativadas pela configuração.
+
+Teste Chromium do formulário de IA passou em 390/768/1440: payload monetário correto, campo password, chave limpa após salvar, ausência do segredo no texto da página, sem overflow horizontal/erros JS. Endpoint simulado para isolar interface; não comprova persistência/criptografia real nem conexão ao provedor. Script incluído no workflow único após instalação do browser.
