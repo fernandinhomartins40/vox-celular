@@ -7,6 +7,17 @@ const money = z.number().int().positive().max(1000000000);
 const schema = z.object({ provedor: z.enum(['deepseek', 'qwen']), apiKey: z.string().min(8).max(512).regex(/^[^\s]+$/).optional(), workspace: z.string().regex(/^[a-zA-Z0-9-]{1,64}$/).optional(), limiteMicroUsd: money, tarifaEntradaMicroUsd: money, tarifaSaidaMicroUsd: money }).strict().refine(value => value.provedor !== 'qwen' || Boolean(value.workspace), 'Informe o workspace Qwen de Singapura.');
 export const iaConfigRouter = Router();
 iaConfigRouter.use(requireLojista);
+iaConfigRouter.get('/orcamento', async (req: AuthRequest, res) => {
+  try {
+    const mes = new Date().toISOString().slice(0, 7);
+    const lojaId = req.user!.lojaId;
+    const [budget, config] = await Promise.all([
+      prisma.orcamentoIa.findUnique({ where: { lojaId_mes: { lojaId, mes } } }),
+      prisma.configuracaoIa.findUnique({ where: { lojaId }, select: { limiteMicroUsd: true } }),
+    ]);
+    res.set('Cache-Control', 'no-store').json({ mes, fuso: 'UTC', limiteMicroUsd: config ? Number(config.limiteMicroUsd) : null, gastoMicroUsd: Number(budget?.gastoMicroUsd ?? 0n), reservadoMicroUsd: Number(budget?.reservadoMicroUsd ?? 0n), ativo: false });
+  } catch { res.status(503).json({ error: 'Não foi possível consultar o orçamento de IA.' }); }
+});
 iaConfigRouter.get('/', async (req: AuthRequest, res) => {
   try {
     const row = await prisma.configuracaoIa.findUnique({ where: { lojaId: req.user!.lojaId } });

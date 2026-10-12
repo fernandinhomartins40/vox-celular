@@ -239,3 +239,6 @@ Migração aditiva ConfiguracaoIa e GET/PUT /api/ia/config exclusivos do lojista
 
 ### Formulário do lojista para IA
 Rota /admin/configuracoes/ia e item no menu oferecem provedor, workspace Qwen, chave mascarada, teto mensal e tarifas por milhão em USD. Converte valores decimais em micro-USD inteiros; valida faixa e seis casas. GET não recebe chave; campo vazio preserva chave no mesmo provedor, troca solicita nova. Após salvar limpa chave do estado e informa integração ainda inativa. Usa componentes/classes compartilhados e carregamento por rota. Build/lint aprovados; testes visuais e integração PostgreSQL deste formulário permanecem pendentes. Não afirma chave verificada nem cobrança ativada.
+
+### Consulta do orçamento no painel
+GET /api/ia/config/orcamento exclusivo do lojista consulta mês corrente UTC por loja autenticada, gasto, reservas e teto da configuração. Painel apresenta valores USD e explica contabilização conservadora de falhas incertas, sem equiparar estimativa à fatura do provedor. Sem secret/ciphertext na resposta. Builds API/web e lint passaram; integração PostgreSQL e teste visual permanecem pendentes. Chamadas ainda não ativadas pela configuração.
