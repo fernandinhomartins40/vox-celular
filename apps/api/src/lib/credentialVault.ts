@@ -5,7 +5,8 @@ import { prisma } from './prisma.js';
 
 let keyPromise: Promise<Buffer> | undefined;
 function vaultKey() {
-  return keyPromise ??= (async () => {
+  if (keyPromise) return keyPromise;
+  const pending = (async () => {
     const file = process.env.MARKETPLACE_KEY_FILE || path.resolve('secrets/marketplace.key');
     await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
     let key: Buffer;
@@ -20,6 +21,9 @@ function vaultKey() {
     if (key.length !== 32) throw new Error('Invalid vault key');
     return key;
   })();
+  keyPromise = pending;
+  pending.catch(() => { if (keyPromise === pending) keyPromise = undefined; });
+  return pending;
 }
 export async function encryptCredentials(value: Record<string, string>, context: string) {
   const iv = randomBytes(12);
