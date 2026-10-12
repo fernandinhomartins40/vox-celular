@@ -169,8 +169,8 @@ jobs:
         run: node .github/scripts/test-runtime.mjs
       - name: Image conversion, dimensions and validation
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/imageStorage.test.js
-        - name: Authentication abuse limits and bounded memory
-          run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/authLimits.test.js
+      - name: Authentication abuse limits and bounded memory
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/authLimits.test.js
       - name: Product search and customer contact regression tests
         run: node --test apps/web/src/lib/catalog.test.js apps/web/src/lib/panel.test.js
       - name: Product flows in Chromium against real API and PostgreSQL
