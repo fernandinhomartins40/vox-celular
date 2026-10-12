@@ -267,3 +267,6 @@ Avisos da configuração atualizados após integração da rota: API distingue a
 
 ### Recuperação do cofre de credenciais
 Falha ao inicializar chave do cofre limpa somente a promise rejeitada, permitindo tentar novamente após restauração/correção do arquivo sem reiniciar API. Inicialização concorrente continua compartilhada; chave válida permanece em memória. Teste com arquivo temporário real passou para chave inválida → corrigida, round-trip criptográfico, contexto de outra loja recusado e ausência da chave fictícia em ciphertext. Build passou; teste incluído no CI. Nenhum segredo real ou arquivo da VPS acessado.
+
+### Cache limitado de seleção por IA
+Rota externa reutiliza somente IDs de consultas equivalentes por até cinco minutos, com máximo de 100 entradas e eviction. Hash considera necessidades, updatedAt da configuração e produtos candidatos completos; mudanças de preço/estoque/especificações invalidam seleção. Conteúdo em cache nunca inclui chave ou perfil do cliente. Catálogo é consultado antes de reaproveitar, IDs continuam restritos aos candidatos atuais. Cache é local ao processo e perdido no restart; chamadas concorrentes iguais ainda podem ocorrer. Build e testes de expiração, limite, cópia isolada e hash por entrada passaram. Economia real não medida sem chamada ao provedor.

@@ -6,11 +6,13 @@ import { decryptCredentials } from '../lib/credentialVault.js';
 import { budgetedRecommendation } from '../lib/aiRecommendation.js';
 import type { AiProviderConfig } from '../lib/aiProvider.js';
 import { z } from 'zod';
+import { AiSelectionCache } from '../lib/aiCache.js';
 
 export const assistenteRouter = Router();
 const capacity = new AttemptWindow(180, 60000, 1);
 const aiCapacity = new AttemptWindow(10, 60000, 1);
 let aiInFlight = 0;
+const aiCache = new AiSelectionCache();
 assistenteRouter.post('/recomendar-ia', async (req, res) => {
   const parsed = z.object({ necessidades: recommendationSchema, autorizaProcessamentoExterno: z.literal(true) }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'Confira as necessidades e autorize o envio externo dessas escolhas.' }); return; }
@@ -28,8 +30,14 @@ assistenteRouter.post('/recomendar-ia', async (req, res) => {
       try {
         const secret = await decryptCredentials(config.credenciais, `${needs.lojaId}:ai:${config.provedor}`);
         const provider = { provider: config.provedor, model: config.modelo, apiKey: secret.apiKey, ...(config.provedor === 'qwen' ? { workspace: config.workspace } : {}) } as AiProviderConfig;
-        const output = await budgetedRecommendation(provider, { monthlyLimitMicroUsd: Number(config.limiteMicroUsd), inputRateMicroUsd: Number(config.tarifaEntradaMicroUsd), outputRateMicroUsd: Number(config.tarifaSaidaMicroUsd) }, needs, candidates);
-        results = output.ids.flatMap(id => results.filter(result => result.produto.id === id));
+        const cacheKey = aiCache.key({ needs, configurationVersion: config.updatedAt.toISOString(), candidates: results.map(row => row.produto) });
+        let ids = aiCache.get(cacheKey);
+        if (!ids) {
+          const output = await budgetedRecommendation(provider, { monthlyLimitMicroUsd: Number(config.limiteMicroUsd), inputRateMicroUsd: Number(config.tarifaEntradaMicroUsd), outputRateMicroUsd: Number(config.tarifaSaidaMicroUsd) }, needs, candidates);
+          ids = output.ids;
+          aiCache.set(cacheKey, ids);
+        }
+        results = ids.flatMap(id => results.filter(result => result.produto.id === id));
         mode = config.provedor;
       } catch { /* Explicit deterministic fallback; no secrets or provider error exposed. */ }
     }

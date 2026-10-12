@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { AiSelectionCache } from './aiCache.js';
+const cache = new AiSelectionCache(2, 10);
+cache.set('a', ['phone'], 0);
+const copy = cache.get('a', 1)!; copy.push('mutated');
+assert.deepEqual(cache.get('a', 2), ['phone']);
+cache.set('b', ['tablet'], 1); cache.set('c', ['other'], 2);
+assert.equal(cache.get('a', 3), null);
+assert.equal(cache.get('b', 11), null);
+assert.notEqual(cache.key({ loja: 'a', price: 1 }), cache.key({ loja: 'b', price: 1 }));
+assert.notEqual(cache.key({ price: 1 }), cache.key({ price: 2 }));
+assert.throws(() => cache.set('invalid', [], 3));
+console.log('AI cache expiry, bounded eviction, copy isolation and input invalidation passed.');
