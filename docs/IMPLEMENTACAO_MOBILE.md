@@ -284,3 +284,6 @@ Cobertura PostgreSQL dos eventos de pedido adicionada ao runtime CI: fixture des
 
 ### Consulta dos avisos do cliente
 GET /api/notificacoes exige cliente autenticado e filtra cliente/loja no servidor, até 100 registros recentes, campos públicos explícitos e no-store. Não mostra avisos cancelados ou quando consentimento atual está retirado. Não marca fila como entregue: inbox e transporte push são independentes. Build passou; testes CI adicionados para autenticação, papel, revogação, isolamento e campos privados ausentes. Execução PostgreSQL, interface e push ainda pendentes.
+
+### Avisos no aplicativo nativo
+Conta abre /avisos, consulta API autenticada vinculada à revisão de sessão e atualiza ao focar. Lista limitada pelo servidor, datas de Brasília, estados de carga/falha/vazio e link às preferências. Destinos validados por chave própria em allowlist de pedidos/serviços/benefícios; não abre URL arbitrária da resposta. Interface distingue lista de avisos de entrega push. Typecheck e bundles Android/iOS validados; teste físico e integração real com fila permanecem pendentes.
