@@ -63,8 +63,9 @@ export async function request<T>(path: string, body?: unknown, authenticated = f
 }
 export async function logout() {
   try { await request('/auth/logout', {}, true); }
-  finally { const version = ++generation; accessToken = null; renewing = undefined; await persistRefresh(null, version); }
+  finally { await clearLocalSession(); }
 }
+export async function clearLocalSession() { const version = ++generation; accessToken = null; renewing = undefined; await persistRefresh(null, version); }
 export function assetUrl(path: string) { return path.startsWith('https://') ? path : `${base.replace(/\/api\/?$/, '')}${path}`; }
 export async function requireCapability(capability: string) {
   try {

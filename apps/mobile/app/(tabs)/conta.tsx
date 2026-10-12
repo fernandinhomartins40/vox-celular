@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { hasSavedSession, logout, NativeUser, request, saveSession, Session } from '../../src/api';
 
 export default function Account() {
@@ -14,15 +14,15 @@ export default function Account() {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
-  useEffect(() => {
-    let active = true;
+  useFocusEffect(useCallback(() => {
+    let active = true; setUser(null); setBusy(true); setError('');
     (async () => {
       try { if (await hasSavedSession()) { const profile = await request<NativeUser>('/auth/me', undefined, true); if (active) setUser(profile); } }
       catch (e) { if (active) setError(e instanceof Error ? e.message : 'Não foi possível recuperar a sessão.'); }
       finally { if (active) setBusy(false); }
     })();
     return () => { active = false; };
-  }, []);
+  }, []));
   async function login() {
     setBusy(true); setError('');
     try {
@@ -46,7 +46,7 @@ export default function Account() {
     <Text accessibilityRole="header" style={styles.heading}>Minha conta</Text>
     {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {busy && <ActivityIndicator color="#0036cc" accessibilityLabel="Consultando sua conta" />}
-    {user ? <View style={styles.card}><Text style={styles.heading}>{user.nome}</Text><Text style={styles.text}>{user.email}</Text><Link href="/beneficios" style={styles.link}>Meus pontos e recompensas</Link><Link href="/pedidos" style={styles.link}>Consultar meus pedidos</Link><Link href="/servicos" style={styles.link}>Serviços e atendimentos</Link><Link href="/favoritos" style={styles.link}>Meus favoritos e comparação</Link><Link href="/privacidade" style={styles.link}>Privacidade e preferências</Link><Link href="/acessos" style={styles.link}>Acessos da minha conta</Link><Pressable accessibilityRole="button" disabled={busy} onPress={exit} style={styles.button}><Text style={styles.buttonText}>Sair da conta</Text></Pressable></View> : <View style={styles.card}>
+    {user ? <View style={styles.card}><Text style={styles.heading}>{user.nome}</Text><Text style={styles.text}>{user.email}</Text><Link href="/beneficios" style={styles.link}>Meus pontos e recompensas</Link><Link href="/pedidos" style={styles.link}>Consultar meus pedidos</Link><Link href="/servicos" style={styles.link}>Serviços e atendimentos</Link><Link href="/favoritos" style={styles.link}>Meus favoritos e comparação</Link><Link href="/privacidade" style={styles.link}>Privacidade e preferências</Link><Link href="/senha" style={styles.link}>Alterar minha senha</Link><Link href="/acessos" style={styles.link}>Acessos da minha conta</Link><Pressable accessibilityRole="button" disabled={busy} onPress={exit} style={styles.button}><Text style={styles.buttonText}>Sair da conta</Text></Pressable></View> : <View style={styles.card}>
       <Text accessibilityRole="header" style={styles.heading}>{creating ? 'Criar minha conta' : 'Entrar na Vox'}</Text>
       <Text style={styles.text}>{creating ? 'Cadastre-se para acompanhar compras e atendimentos. As preferências de personalização e notificações começam desativadas.' : 'Use sua conta de cliente da Vox.'}</Text>
       {creating && <><Text style={styles.label}>Seu nome</Text><TextInput accessibilityLabel="Seu nome" autoComplete="name" value={name} onChangeText={setName} maxLength={100} style={styles.input} editable={!busy} /><Text style={styles.label}>Telefone (opcional)</Text><TextInput accessibilityLabel="Telefone opcional" autoComplete="tel" keyboardType="phone-pad" value={phone} onChangeText={setPhone} maxLength={30} style={styles.input} editable={!busy} /></>}
