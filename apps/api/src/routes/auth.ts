@@ -4,8 +4,10 @@ import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { createSession, hashRefresh, readRefresh, refreshCookie, refreshValue, sessionResponse, webOrigin } from '../lib/sessions.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { authLimits } from '../lib/authLimits.js';
 
 export const authRouter = Router();
+authRouter.use(['/login', '/register', '/refresh', '/senha'], authLimits);
 
 authRouter.patch('/senha', requireAuth, async (req: AuthRequest, res) => {
   const parsed = z.object({ senhaAtual: z.string().min(1).max(72), novaSenha: z.string().min(12).max(72) }).safeParse(req.body);

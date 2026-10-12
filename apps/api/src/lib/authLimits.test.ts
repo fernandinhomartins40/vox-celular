@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { AttemptWindow } from './authLimits.js';
+const limit = new AttemptWindow(2, 1000, 2);
+assert.equal(limit.consume('a', 0), 0);
+assert.equal(limit.consume('a', 0), 0);
+assert.equal(limit.consume('a', 0), 1);
+assert.equal(limit.consume('b', 0), 0);
+assert.equal(limit.consume('c', 0), 1, 'Capacity cannot evict an active limit');
+assert.equal(limit.consume('a', 1000), 0, 'Expired window recovers');
+assert.equal(limit.consume('c', 1000), 0, 'Expired keys release capacity');
+console.log('PASS: authentication limits, isolated keys, bounded capacity and expiry recovery.');
