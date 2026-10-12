@@ -145,6 +145,7 @@ jobs:
       POSTGRES_PASSWORD: ci-only-password
       JWT_SECRET: ci-only-signing-secret-at-least-32-characters
       DEPLOY_PORT: "3196"
+      CORS_ORIGIN: http://127.0.0.1:3196
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

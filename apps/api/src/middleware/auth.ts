@@ -3,7 +3,7 @@ import { verifyToken } from '../lib/jwt.js';
 import { prisma } from '../lib/prisma.js';
 
 export interface AuthRequest extends Request {
-  user?: { userId: string; lojaId: string; role: string };
+  user?: { userId: string; lojaId: string; role: string; sessionId?: string };
 }
 
 export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
@@ -17,6 +17,9 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     const user = await prisma.usuario.findFirst({ where: { id: claims.userId, lojaId: claims.lojaId }, select: { role: true, tokenVersion: true } });
     if (!user || user.role !== claims.role || (claims.tokenVersion ?? 0) !== user.tokenVersion) {
       res.status(401).json({ error: 'Sua sessão expirou. Entre novamente.' }); return;
+    }
+    if (claims.sessionId && !await prisma.sessao.findFirst({ where: { id: claims.sessionId, usuarioId: claims.userId, tokenVersion: user.tokenVersion, expiresAt: { gt: new Date() } }, select: { id: true } })) {
+      res.status(401).json({ error: 'Sua sessão foi encerrada. Entre novamente.' }); return;
     }
     req.user = claims;
     next();

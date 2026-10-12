@@ -1,6 +1,6 @@
 # Vox Celular — PWA e aplicativos do cliente
 
-Data da auditoria e pesquisa: 11/10/2026. **Status: proposta aguardando aprovação.** Nenhum código da aplicação foi alterado para este escopo. Este plano complementa o multicanal; não declara aqueles conectores concluídos.
+Data da auditoria e pesquisa: 11/10/2026. **Status: aprovado pelo usuário em 12/10/2026; implementação em andamento com goal ativo.** A auditoria abaixo registra a base na data da análise; entregas posteriores estão em IMPLEMENTACAO_MOBILE.md. Este plano complementa o multicanal; não declara aqueles conectores concluídos.
 
 ## 1. Auditoria da base existente
 

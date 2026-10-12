@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { signToken } from '../lib/jwt.js';
+import { createSession, hashRefresh, readRefresh, refreshCookie, refreshValue, sessionResponse, webOrigin } from '../lib/sessions.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 
 export const authRouter = Router();
@@ -26,6 +26,7 @@ const loginSchema = z.object({
   email: z.string().email(),
   senha: z.string().min(6),
   lojaId: z.string().min(1).optional(),
+  plataforma: z.enum(['web', 'native']).optional(),
 });
 
 const registerSchema = z.object({
@@ -35,9 +36,11 @@ const registerSchema = z.object({
   telefone: z.string().optional(),
   cidade: z.string().optional(),
   lojaId: z.string(),
+  plataforma: z.enum(['web', 'native']).optional(),
 });
 
 authRouter.post('/login', async (req, res) => {
+  if (req.body?.plataforma === 'web' && !webOrigin(req)) { res.status(403).json({ error: 'Origem não autorizada.' }); return; }
   const parse = loginSchema.safeParse(req.body);
   if (!parse.success) { res.status(400).json({ error: parse.error.errors }); return; }
 
@@ -49,14 +52,12 @@ authRouter.post('/login', async (req, res) => {
   const ok = await bcrypt.compare(senha, usuario.senhaHash);
   if (!ok) { res.status(401).json({ error: 'Credenciais inválidas' }); return; }
 
-  const token = signToken({ userId: usuario.id, lojaId: usuario.lojaId, role: usuario.role, tokenVersion: usuario.tokenVersion });
-  res.json({
-    token,
-    user: { id: usuario.id, nome: usuario.nome, email: usuario.email, role: usuario.role, lojaId: usuario.lojaId }
-  });
+  res.set('Cache-Control', 'no-store');
+  res.json(await createSession(usuario, req, res));
 });
 
 authRouter.post('/register', async (req, res) => {
+  if (req.body?.plataforma === 'web' && !webOrigin(req)) { res.status(403).json({ error: 'Origem não autorizada.' }); return; }
   const parse = registerSchema.safeParse(req.body);
   if (!parse.success) { res.status(400).json({ error: parse.error.errors }); return; }
 
@@ -85,11 +86,35 @@ authRouter.post('/register', async (req, res) => {
     include: { cliente: true }
   });
 
-  const token = signToken({ userId: usuario.id, lojaId: usuario.lojaId, role: usuario.role, tokenVersion: usuario.tokenVersion });
-  res.status(201).json({
-    token,
-    user: { id: usuario.id, nome: usuario.nome, email: usuario.email, role: usuario.role, lojaId: usuario.lojaId }
-  });
+  res.set('Cache-Control', 'no-store');
+  res.status(201).json(await createSession(usuario, req, res));
+});
+
+authRouter.post('/refresh', async (req, res) => {
+  const native = req.body?.plataforma === 'native';
+  if (!native && !webOrigin(req)) { res.status(403).json({ error: 'Origem não autorizada.' }); return; }
+  const value = native ? req.body?.refreshToken : readRefresh(req);
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(value)) { res.status(401).json({ error: 'Entre novamente.' }); return; }
+  try {
+    const next = refreshValue();
+    const result = await prisma.$transaction(async tx => {
+      const row = await tx.sessao.findUnique({ where: { token: hashRefresh(value) }, include: { usuario: true } });
+      if (!row || row.expiresAt <= new Date() || row.tokenVersion !== row.usuario.tokenVersion) throw new Error('EXPIRED');
+      const changed = await tx.sessao.updateMany({ where: { id: row.id, token: row.token }, data: { token: hashRefresh(next) } });
+      if (changed.count !== 1) throw new Error('REUSED');
+      return sessionResponse(row.usuario, row.id);
+    });
+    res.set('Cache-Control', 'no-store');
+    if (native) res.json({ ...result, refreshToken: next });
+    else { refreshCookie(res, next); res.json(result); }
+  } catch { res.status(401).json({ error: 'Sua sessão expirou. Entre novamente.' }); }
+});
+authRouter.post('/logout', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    if (req.user!.sessionId) await prisma.sessao.deleteMany({ where: { id: req.user!.sessionId, usuarioId: req.user!.userId } });
+    else await prisma.usuario.update({ where: { id: req.user!.userId }, data: { tokenVersion: { increment: 1 } } });
+    refreshCookie(res, ''); res.json({ ok: true });
+  } catch { res.status(503).json({ error: 'Não foi possível encerrar a sessão no servidor.' }); }
 });
 
 authRouter.get('/me', requireAuth, async (req: AuthRequest, res) => {

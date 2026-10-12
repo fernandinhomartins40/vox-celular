@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../lib/api.js';
+import { api, setAccessToken } from '../lib/api.js';
 import { AuthContext } from './context.js';
 
 export function AuthProvider({ children }) {
@@ -15,8 +15,9 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const lojaId = import.meta.env.VITE_LOJA_ID || (await api.get('/loja')).id;
-      const data = await api.post('/auth/login', { email, senha, lojaId });
-      const stored = { ...data.user, token: data.token };
+      const data = await api.post('/auth/login', { email, senha, lojaId, plataforma: 'web' });
+      setAccessToken(data.token);
+      const stored = { ...data.user };
       localStorage.setItem('vox_user', JSON.stringify(stored));
       setUser(stored);
       return { ok: true };
@@ -32,8 +33,9 @@ export function AuthProvider({ children }) {
     try {
       const lojaId = import.meta.env.VITE_LOJA_ID || (await api.get('/loja')).id;
       localStorage.setItem('vox_loja_id', lojaId);
-      const data = await api.post('/auth/register', { nome, email, senha, lojaId, ...extra });
-      const stored = { ...data.user, token: data.token };
+      const data = await api.post('/auth/register', { nome, email, senha, lojaId, ...extra, plataforma: 'web' });
+      setAccessToken(data.token);
+      const stored = { ...data.user };
       localStorage.setItem('vox_user', JSON.stringify(stored));
       setUser(stored);
       return { ok: true };
@@ -44,8 +46,13 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function logout() {
+  async function logout() {
+    try { await api.post('/auth/logout', {}); }
+    catch { /* Local logout remains possible without network; session expires server-side. */ }
+    setAccessToken(null);
     localStorage.removeItem('vox_user');
+    sessionStorage.removeItem('vox_cart');
+    sessionStorage.removeItem('vox_checkout_attempt');
     setUser(null);
   }
 
