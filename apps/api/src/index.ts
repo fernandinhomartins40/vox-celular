@@ -14,6 +14,7 @@ import { promocoesRouter } from './routes/promocoes.js';
 import { lojaRouter } from './routes/loja.js';
 import { integracoesRouter } from './routes/integracoes.js';
 import { favoritosRouter } from './routes/favoritos.js';
+import { privacidadeRouter } from './routes/privacidade.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,6 +44,7 @@ app.use('/api/fidelidade', fidelidadeRouter);
 app.use('/api/config', configRouter);
 app.use('/api/integracoes', integracoesRouter);
 app.use('/api/favoritos', favoritosRouter);
+app.use('/api/privacidade', privacidadeRouter);
 app.use('/api/promocoes', promocoesRouter);
 app.use('/api/loja', lojaRouter);
 

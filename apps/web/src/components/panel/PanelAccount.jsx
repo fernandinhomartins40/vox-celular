@@ -11,6 +11,18 @@ export default function PanelAccount() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  async function exportData() {
+    setExporting(true); setExportError('');
+    try {
+      const data = await api.get('/privacidade/exportar');
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+      const link = document.createElement('a'); link.href = url; link.download = 'vox-meus-dados.json';
+      link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) { setExportError(error.message); }
+    finally { setExporting(false); }
+  }
   async function submit(e) {
     e.preventDefault(); if (saving) return; setSuccess(false); setError('');
     if (form.novaSenha !== form.confirmar) { setError('As novas senhas não coincidem.'); return; }
@@ -26,6 +38,7 @@ export default function PanelAccount() {
     <section className="panel-account-profile" aria-labelledby="account-profile-title">
       <div className="panel-account-heading"><span className="panel-action-icon"><Icon.user /></span><h2 id="account-profile-title">Seus dados</h2></div>
       <dl><div><dt>Nome</dt><dd>{user?.nome}</dd></div><div><dt>E-mail</dt><dd>{user?.email}</dd></div></dl>
+      {user?.role === 'CLIENTE' && <div className="mt-6"><h3 className="font-semibold mb-2">Seus dados com você</h3><p className="panel-account-help">Baixe uma cópia do seu cadastro, pedidos, favoritos e benefícios.</p><button disabled={exporting} onClick={exportData} className="panel-primary-button mt-3">{exporting ? 'Preparando arquivo…' : 'Baixar meus dados'}</button>{exportError && <p role="alert" className="panel-account-error">{exportError}</p>}</div>}
     </section>
     <form onSubmit={submit} className="panel-account-form" aria-labelledby="account-password-title">
       <div className="panel-account-heading"><span className="panel-action-icon"><Icon.lock /></span><h2 id="account-password-title">Alterar senha</h2></div>

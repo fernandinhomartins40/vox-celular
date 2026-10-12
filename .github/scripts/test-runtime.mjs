@@ -313,3 +313,15 @@ assert.equal((await json(`/api/produtos?lojaId=${loja.id}`)).find(p => p.id === 
 const uncheckedProduct = await json(`/api/produtos/${product.id}`, { method: 'PATCH', token: admin.token, body: { atributosTecnicos: { tipo: 'celular', verificado: false } } });
 assert.equal(uncheckedProduct.atributosVerificadosEm, null);
 console.log('PASS: real catalog attribute persistence, public serialization, source requirement and verification timestamp.');
+
+await json('/api/privacidade/exportar', { status: 401 });
+await json('/api/privacidade/exportar', { token: admin.token, status: 403 });
+const personalExport = await json('/api/privacidade/exportar', { token: renewed.token });
+assert.equal(personalExport.perfil.usuario.email, 'teste.cliente@voxcelular.example');
+assert.equal(personalExport.pedidos.length, 4);
+assert.equal(personalExport.pedidos.map(order => order.id).sort().join(','), sql(`SELECT string_agg(id, ',' ORDER BY id) FROM "Pedido" WHERE "clienteId"='${personalExport.perfil.id}'`));
+assert.ok(!JSON.stringify(personalExport).includes('senhaHash'));
+assert.ok(!JSON.stringify(personalExport).includes('refreshToken'));
+assert.ok(!JSON.stringify(personalExport).includes('ci-admin@example.com'));
+assert.ok(personalExport.historicoPontos.length > 0);
+console.log('PASS: personal-data export authentication, customer-only scope, own orders/history and no password or session secrets.');
