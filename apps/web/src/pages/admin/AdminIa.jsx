@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
+import { usdToMicro } from '../../lib/aiMoney';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
 import { PanelLoading } from '../../components/panel/PanelFeedback';
 const defaults = { provedor: 'deepseek', workspace: '', limite: '25', entrada: '', saida: '', apiKey: '' };
-const micro = value => { if (!/^\d+(\.\d{1,6})?$/.test(value)) throw new Error('Use valores em dólares, com ponto decimal e até seis casas.'); const result = Math.round(Number(value) * 1000000); if (!Number.isSafeInteger(result) || result <= 0 || result > 1000000000) throw new Error('Use valores maiores que zero e até US$ 1.000.'); return result; };
 export default function AdminIa() {
   const [form, setForm] = useState(defaults), [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState(''), [configured, setConfigured] = useState(false);
   const [budget, setBudget] = useState(null), [budgetError, setBudgetError] = useState('');
@@ -30,7 +30,7 @@ export default function AdminIa() {
   async function save(event) {
     event.preventDefault(); setBusy(true); setError(''); setNotice('');
     try {
-      await api.put('/ia/config', { provedor: form.provedor, ...(form.provedor === 'qwen' ? { workspace: form.workspace.trim() } : {}), ...(form.apiKey ? { apiKey: form.apiKey.trim() } : {}), limiteMicroUsd: micro(form.limite), tarifaEntradaMicroUsd: micro(form.entrada), tarifaSaidaMicroUsd: micro(form.saida) });
+      await api.put('/ia/config', { provedor: form.provedor, ...(form.provedor === 'qwen' ? { workspace: form.workspace.trim() } : {}), ...(form.apiKey ? { apiKey: form.apiKey.trim() } : {}), limiteMicroUsd: usdToMicro(form.limite), tarifaEntradaMicroUsd: usdToMicro(form.entrada), tarifaSaidaMicroUsd: usdToMicro(form.saida) });
       setForm(previous => ({ ...previous, apiKey: '' })); setConfigured(true); setNotice('Configuração salva. As chamadas de IA ainda não estão ativadas.');
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   }

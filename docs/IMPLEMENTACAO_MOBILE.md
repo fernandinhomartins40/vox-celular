@@ -249,3 +249,5 @@ Teste de integração PostgreSQL da configuração de IA acrescentado ao runtime
 
 ### Remoção da configuração de IA
 DELETE exclusivo do lojista remove somente configuração/chave da loja autenticada, serializado com salvamento. Painel pede confirmação e limpa formulário após resposta. Orçamentos/reservas não são apagados. Testes CI adicionados para cliente recusado, outra loja sem efeito e repetição idempotente; execução PostgreSQL ainda pendente. Builds API/web, lint e sintaxe do teste passaram localmente.
+
+Conversão monetária do formulário extraída para aiMoney: interpreta dólares por parte inteira/fração decimal, sem multiplicar decimal de ponto flutuante. Limita seis casas e US$ 1.000; rejeita vírgula, expoente, espaço, fração menor que microdólar e excesso. Testes de fronteira passaram; build/lint passaram e cobertura incluída no CI.
