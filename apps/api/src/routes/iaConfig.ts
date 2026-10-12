@@ -7,6 +7,16 @@ const money = z.number().int().positive().max(1000000000);
 const schema = z.object({ provedor: z.enum(['deepseek', 'qwen']), apiKey: z.string().min(8).max(512).regex(/^[^\s]+$/).optional(), workspace: z.string().regex(/^[a-zA-Z0-9-]{1,64}$/).optional(), limiteMicroUsd: money, tarifaEntradaMicroUsd: money, tarifaSaidaMicroUsd: money }).strict().refine(value => value.provedor !== 'qwen' || Boolean(value.workspace), 'Informe o workspace Qwen de Singapura.');
 export const iaConfigRouter = Router();
 iaConfigRouter.use(requireLojista);
+iaConfigRouter.delete('/', async (req: AuthRequest, res) => {
+  try {
+    const lojaId = req.user!.lojaId;
+    await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lojaId}), hashtext('ai-config'))`;
+      await tx.configuracaoIa.deleteMany({ where: { lojaId } });
+    });
+    res.set('Cache-Control', 'no-store').json({ ok: true });
+  } catch { res.status(503).json({ error: 'Não foi possível remover a configuração de IA.' }); }
+});
 iaConfigRouter.get('/orcamento', async (req: AuthRequest, res) => {
   try {
     const mes = new Date().toISOString().slice(0, 7);

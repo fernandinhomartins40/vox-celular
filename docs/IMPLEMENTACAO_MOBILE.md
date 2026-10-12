@@ -246,3 +246,6 @@ GET /api/ia/config/orcamento exclusivo do lojista consulta mês corrente UTC por
 Teste Chromium do formulário de IA passou em 390/768/1440: payload monetário correto, campo password, chave limpa após salvar, ausência do segredo no texto da página, sem overflow horizontal/erros JS. Endpoint simulado para isolar interface; não comprova persistência/criptografia real nem conexão ao provedor. Script incluído no workflow único após instalação do browser.
 
 Teste de integração PostgreSQL da configuração de IA acrescentado ao runtime CI: cliente GET/PUT recusado, limite inválido, ciphertext sem chave literal, resposta sem segredo, preservar chave no mesmo provedor, troca exigindo chave nova, isolamento de configuração/orçamento entre lojas. Usa somente chaves fictícias e não faz chamadas a provedores. Sintaxe validada localmente; execução real não comprovada enquanto workflow não roda com sucesso.
+
+### Remoção da configuração de IA
+DELETE exclusivo do lojista remove somente configuração/chave da loja autenticada, serializado com salvamento. Painel pede confirmação e limpa formulário após resposta. Orçamentos/reservas não são apagados. Testes CI adicionados para cliente recusado, outra loja sem efeito e repetição idempotente; execução PostgreSQL ainda pendente. Builds API/web, lint e sintaxe do teste passaram localmente.
