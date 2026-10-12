@@ -336,10 +336,12 @@ model ResgateRecompensa {
   clienteId     String
   recompensaId  String
   codigo        String   @unique
+  chaveResgate  String?
   usadoEm       DateTime?
   createdAt     DateTime @default(now())
 
   recompensa    RecompensaCatalogo @relation(fields: [recompensaId], references: [id])
+  @@unique([clienteId, chaveResgate])
 }
 
 model HistoricoPontos {

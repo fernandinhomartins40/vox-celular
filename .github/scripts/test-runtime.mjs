@@ -126,6 +126,17 @@ const otherCustomer = await json('/api/auth/register', { method: 'POST', status:
 } });
 assert.deepEqual((await json('/api/fidelidade/pontos', { token: otherCustomer.token })).resgates, [], 'Other customers cannot see reward codes');
 assert.equal(sql(`SELECT count(*) FROM "ResgateRecompensa" WHERE "clienteId"='${me.cliente.id}';`), '1');
+sql(`INSERT INTO "RecompensaCatalogo" (id,"lojaId",titulo,pontos,ativo) VALUES ('ci-keyed-reward','${loja.id}','CI keyed reward',10,true);`);
+const rewardAttempt = { chaveResgate: '72bd5565-4803-4a88-8e48-749ec60ed631' };
+await json('/api/fidelidade/resgatar/ci-keyed-reward', { method: 'POST', token: otherCustomer.token, body: { chaveResgate: '72bd5565-4803-4a88-8e48-749ec60ed632', pontosEsperados: 9 }, status: 409 });
+assert.equal((await json('/api/fidelidade/pontos', { token: otherCustomer.token })).saldo, 50, 'Changed reward cost must not debit points');
+const keyedRewards = await Promise.all(Array.from({ length: 3 }, () => json('/api/fidelidade/resgatar/ci-keyed-reward', { method: 'POST', token: otherCustomer.token, body: rewardAttempt })));
+assert.equal(new Set(keyedRewards.map(row => row.codigo)).size, 1, 'Concurrent same-key redemptions return one code');
+assert.equal((await json('/api/fidelidade/pontos', { token: otherCustomer.token })).saldo, 40, 'Same-key redemption debits points once');
+await json('/api/fidelidade/resgatar/ci-reward', { method: 'POST', token: otherCustomer.token, body: rewardAttempt, status: 409 });
+sql(`UPDATE "RecompensaCatalogo" SET ativo=false WHERE id='ci-keyed-reward';`);
+assert.equal((await json('/api/fidelidade/resgatar/ci-keyed-reward', { method: 'POST', token: otherCustomer.token, body: rewardAttempt })).codigo, keyedRewards[0].codigo, 'Recover confirmed code even after reward is inactive');
+await json('/api/fidelidade/resgatar/ci-keyed-reward', { method: 'POST', token: customer.token, body: rewardAttempt, status: 404 });
 const invalidImage = await json(`/api/produtos/${product.id}`, { method: 'PATCH', token: admin.token, status: 400,
   body: { image: { dataUrl: 'data:image/gif;base64,AAAA' } } });
 assert.ok(invalidImage.error);
