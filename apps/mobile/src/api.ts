@@ -4,6 +4,7 @@ const base = process.env.EXPO_PUBLIC_API_URL || 'https://www.voxcelular.com.br/a
 if (!base.startsWith('https://')) throw new Error('Configure uma API HTTPS para o aplicativo.');
 let accessToken: string | null = null;
 let generation = 0;
+export function sessionRevision() { return generation; }
 let renewing: Promise<string> | undefined;
 const refreshKey = 'vox.refresh';
 let storageQueue: Promise<unknown> = Promise.resolve();
@@ -46,6 +47,7 @@ async function renew() {
   renewing = pending;
   return pending;
 }
+export class ApiError extends Error { status: number; constructor(message: string, status: number) { super(message); this.status = status; } }
 export async function request<T>(path: string, body?: unknown, authenticated = false, method = body === undefined ? 'GET' : 'POST', retried = false): Promise<T> {
   const version = generation;
   let token = accessToken;
@@ -55,7 +57,7 @@ export async function request<T>(path: string, body?: unknown, authenticated = f
   if (authenticated && generation !== version) throw new Error('Sua sessão mudou. Tente novamente.');
   if (response.status === 401 && authenticated && !retried) { await renew(); if (generation !== version) throw new Error('Sua sessão mudou.'); return request<T>(path, body, authenticated, method, true); }
   const data = await response.json();
-  if (!response.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Não foi possível concluir. Confira os dados.');
+  if (!response.ok) throw new ApiError(typeof data.error === 'string' ? data.error : 'Não foi possível concluir. Confira os dados.', response.status);
   return data as T;
 }
 export async function logout() {

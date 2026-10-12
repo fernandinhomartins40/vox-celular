@@ -213,10 +213,16 @@ assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "lojaId"='ci-demo-store'`)
 const checkoutProduct = 'vox-demo-v1-ci-demo-store-produto-1';
 sql(`UPDATE "Produto" SET estoque=1, ativo=true WHERE id='${checkoutProduct}';`);
 const checkoutBody = { checkoutKey: '39ad53a0-a649-4e70-8e15-5e455841ef06', itens: [{ produtoId: checkoutProduct, qty: 1 }] };
-const purchases = await Promise.all(Array.from({ length: 2 }, () => json('/api/pedidos', { method: 'POST', token: demoLogin.token, body: checkoutBody, status: 201 })));
+const reviewedCents = Math.round(Number(sql(`SELECT preco FROM "Produto" WHERE id='${checkoutProduct}'`)) * 100);
+await json('/api/pedidos', { method: 'POST', token: demoLogin.token, body: { checkoutKey: '39ad53a0-a649-4e70-8e15-5e455841ef07', itens: [{ produtoId: checkoutProduct, qty: 1, precoCentavos: reviewedCents + 1 }] }, status: 409 });
+assert.equal(sql(`SELECT estoque FROM "Produto" WHERE id='${checkoutProduct}'`), '1', 'Reviewed price mismatch must not reserve stock');
+assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "checkoutKey"='39ad53a0-a649-4e70-8e15-5e455841ef07'`), '0');
+const purchases = await Promise.all(Array.from({ length: 2 }, (_, index) => json('/api/pedidos', { method: 'POST', token: demoLogin.token, body: index ? { ...checkoutBody, itens: [{ produtoId: checkoutProduct, qty: 1, precoCentavos: reviewedCents }] } : checkoutBody, status: 201 })));
 assert.equal(purchases[0].id, purchases[1].id, 'Concurrent retries return the same persisted order');
 assert.equal(sql(`SELECT estoque FROM "Produto" WHERE id='${checkoutProduct}'`), '0');
 assert.equal(purchases[0].pagamento, 'Aguardando confirmação');
+const priceRetry = await json('/api/pedidos', { method: 'POST', token: demoLogin.token, body: { ...checkoutBody, itens: [{ produtoId: checkoutProduct, qty: 1, precoCentavos: reviewedCents + 1 }] }, status: 201 });
+assert.equal(priceRetry.id, purchases[0].id, 'Existing order recovery precedes price validation');
 await json('/api/pedidos', { method: 'POST', token: demoLogin.token, body: { ...checkoutBody, checkoutKey: '7a0a3ac4-7514-4250-8ad7-d2b2be969a99' }, status: 409 });
 assert.equal(sql(`SELECT count(*) FROM "Pedido" WHERE "checkoutKey"='${checkoutBody.checkoutKey}'`), '1');
 await json(`/api/pedidos/${purchases[0].id}/cancelar`, { method: 'POST', token: demoLogin.token, body: {}, status: 403 });

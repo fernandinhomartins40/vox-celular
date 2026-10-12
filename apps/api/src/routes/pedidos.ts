@@ -8,7 +8,7 @@ export const pedidosRouter = Router();
 
 const checkoutSchema = z.object({
   checkoutKey: z.string().uuid(),
-  itens: z.array(z.object({ produtoId: z.string().min(1), qty: z.number().int().min(1).max(100) })).min(1).max(30),
+  itens: z.array(z.object({ produtoId: z.string().min(1), qty: z.number().int().min(1).max(100), precoCentavos: z.number().int().nonnegative().max(1e12).optional() })).min(1).max(30),
 });
 
 pedidosRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
@@ -30,6 +30,7 @@ pedidosRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
       for (const [produtoId, qty] of [...quantities].sort(([a], [b]) => a.localeCompare(b))) {
         const produto = await tx.produto.findFirst({ where: { id: produtoId, lojaId: cliente.lojaId, ativo: true } });
         if (!produto) throw new Error('Um produto não está mais disponível. Atualize o carrinho.');
+        if (parsed.data.itens.some(item => item.produtoId === produtoId && item.precoCentavos !== undefined && item.precoCentavos !== Math.round(Number(produto.preco) * 100))) throw new Error(`Estoque ou preço de ${produto.nome} mudou. Atualize o carrinho.`);
         const reserved = await tx.produto.updateMany({ where: { id: produtoId, lojaId: cliente.lojaId, ativo: true, preco: produto.preco, estoque: { gte: qty } }, data: { estoque: { decrement: qty } } });
         if (reserved.count !== 1) throw new Error(`Estoque ou preço de ${produto.nome} mudou. Atualize o carrinho.`);
         cents += Math.round(Number(produto.preco) * 100) * qty;
