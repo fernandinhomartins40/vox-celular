@@ -18,6 +18,7 @@ const responses = () => ({
   '/auth/sessoes': [],
   '/servicos': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null }],
   '/servicos/admin': [{ id: 'service', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null, ativo: true }],
+  '/agenda/admin': [],
   '/servicos/solicitacoes': [],
   '/dashboard': { pedidosHoje: 1, pedidosMes: 1, faturamentoMes: 2299, faturamentoOntem: 0, ticketMedio: 2299, estoqueBaixo: 0, grafico: [{ dia: '10/10', valor: 0 }] },
   '/pedidos': [order], '/pedidos/meus': [order], '/produtos/admin': [product],
@@ -77,6 +78,9 @@ try {
       }
       if (role === 'LOJISTA') {
         await page.goto(base + prefix + '/servicos');
+        await page.getByRole('button', { name: 'Agenda de atendimento', exact: true }).click();
+        await page.getByRole('heading', { name: 'Abrir horário de atendimento' }).waitFor();
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `Agenda overflow at ${width}`);
         await page.getByRole('button', { name: 'Catálogo de serviços', exact: true }).click();
         await page.getByRole('button', { name: 'Novo serviço', exact: true }).click();
         await page.getByLabel('Nome do serviço', { exact: true }).fill('Troca de bateria');
