@@ -16,7 +16,7 @@ async function main() {
     if (await tx.loja.count() !== 0) return;
     await tx.loja.create({
       data: {
-        nome: 'Vox Celular', telefone: '5542991031420',
+        chavePublica: 'vox-celular', nome: 'Vox Celular', telefone: '5542991031420',
         endereco: 'Av. Maximiliano Vicentin, 710', cidade: 'Palmital–PR',
         mapsUrl: 'https://maps.google.com/?q=Av.+Maximiliano+Vicentin,+710,+Palmital+PR',
         config: { create: {} },

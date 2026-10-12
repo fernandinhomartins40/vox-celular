@@ -46,6 +46,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET required}
       PORT: "3001"
       CORS_ORIGIN: ${CORS_ORIGIN:-https://www.voxcelular.com.br}
+      PUBLIC_STORE_KEY: ${PUBLIC_STORE_KEY:-vox-celular}
       UPLOADS_DIR: /app/uploads
       MARKETPLACE_KEY_FILE: /app/secrets/marketplace.key
       NODE_ENV: production

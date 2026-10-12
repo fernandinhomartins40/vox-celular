@@ -10,6 +10,7 @@ datasource db {
 // Multi-tenant: each Loja is a tenant
 model Loja {
   id        String   @id @default(cuid())
+  chavePublica String? @unique
   nome      String
   telefone  String
   endereco  String

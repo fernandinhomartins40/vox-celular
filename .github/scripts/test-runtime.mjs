@@ -42,6 +42,10 @@ const unauthorized = await fetch(base + '/api/dashboard');
 assert.equal(unauthorized.status, 401);
 const admin = await json('/api/auth/login', { method: 'POST', body: { email: env.ADMIN_EMAIL, senha: env.ADMIN_PASSWORD } });
 const loja = await json('/api/loja');
+assert.equal(loja.chavePublica, 'vox-celular');
+await json('/api/loja?lojaId=missing-store', { status: 404 });
+await json('/api/loja?lojaId[]=invalid', { status: 400 });
+assert.equal((await json(`/api/loja?lojaId=${loja.id}`)).id, loja.id);
 const testSeed = (password) => compose('--profile', 'tools', 'run', '--rm', '--no-deps', '-e', 'ALLOW_TEST_ADMIN_SEED=true',
   '-e', 'TEST_ADMIN_PASSWORD=' + password, 'migrate', 'node', 'dist/seed.js');
 const userCount = sql('SELECT count(*) FROM "Usuario";');
@@ -100,6 +104,8 @@ sql(`UPDATE "Cliente" SET pontos=100 WHERE id='${me.cliente.id}';
  ('ci-inactive','${loja.id}','CI inactive',1,false);
  INSERT INTO "Loja" (id,nome,telefone,endereco,cidade,"mapsUrl") VALUES ('ci-other-store','CI other','','','','');
  INSERT INTO "RecompensaCatalogo" (id,"lojaId",titulo,pontos,ativo) VALUES ('ci-foreign','ci-other-store','Other',1,true);`);
+assert.equal((await json('/api/loja')).id, loja.id, 'Default discovery must resolve the configured store with multiple tenants');
+assert.equal((await json('/api/loja?lojaId=ci-other-store')).id, 'ci-other-store');
 await json('/api/fidelidade/resgatar/ci-inactive', { method: 'POST', token: customer.token, body: {}, status: 404 });
 await json('/api/fidelidade/resgatar/ci-foreign', { method: 'POST', token: customer.token, body: {}, status: 404 });
 const redemptions = await Promise.all(Array.from({ length: 6 }, () => fetch(base + '/api/fidelidade/resgatar/ci-reward', {

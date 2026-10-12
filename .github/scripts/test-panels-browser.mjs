@@ -14,6 +14,8 @@ let receipts = [];
 let failPointsRefresh = false;
 const responses = () => ({
   '/loja': { id: 'fixture-store' }, '/config': {},
+  '/privacidade/preferencias': { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' },
+  '/auth/sessoes': [],
   '/dashboard': { pedidosHoje: 1, pedidosMes: 1, faturamentoMes: 2299, faturamentoOntem: 0, ticketMedio: 2299, estoqueBaixo: 0, grafico: [{ dia: '10/10', valor: 0 }] },
   '/pedidos': [order], '/pedidos/meus': [order], '/produtos/admin': [product],
   '/clientes': [customer, { ...customer, id: 'fixture-second-customer', nome: 'João Souza', email: 'joao@example.test', totalGasto: '1000.00', historicoPedidos: [] }], '/promocoes': [],
