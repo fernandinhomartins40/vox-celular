@@ -7,9 +7,35 @@ import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
 import { newPasswordSchema } from '../lib/passwordPolicy.js';
 import { createHash } from 'node:crypto';
+import { consumeAccountToken } from '../lib/accountTokenStore.js';
 
 export const authRouter = Router();
-authRouter.use(['/login', '/register', '/refresh', '/senha'], authLimits);
+authRouter.use(['/login', '/register', '/refresh', '/senha', '/recuperacao/confirmar', '/email/confirmar'], authLimits);
+const confirmationSchema = z.object({ lojaId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict();
+authRouter.post('/recuperacao/confirmar', async (req, res) => {
+  const parsed = confirmationSchema.extend({ novaSenha: newPasswordSchema }).safeParse(req.body);
+  res.set('Cache-Control', 'no-store');
+  if (!parsed.success) { res.status(400).json({ error: 'Confira o link e use uma senha de 12 a 72 caracteres.' }); return; }
+  try {
+    const senhaHash = await bcrypt.hash(parsed.data.novaSenha, 12);
+    const accepted = await prisma.$transaction(tx => consumeAccountToken(tx, parsed.data.lojaId, parsed.data.token, 'RECUPERAR_SENHA', async userId => {
+      await tx.usuario.update({ where: { id: userId }, data: { senhaHash, tokenVersion: { increment: 1 } } });
+      await tx.sessao.deleteMany({ where: { usuarioId: userId } });
+    }));
+    res.status(accepted ? 200 : 400).json(accepted ? { ok: true } : { error: 'Link inválido ou vencido. Solicite uma nova recuperação.' });
+  } catch { res.status(503).json({ error: 'Não foi possível confirmar. Tente novamente mais tarde.' }); }
+});
+authRouter.post('/email/confirmar', async (req, res) => {
+  const parsed = confirmationSchema.safeParse(req.body);
+  res.set('Cache-Control', 'no-store');
+  if (!parsed.success) { res.status(400).json({ error: 'Link de verificação inválido.' }); return; }
+  try {
+    const accepted = await prisma.$transaction(tx => consumeAccountToken(tx, parsed.data.lojaId, parsed.data.token, 'VERIFICAR_EMAIL', async userId => {
+      await tx.usuario.update({ where: { id: userId }, data: { emailVerificadoEm: new Date() } });
+    }));
+    res.status(accepted ? 200 : 400).json(accepted ? { ok: true } : { error: 'Link inválido ou vencido. Solicite uma nova verificação.' });
+  } catch { res.status(503).json({ error: 'Não foi possível confirmar. Tente novamente mais tarde.' }); }
+});
 
 authRouter.patch('/senha', requireAuth, async (req: AuthRequest, res) => {
   const parsed = z.object({ senhaAtual: z.string().min(1).max(72), novaSenha: newPasswordSchema }).safeParse(req.body);

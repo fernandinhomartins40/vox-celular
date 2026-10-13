@@ -278,7 +278,22 @@ try {
   await request('/auth/refresh', null, { plataforma: 'native', refreshToken: admin.refreshToken }, 'POST', [401]);
   await request('/auth/logout', rotated.token, {});
   await request('/auth/me', rotated.token, null, 'GET', [401]);
-  console.log('Real HTTP/PostgreSQL: registration, roles, scoped catalog, checkout concurrency, cancellation, appointment capacity, consent, private push metadata, logout ownership and refresh rotation passed.');
+  const verificationLink = await prisma.$transaction(tx => createAccountToken(tx, other.user.id, loja.id, 'VERIFICAR_EMAIL'));
+  assert.ok(verificationLink);
+  await request('/auth/email/confirmar', null, { lojaId: loja.id, token: verificationLink.token });
+  await request('/auth/email/confirmar', null, { lojaId: loja.id, token: verificationLink.token }, 'POST', [400]);
+  const recoveryLink = await prisma.$transaction(tx => createAccountToken(tx, other.user.id, loja.id, 'RECUPERAR_SENHA'));
+  assert.ok(recoveryLink);
+  const newPassword = 'ci-http-recovered-password-123';
+  await request('/auth/recuperacao/confirmar', null, { lojaId: 'wrong-store', token: recoveryLink.token, novaSenha: newPassword }, 'POST', [400]);
+  await request('/auth/recuperacao/confirmar', null, { lojaId: loja.id, token: recoveryLink.token, novaSenha: 'short' }, 'POST', [400]);
+  const recoveries = await Promise.all(Array.from({ length: 2 }, () => request('/auth/recuperacao/confirmar', null, { lojaId: loja.id, token: recoveryLink.token, novaSenha: newPassword }, 'POST', [200, 400])));
+  assert.deepEqual(recoveries.map(result => result.status).sort(), [200, 400]);
+  await request('/auth/me', other.token, null, 'GET', [401]);
+  await request('/auth/refresh', null, { plataforma: 'native', refreshToken: other.refreshToken }, 'POST', [401]);
+  await request('/auth/login', null, { lojaId: loja.id, email: other.user.email, senha: 'ci-http-client-password-123', plataforma: 'native' }, 'POST', [401]);
+  await request('/auth/login', null, { lojaId: loja.id, email: other.user.email, senha: newPassword, plataforma: 'native' });
+  console.log('Real HTTP/PostgreSQL: account token confirmation, session revocation and existing product flows passed.');
 } finally {
   if (api && api.exitCode === null) {
     const exited = once(api, 'exit'); api.kill(); await exited;
