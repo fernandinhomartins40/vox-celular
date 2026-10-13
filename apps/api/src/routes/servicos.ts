@@ -70,6 +70,35 @@ servicosRouter.post('/solicitacoes', requireAuth, async (req: AuthRequest, res) 
   if ('horarioIndisponivel' in result) { res.status(409).json({ error: 'Horário indisponível. Escolha outro ou envie sem agendamento.' }); return; }
   res.status(result.repeated ? 200 : 201).json(result.row);
 });
+servicosRouter.post('/solicitacoes/:id/horario', requireAuth, async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  const parsed = z.object({ horarioId: z.string().min(1).max(100), horarioAtualId: z.string().min(1).max(100).nullable() }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Informe o novo horário e a reserva atual.' }); return; }
+  const id = String(req.params.id);
+  if (id.length > 100) { res.status(400).json({ error: 'Solicitação inválida.' }); return; }
+  const result = await prisma.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+    const current = await tx.solicitacaoServico.findFirst({ where: { id, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } }, include: { horario: true } });
+    if (!current) return 'missing';
+    if (!['RECEBIDA', 'EM_ANALISE', 'AGUARDANDO_CLIENTE'].includes(current.status)) return 'conflict';
+    if (current.horarioId === parsed.data.horarioId) return 'ok';
+    if (current.horarioId !== parsed.data.horarioAtualId || (current.horario && current.horario.inicio <= new Date())) return 'conflict';
+    if (!await tx.servico.findFirst({ where: { id: current.servicoId, lojaId: req.user!.lojaId, ativo: true, agendamento: true } })) return 'conflict';
+    // All transfers lock both slots in one stable order, preserving capacity during swaps.
+    const slots = [...new Set([current.horarioId, parsed.data.horarioId].filter((slot): slot is string => Boolean(slot)))].sort();
+    for (const slot of slots) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${slot}))`;
+    const target = await tx.horarioServico.findFirst({ where: { id: parsed.data.horarioId, servicoId: current.servicoId, ativo: true, inicio: { gt: new Date() } } });
+    if (!target) return 'conflict';
+    const reserved = await tx.solicitacaoServico.count({ where: { horarioId: target.id, status: { not: 'CANCELADA' } } });
+    if (reserved >= target.capacidade) return 'conflict';
+    const changes = await tx.historicoServico.count({ where: { solicitacaoId: id, mensagem: { startsWith: 'Horário alterado pelo cliente:' }, createdAt: { gte: new Date(Date.now() - 86400000) } } });
+    if (changes >= 10) return 'limit';
+    const date = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
+    await tx.solicitacaoServico.update({ where: { id }, data: { horarioId: target.id, historico: { create: { status: current.status, mensagem: `Horário alterado pelo cliente: ${date.format(target.inicio)} (Brasília).` } } } });
+    return 'ok';
+  });
+  res.status(result === 'missing' ? 404 : result === 'conflict' ? 409 : result === 'limit' ? 429 : 200).json(result === 'ok' ? { ok: true } : { error: result === 'missing' ? 'Atendimento não encontrado.' : result === 'limit' ? 'Limite diário de alterações atingido. Fale com a loja.' : 'Não foi possível trocar o horário. Sua reserva foi mantida; consulte o atendimento e os horários disponíveis.' });
+});
 servicosRouter.patch('/solicitacoes/:id/status', requireLojista, async (req: AuthRequest, res) => {
   const parsed = z.object({ status: z.enum(['EM_ANALISE', 'AGUARDANDO_CLIENTE', 'EM_EXECUCAO', 'CONCLUIDA', 'CANCELADA']), mensagem: z.string().trim().min(2).max(1000) }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.errors }); return; }

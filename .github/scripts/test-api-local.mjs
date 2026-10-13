@@ -143,7 +143,30 @@ try {
   const bookings = await Promise.all([customer, other].map(client => request('/servicos/solicitacoes', client.token, { ...reservation, chaveIdempotencia: randomUUID() }, 'POST', [201, 409])));
   assert.deepEqual(bookings.map(row => row.status).sort(), [201, 409]);
   const booked = bookings.find(row => row.status === 201).data;
+  const bookingOwner = bookings[0].status === 201 ? customer : other;
+  const bookingOther = bookingOwner === customer ? other : customer;
+  const makeSlot = async days => (await request('/agenda', admin.token, { servicoId: service.id, inicio: new Date(Date.now() + days * 86400000).toISOString(), fim: new Date(Date.now() + days * 86400000 + 3600000).toISOString(), capacidade: 1 }, 'POST', [201])).data;
+  const alternative = await makeSlot(2), destination = await makeSlot(3);
+  const secondBooking = (await request('/servicos/solicitacoes', bookingOther.token, { ...reservation, horarioId: alternative.id, chaveIdempotencia: randomUUID() }, 'POST', [201])).data;
+  const movePath = `/servicos/solicitacoes/${booked.id}/horario`;
+  await request(movePath, bookingOther.token, { horarioId: destination.id, horarioAtualId: slot.id }, 'POST', [404]);
+  await request(movePath, admin.token, { horarioId: destination.id, horarioAtualId: slot.id }, 'POST', [403]);
+  await request(movePath, bookingOwner.token, { horarioId: alternative.id, horarioAtualId: slot.id }, 'POST', [409]);
+  assert.equal((await prisma.solicitacaoServico.findUniqueOrThrow({ where: { id: booked.id } })).horarioId, slot.id);
+  const transfers = await Promise.all([
+    request(movePath, bookingOwner.token, { horarioId: destination.id, horarioAtualId: slot.id }, 'POST', [200, 409]),
+    request(`/servicos/solicitacoes/${secondBooking.id}/horario`, bookingOther.token, { horarioId: destination.id, horarioAtualId: alternative.id }, 'POST', [200, 409]),
+  ]);
+  assert.deepEqual(transfers.map(row => row.status).sort(), [200, 409]);
+  assert.equal(await prisma.solicitacaoServico.count({ where: { horarioId: destination.id, status: { not: 'CANCELADA' } } }), 1);
+  const moved = transfers[0].status === 200 ? booked : secondBooking;
+  const movedOwner = transfers[0].status === 200 ? bookingOwner : bookingOther;
+  const previousSlot = transfers[0].status === 200 ? slot : alternative;
+  await request(`/servicos/solicitacoes/${moved.id}/horario`, movedOwner.token, { horarioId: destination.id, horarioAtualId: previousSlot.id });
+  assert.equal(await prisma.historicoServico.count({ where: { solicitacaoId: moved.id, mensagem: { startsWith: 'Horário alterado pelo cliente:' } } }), 1);
+  await request(`/servicos/solicitacoes/${moved.id}/horario`, movedOwner.token, { horarioId: previousSlot.id, horarioAtualId: previousSlot.id }, 'POST', [409]);
   await request(`/servicos/solicitacoes/${booked.id}/status`, admin.token, { status: 'CANCELADA', mensagem: 'Fixture cancellation' }, 'PATCH');
+  await request(movePath, bookingOwner.token, { horarioId: destination.id, horarioAtualId: slot.id }, 'POST', [409]);
   assert.equal((await request(`/agenda?lojaId=${loja.id}&servicoId=${service.id}`)).data[0].vagas, 1);
   const ticket = (await request('/servicos/solicitacoes', customer.token, { servicoId: service.id, chaveIdempotencia: randomUUID(), aparelho: 'Fixture phone', problema: 'Quote integration fixture' }, 'POST', [201])).data;
   const ticketStatus = `/servicos/solicitacoes/${ticket.id}/status`;
