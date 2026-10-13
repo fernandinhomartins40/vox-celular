@@ -1,4 +1,5 @@
 import PanelAuthLayout from '../../components/panel/PanelAuthLayout';
+import AccountRecovery from '../../components/panel/AccountRecovery';
 import { useState } from 'react';
 import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { panelReturnTo } from '../../lib/panel';
@@ -13,6 +14,7 @@ export default function ClienteLogin() {
   const destination = panelReturnTo(location.state?.returnTo, '/area-cliente');
   const [form, setForm] = useState({ nome: '', email: '', senha: '', telefone: '' });
   const [creating, setCreating] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
@@ -20,6 +22,7 @@ export default function ClienteLogin() {
   if (user?.role === 'CLIENTE') {
     return <Navigate to={destination} replace />;
   }
+  if (recovering) return <PanelAuthLayout title="Sua conta na VOX" description="Recupere seu acesso com segurança."><AccountRecovery initialEmail={form.email} onBack={() => setRecovering(false)} /></PanelAuthLayout>;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -83,6 +86,7 @@ export default function ClienteLogin() {
                 {loading ? 'Aguarde…' : creating ? 'Criar minha conta' : 'Entrar na minha conta'}
               </button>
             </form>
+{!creating && <button type="button" disabled={loading} className="mt-4 w-full min-h-11 text-sm font-medium text-[var(--royal-700)] hover:underline" onClick={() => { setForm(previous => ({ ...previous, senha: '' })); setRecovering(true); }}>Esqueci minha senha</button>}
 <div className="mt-5 text-center text-[13px] text-zinc-500">
               {creating ? 'Já tem conta? ' : 'Ainda não tem conta? '}
               <button disabled={loading} onClick={() => { setCreating(v => !v); setErro(''); }} className="text-[var(--royal-700)] font-medium hover:underline">{creating ? 'Entrar' : 'Criar conta grátis'}</button>
