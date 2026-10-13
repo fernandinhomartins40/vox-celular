@@ -27,3 +27,6 @@ build iOS requer macOS/Xcode. Não instalar toolchains ou executar builds na VPS
 
 Referências: [Expo Router](https://docs.expo.dev/router/installation/),
 [SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/).
+
+## Associação de links
+O app declara os domínios www.voxcelular.com.br e voxcelular.com.br. A API gera os documentos públicos em /.well-known/assetlinks.json e /.well-known/apple-app-site-association. Configure MOBILE_ANDROID_SHA256 com fingerprints SHA-256 do certificado de assinatura (separados por vírgula) e MOBILE_APPLE_TEAM_ID com o Team ID de dez caracteres. São identificadores públicos, nunca arquivos/chaves privadas. Sem configuração, a associação fica vazia. Ativação na VPS requer o fluxo autorizado de configuração/Actions; verificar HTTPS sem redirect em ambos os hosts e instalar app assinado para validar. Não considerar este recurso verificado somente por compilar.

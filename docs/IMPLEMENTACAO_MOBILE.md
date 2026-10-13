@@ -613,3 +613,7 @@ Exportação Metro Android/iOS também passou; não equivale a build instalável
 
 ### Tratamento de links recebidos — 13/10/2026
 Expo Router native-intent traduz destinos web autorizados do cliente para telas nativas e preserva rotas permitidas do scheme voxcelular. URLs HTTPS limitadas aos dois hosts Vox, sem credenciais/porta alternativa; parâmetros são descartados, exceto id editorial validado. Links desconhecidos vão ao início. Testes Node e TypeScript passaram para destinos, hosts falsos, scheme, parâmetros privados e tamanho. Não configura nem comprova associação de domínio Android/iOS: assetlinks/AASA, assinatura real, intent filters/associatedDomains e instalação física continuam pendentes. Referências oficiais: https://docs.expo.dev/linking/android-app-links/ e https://docs.expo.dev/linking/ios-universal-links/.
+
+
+### Associação de domínio preparada — 13/10/2026
+API serve assetlinks.json e apple-app-site-association em endpoints públicos exatos, encaminhados pelo nginx da aplicação sem fallback HTML. Usa identificadores públicos MOBILE_ANDROID_SHA256 (até cinco fingerprints válidos) e MOBILE_APPLE_TEAM_ID; configuração ausente retorna associações vazias e configuração inválida é rejeitada no startup. Compose passa variáveis opcionais. Expo inclui intent filters HTTPS autoVerify dos hosts Vox e associatedDomains iOS. Build API, teste unitário dos documentos e TypeScript mobile passaram. Não houve validação HTTP/nginx, assinatura, associação no sistema operacional nem deploy deste incremento. Sem identidade real, links não estão verificados.

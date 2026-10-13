@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { androidAssociation, appleAssociation } from './lib/mobileAssociation.js';
 import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
@@ -29,6 +30,10 @@ import { pruneExpiredNotifications } from './lib/notificationRetention.js';
 import { startConfiguredNotificationWorker } from './lib/notificationWorker.js';
 
 const app = express();
+const androidLinks = androidAssociation(process.env.MOBILE_ANDROID_SHA256);
+const appleLinks = appleAssociation(process.env.MOBILE_APPLE_TEAM_ID);
+app.get('/.well-known/assetlinks.json', (_req, res) => res.set('Cache-Control', 'public, max-age=300').json(androidLinks));
+app.get('/.well-known/apple-app-site-association', (_req, res) => res.set('Cache-Control', 'public, max-age=300').json(appleLinks));
 const PORT = process.env.PORT || 3001;
 const uploadsDir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
 
