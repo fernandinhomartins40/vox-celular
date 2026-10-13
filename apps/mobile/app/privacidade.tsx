@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
 import { requestForSession, sessionRevision } from '../src/api';
+import AccountClosure from '../src/AccountClosure';
 
 type Preferences = { personalizacao: boolean; notificacoes: boolean; versaoAviso: string };
 export default function Privacy() {
@@ -55,6 +56,7 @@ export default function Privacy() {
       {message && <Text accessibilityLiveRegion="polite" style={styles.description}>{message}</Text>}
     </View>}
     {!loading && !draft && <Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={styles.button}><Text style={styles.buttonText}>Tentar novamente</Text></Pressable>}
+    <AccountClosure />
   </ScrollView>;
 }
 const styles = StyleSheet.create({ screen: { padding: 20, paddingBottom: 40 }, heading: { color: '#10243e', fontSize: 25, fontWeight: '700', marginBottom: 16 }, description: { color: '#52647b', marginBottom: 16, lineHeight: 22 }, card: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#dce4f3' }, option: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, marginBottom: 8 }, label: { flex: 1, fontSize: 17, fontWeight: '600', color: '#10243e' }, button: { backgroundColor: '#0036cc', borderRadius: 12, padding: 14, minHeight: 48, marginBottom: 16 }, buttonText: { color: '#fff', fontWeight: '700', textAlign: 'center' }, disabled: { opacity: 0.5 }, error: { color: '#9c1230' }, link: { color: '#0036cc', paddingVertical: 14 } });

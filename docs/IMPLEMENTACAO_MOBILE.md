@@ -409,3 +409,7 @@ Novo teste serve duas versões do worker real em origem local exclusiva e abre d
 
 ### Solicitação autenticada de encerramento — 13/10/2026
 Nova entidade única por cliente com FK restritiva e status SOLICITADA, sem exclusão automática ou alegação de anonimização concluída. GET/POST privacidade/encerramento exigem cliente e isolam loja/titular. POST exige senha atual, confirmação explícita e limite de tentativas; transação revalida hash e reaproveita solicitação existente. Resposta esclarece conta ainda ativa e preservação de registros. PostgreSQL real aplicou 23 migrations; build e suíte HTTP passaram, incluindo senha incorreta, papel lojista, duas solicitações simultâneas únicas, isolamento e conta preservada. UI web/native, tratamento pelo lojista, decisão de retenção e encerramento efetivo permanecem pendentes; esta entrega é somente a primeira parte do fluxo.
+
+
+### Solicitação de encerramento no aplicativo — 13/10/2026
+Privacidade inclui componente de solicitação/status: consulta ao receber foco, senha atual protegida e confirmação explícita antes do envio, protocolo somente após resposta do servidor. Explica conta ainda ativa e registros preservados; erro oferece consultar status antes de repetir. Operação e leitura vinculadas à sessão/foco; ref impede duplo toque e senha é limpa após tentativa/saída, sem persistência local. Typecheck e testes do serviço de sessão passaram. Interação em aparelho, tela web, gestão da solicitação e encerramento efetivo permanecem pendentes. Não representa conformidade final de publicação das lojas.
