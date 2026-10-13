@@ -637,3 +637,7 @@ Prebuild Android tentou criar projeto no workspace e em cópia isolada .git/nati
 
 ### Build iOS para simulador preparado — 13/10/2026
 Workflow único recebe input build_ios_simulator e job macOS independente do deploy e paralelo ao build Android opcional após verify-mobile. Gera projeto/pods Expo e executa xcodebuild Release iphonesimulator sem assinatura; script descobre workspace/scheme, limita dois jobs, exige Info.plist e main.jsbundle e compacta app em artefato de sete dias. Verifica sintaxe Python e parse/dependências do YAML; passaram. Nenhum Xcode foi executado localmente (Windows), portanto compilação/artefato ainda não comprovados. Artefato de simulador não instala em iPhone físico; archive assinado/TestFlight/distribuição seguem pendentes. Referência de processo: https://docs.expo.dev/build-reference/ios-builds/.
+
+
+### Base de tokens de recuperação/verificação — 13/10/2026
+Implementada geração criptográfica de token 32 bytes base64url e SHA-256 separado por finalidade RECUPERAR_SENHA/VERIFICAR_EMAIL, validade de vinte minutos e validação de estado consumido/versão da credencial. Build API e teste unitário passaram para expiração exata, finalidade, formato, consumo e versão; teste incluído no workflow. Módulo ainda não utilizado em rota: persistência/consumo transacional, limites de emissão, envio de e-mail e telas seguem pendentes. Não representa recuperação/verificação funcional, entrega de mensagem nem validação de uso único concorrente no banco.

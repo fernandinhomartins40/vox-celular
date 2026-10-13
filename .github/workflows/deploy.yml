@@ -342,6 +342,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/operatorGuides.test.js
       - name: Public mobile domain association documents
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/mobileAssociation.test.js
+      - name: Account recovery token boundaries
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/accountToken.test.js
       - name: Product search and customer contact regression tests
         run: node --test apps/web/src/lib/catalog.test.js apps/web/src/lib/panel.test.js apps/web/src/lib/aiMoney.test.js
       - name: Product flows in Chromium against real API and PostgreSQL
