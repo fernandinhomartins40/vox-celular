@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
+import { createECDH, randomBytes } from 'node:crypto';
 import { allowedPushEndpoint, webPushSubscriptionSchema } from './pushSubscription.js';
 for (const host of ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com']) assert.equal(allowedPushEndpoint(`https://${host}/fixture`), true);
 for (const url of ['http://fcm.googleapis.com/fixture', 'https://fcm.googleapis.com.evil.invalid/fixture', 'https://127.0.0.1/fixture', 'https://user@fcm.googleapis.com/fixture', 'https://fcm.googleapis.com:8443/fixture', 'https://fcm.googleapis.com/fixture#fragment', 'https://fcm.googleapis.com/', 'invalid']) assert.equal(allowedPushEndpoint(url), false);
-const fixture = { endpoint: 'https://fcm.googleapis.com/fixture', keys: { p256dh: 'A'.repeat(87), auth: 'B'.repeat(22) } };
+const curve = createECDH('prime256v1');
+const fixture = { endpoint: 'https://fcm.googleapis.com/fixture', keys: { p256dh: curve.generateKeys().toString('base64url'), auth: randomBytes(16).toString('base64url') } };
 assert.equal(webPushSubscriptionSchema.safeParse(fixture).success, true);
 assert.equal(webPushSubscriptionSchema.safeParse({ ...fixture, extra: true }).success, false);
 assert.equal(webPushSubscriptionSchema.safeParse({ ...fixture, keys: { ...fixture.keys, auth: 'short' } }).success, false);
+assert.equal(webPushSubscriptionSchema.safeParse({ ...fixture, keys: { ...fixture.keys, p256dh: 'A'.repeat(87) } }).success, false);
+assert.equal(webPushSubscriptionSchema.safeParse({ ...fixture, keys: { ...fixture.keys, auth: 'B'.repeat(22) } }).success, false, 'Noncanonical trailing base64 bits are rejected');
 console.log('Web push endpoint allowlist and subscription shape passed.');
