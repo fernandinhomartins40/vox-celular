@@ -55,6 +55,7 @@ export default function Account() {
       {creating && <><Text style={styles.text}>Use de 12 a 72 caracteres.</Text><Text style={styles.label}>Confirme sua senha</Text><TextInput accessibilityLabel="Confirme sua senha" autoComplete="new-password" secureTextEntry={!showPassword} value={confirmation} onChangeText={setConfirmation} maxLength={72} style={styles.input} editable={!busy} onSubmitEditing={login} /></>}
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: showPassword }} disabled={busy} onPress={() => setShowPassword(value => !value)} style={styles.linkButton}><Text style={styles.link}>{showPassword ? 'Ocultar senha' : 'Mostrar senha'}</Text></Pressable>
       <Pressable accessibilityRole="button" disabled={busy} onPress={login} style={[styles.button, busy && { opacity: 0.5 }]}><Text style={styles.buttonText}>{busy ? 'Aguarde…' : creating ? 'Criar conta' : 'Entrar'}</Text></Pressable>
+      {!creating && <Link href="/recuperar-senha" accessibilityState={{ disabled: busy }} onPress={event => { if (busy) { event.preventDefault(); return; } setPassword(''); setConfirmation(''); }} style={styles.link}>Esqueci minha senha</Link>}
       <Pressable accessibilityRole="button" disabled={busy} onPress={() => { setCreating(value => !value); setPassword(''); setConfirmation(''); setError(''); }} style={styles.linkButton}><Text style={styles.link}>{creating ? 'Já tenho conta · Entrar' : 'Sou novo · Criar conta'}</Text></Pressable>
     </View>}
   </ScrollView></KeyboardAvoidingView>;
