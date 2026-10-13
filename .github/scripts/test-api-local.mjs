@@ -6,6 +6,7 @@ import path from 'node:path';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { assertDisposableDatabase } from '../../apps/api/dist/lib/disposableDatabase.js';
+import { createAccountToken, consumeAccountToken } from '../../apps/api/dist/lib/accountTokenStore.js';
 
 assertDisposableDatabase('local-disposable');
 const { prisma } = await import('../../apps/api/dist/lib/prisma.js');
@@ -59,6 +60,20 @@ try {
   const register = async name => (await request('/auth/register', null, { nome: name, email: `${name}@example.invalid`, senha: 'ci-http-client-password-123', lojaId: loja.id, plataforma: 'native' }, 'POST', [201])).data;
   const customer = await register('cliente-one');
   const other = await register('cliente-two');
+  const verification = await prisma.$transaction(tx => createAccountToken(tx, customer.user.id, loja.id, 'VERIFICAR_EMAIL'));
+  assert.ok(verification);
+  const persistedToken = await prisma.tokenConta.findFirstOrThrow({ where: { usuarioId: customer.user.id } });
+  assert.notEqual(persistedToken.digest, verification.token);
+  assert.equal(await prisma.$transaction(tx => consumeAccountToken(tx, 'wrong-store', verification.token, 'VERIFICAR_EMAIL', async () => { throw new Error('Wrong tenant must not apply'); })), false);
+  const consumed = await Promise.all(Array.from({ length: 2 }, () => prisma.$transaction(tx => consumeAccountToken(tx, loja.id, verification.token, 'VERIFICAR_EMAIL', async userId => { await tx.usuario.update({ where: { id: userId }, data: { emailVerificadoEm: new Date() } }); }))));
+  assert.deepEqual(consumed.sort(), [false, true]);
+  assert.ok((await prisma.usuario.findUniqueOrThrow({ where: { id: customer.user.id } })).emailVerificadoEm);
+  const oldToken = await prisma.$transaction(tx => createAccountToken(tx, customer.user.id, loja.id, 'RECUPERAR_SENHA'));
+  const newToken = await prisma.$transaction(tx => createAccountToken(tx, customer.user.id, loja.id, 'RECUPERAR_SENHA'));
+  assert.ok(oldToken && newToken);
+  assert.equal(await prisma.$transaction(tx => consumeAccountToken(tx, loja.id, oldToken.token, 'RECUPERAR_SENHA', async () => {})), false);
+  await assert.rejects(prisma.$transaction(tx => consumeAccountToken(tx, loja.id, newToken.token, 'RECUPERAR_SENHA', async () => { throw new Error('Rollback fixture'); })));
+  assert.equal(await prisma.$transaction(tx => consumeAccountToken(tx, loja.id, newToken.token, 'RECUPERAR_SENHA', async () => {})), true);
   await request('/dashboard', customer.token, null, 'GET', [403]);
   const me = (await request('/auth/me', customer.token)).data;
   const newsBody = { titulo: 'Novidade fixture', resumo: 'Conteúdo editorial de integração', texto: 'Texto de fixture sem publicação real.', fonte: 'https://example.invalid/source', revisadoEm: new Date(Date.now() - 1000).toISOString(), validoAte: new Date(Date.now() + 86400000).toISOString(), publicado: false };

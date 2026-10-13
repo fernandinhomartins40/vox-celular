@@ -145,6 +145,7 @@ model Usuario {
   email        String
   senhaHash    String
   tokenVersion Int      @default(0)
+  emailVerificadoEm DateTime?
   role         Role     @default(CLIENTE)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -152,6 +153,7 @@ model Usuario {
   loja         Loja     @relation(fields: [lojaId], references: [id])
   cliente      Cliente?
   sessoes      Sessao[]
+  tokensConta TokenConta[]
   analisesEncerramento SolicitacaoEncerramentoConta[]
   novidadesRevisadas Novidade[]
   orcamentosServicoEmitidos OrcamentoServico[]
@@ -159,6 +161,20 @@ model Usuario {
 
   @@unique([lojaId, email])
   @@index([email])
+}
+
+model TokenConta {
+  id String @id @default(cuid())
+  usuarioId String
+  finalidade String
+  digest String @unique
+  tokenVersion Int
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  @@index([usuarioId, finalidade, createdAt])
+  @@index([expiresAt, id])
 }
 
 enum Role {
