@@ -319,3 +319,6 @@ Migração aditiva AssinaturaPush, endpoint hash único e conteúdo criptografad
 
 ### Consulta e testes das assinaturas push
 GET /push/web lista até dez assinaturas próprias com id/ativo/datas, sem endpoint/hash/ciphertext. Build passou. Runtime CI ganhou fixtures de chave P-256 local e endpoint fictício: cadastro consentido, segredo ausente da lista, cliente sem consentimento recusado, tentativa de assumir endpoint de outra conta em conflito, remoção estrangeira sem efeito, revogação desativa e remoção própria. Sintaxe passou; execução PostgreSQL ainda pendente. Nenhum endpoint fictício recebe envio.
+
+### Gerenciamento web das assinaturas
+Minha conta do cliente inclui consulta sob demanda de assinaturas, estado ativo/desativado e data, sem metadados inventados de aparelho nem segredo. Remoção individual pede confirmação e só atualiza lista após DELETE confirmado. Estado vazio/carga/erro e sucesso acessíveis. Build/lint passaram; teste visual específico e persistência real ainda pendentes. Cadastro via permissão do navegador e entrega push continuam em implementação.
