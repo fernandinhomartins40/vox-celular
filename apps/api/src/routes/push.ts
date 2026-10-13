@@ -5,8 +5,16 @@ import { encryptCredentials } from '../lib/credentialVault.js';
 import { webPushSubscriptionSchema } from '../lib/pushSubscription.js';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
+import { loadVapidKeys } from '../lib/vapidKeys.js';
 export const pushRouter = Router();
 pushRouter.use(requireAuth, authLimits);
+pushRouter.get('/config', async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  try {
+    const keys = await loadVapidKeys();
+    res.set('Cache-Control', 'no-store').json({ publicKey: keys.publicKey, entregaConfigurada: false });
+  } catch { res.status(503).json({ error: 'Não foi possível carregar a configuração de notificações.' }); }
+});
 pushRouter.get('/web', async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
   try {

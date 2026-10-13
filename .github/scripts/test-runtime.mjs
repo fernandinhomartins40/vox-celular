@@ -543,6 +543,12 @@ assert.ok(noticesExport.avisos.length > 0, 'Export includes retained notices eve
 assert.ok(noticesExport.avisos.every(row => row.clienteId === undefined && row.lojaId === undefined && row.chaveEvento === undefined));
 assert.deepEqual((await json('/api/privacidade/exportar', { token: otherCustomer.token })).avisos, [], 'Export does not include another client notices');
 const pushCurve = createECDH('prime256v1');
+await json('/api/push/config', { token: admin.token, status: 403 });
+const pushConfig = await json('/api/push/config', { token: customer.token });
+assert.equal(pushConfig.publicKey.length, 87);
+assert.equal(pushConfig.entregaConfigurada, false);
+assert.equal(pushConfig.privateKey, undefined);
+assert.equal((await json('/api/push/config', { token: customer.token })).publicKey, pushConfig.publicKey);
 const pushFixture = { endpoint: 'https://fcm.googleapis.com/ci-disposable-endpoint', keys: { p256dh: pushCurve.generateKeys().toString('base64url'), auth: randomBytes(16).toString('base64url') } };
 await json('/api/push/web', { token: admin.token, status: 403 });
 await json('/api/push/web', { method: 'PUT', token: customer.token, body: pushFixture });
