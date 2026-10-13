@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { stripTypeScriptTypes } from 'node:module';
+const source = stripTypeScriptTypes(await readFile(new URL('../../apps/mobile/src/storeContact.ts', import.meta.url), 'utf8'));
+const { orderContactUrl } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+const contact = new URL(orderContactUrl('(42) 99103-1420', 'VOX-123'));
+assert.equal(contact.origin, 'https://wa.me');
+assert.equal(contact.pathname, '/5542991031420');
+assert.equal(contact.searchParams.get('text'), 'Olá! Preciso de ajuda com o pedido VOX-123.');
+assert.equal(orderContactUrl('+55 42 99103-1420', 'VOX-123'), contact.href);
+assert.equal(new URL(orderContactUrl('42991031420', 'A&B?')).searchParams.get('text'), 'Olá! Preciso de ajuda com o pedido A&B?.');
+for (const phone of ['', 'https://evil.example', '123', '99999999999999']) assert.throws(() => orderContactUrl(phone, 'VOX-123'));
+assert.throws(() => orderContactUrl('42991031420', ''));
+console.log('Order contact fixed HTTPS destination, Brazilian phone and safe message encoding passed.');

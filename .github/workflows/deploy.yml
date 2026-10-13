@@ -150,6 +150,8 @@ jobs:
         run: node .github/scripts/test-mobile-session-races.mjs
       - name: Validate persistent native checkout
         run: node .github/scripts/test-mobile-cart.mjs
+      - name: Native order contact link safety
+        run: node .github/scripts/test-mobile-contact.mjs
       - name: Validate persistent reward redemption
         run: node .github/scripts/test-mobile-rewards.mjs
       - name: Check Expo dependency compatibility
