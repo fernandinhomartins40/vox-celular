@@ -152,6 +152,7 @@ model Usuario {
   cliente      Cliente?
   sessoes      Sessao[]
   analisesEncerramento SolicitacaoEncerramentoConta[]
+  compatibilidadesAprovadas CompatibilidadeProduto[]
 
   @@unique([lojaId, email])
   @@index([email])
@@ -340,7 +341,23 @@ model Produto {
   itensPedido   ItemPedido[]
   promocoes     Promocao[]
   favoritos     Favorito[]
+  aparelhosCompativeis CompatibilidadeProduto[] @relation("AcessorioCompativel")
+  acessoriosCompativeis CompatibilidadeProduto[] @relation("AparelhoCompativel")
   @@index([lojaId, ativo, destaque])
+}
+
+model CompatibilidadeProduto {
+  id String @id @default(cuid())
+  acessorioId String
+  aparelhoId String
+  observacao String
+  aprovadoPorId String
+  aprovadoEm DateTime @default(now())
+  acessorio Produto @relation("AcessorioCompativel", fields: [acessorioId], references: [id], onDelete: Cascade)
+  aparelho Produto @relation("AparelhoCompativel", fields: [aparelhoId], references: [id], onDelete: Cascade)
+  aprovadoPor Usuario @relation(fields: [aprovadoPorId], references: [id], onDelete: Restrict)
+  @@unique([acessorioId, aparelhoId])
+  @@index([aparelhoId])
 }
 
 model Pedido {
