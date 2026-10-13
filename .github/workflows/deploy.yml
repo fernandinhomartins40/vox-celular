@@ -262,6 +262,8 @@ jobs:
         run: node .github/scripts/test-panels-browser.mjs
       - name: PWA installation resources and safe offline behavior
         run: node .github/scripts/test-pwa-browser.mjs
+      - name: PWA update without interrupting active pages
+        run: node .github/scripts/test-pwa-update-browser.mjs
       - name: Push worker privacy and safe notification destinations
         run: node .github/scripts/test-push-worker.mjs
       - name: Browser push consent and explicit permission flow

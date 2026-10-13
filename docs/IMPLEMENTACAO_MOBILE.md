@@ -401,3 +401,7 @@ Tela de privacidade limpa preferências e bloqueio ao receber foco e invalida op
 
 ### Aviso de atualização disponível do PWA — 13/10/2026
 Registro do service worker detecta worker waiting ou nova instalação concluída com controlador existente e informa nova versão em aviso acessível, dispensável. Primeira instalação não anuncia atualização. Orienta concluir atividade e fechar todas as abas antes de reabrir; não chama skipWaiting nem recarrega checkout. Build web e lint passaram. Teste browser real com duas versões e múltiplas abas permanece pendente; aviso não comprova ativação da versão nova.
+
+
+### Atualização PWA validada em Chromium real — 13/10/2026
+Novo teste serve duas versões do worker real em origem local exclusiva e abre duas abas. Primeira instalação não exibe aviso; update instala worker waiting, exibe aviso responsivo, mantém marcador da página (sem reload), permite dispensar e preserva waiting. Após fechar ambas as abas, reabertura verifica ativação sem aviso. Execução Playwright Chromium terminou com código zero e sem erros de página. Teste adicionado ao job browser existente, usando mesmo servidor/ferramentas. Safari/iOS e checkout interativo completo continuam pendentes; este teste comprova ciclo do worker e preservação de página, não compra real.
