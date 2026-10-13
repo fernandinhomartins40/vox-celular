@@ -4,11 +4,21 @@ import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { router } from './router';
 import './index.css';
+import PwaUpdateNotice from './components/PwaUpdateNotice';
 
 // Waiting updates activate after existing tabs close, protecting active checkout.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {});
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(registration => {
+      const announce = () => window.dispatchEvent(new Event('vox:update-available'));
+      if (registration.waiting && navigator.serviceWorker.controller) announce();
+      registration.addEventListener('updatefound', () => {
+        const worker = registration.installing;
+        worker?.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) announce();
+        });
+      });
+    }).catch(() => {});
   });
 }
 
@@ -26,6 +36,7 @@ if (!storedLojaId && !envLojaId) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
+      <PwaUpdateNotice />
       <Suspense fallback={<div role="status" aria-live="polite" className="min-h-screen bg-slate-50 text-slate-900 grid place-items-center p-6"><p>Carregando a página…</p></div>}>
         <RouterProvider router={router} />
       </Suspense>

@@ -397,3 +397,7 @@ FavoriteButton limpa mensagens e operação ao receber foco ou mudar produto. En
 
 ### Preferências nativas sem resposta atrasada — 13/10/2026
 Tela de privacidade limpa preferências e bloqueio ao receber foco e invalida operação ao sair. Salvar captura revisão carregada e identidade exclusiva; retorno, erro e finally só alteram tela da mesma operação/sessão. Ref impede duplo toque antes da renderização; formulário de conta antiga não é enviado para novo titular. Typecheck e suíte existente do serviço de sessão passaram. Não representam teste interativo da tela React Native; esse permanece pendente. Nenhuma mudança de consentimento em produção foi executada.
+
+
+### Aviso de atualização disponível do PWA — 13/10/2026
+Registro do service worker detecta worker waiting ou nova instalação concluída com controlador existente e informa nova versão em aviso acessível, dispensável. Primeira instalação não anuncia atualização. Orienta concluir atividade e fechar todas as abas antes de reabrir; não chama skipWaiting nem recarrega checkout. Build web e lint passaram. Teste browser real com duas versões e múltiplas abas permanece pendente; aviso não comprova ativação da versão nova.
