@@ -609,3 +609,7 @@ Resultado oferece adicionar acessório explicitamente relacionado ao aparelho. A
 ### Acessórios no assistente nativo — 13/10/2026
 Resultados incluem consulta explícita de acessórios aprovados para o aparelho. Antes da inclusão, reconsulta relação e produto da mesma loja, valida estoque/preço e apresenta Alert com valor adicional opcional. Operação bloqueia duplo toque e impede inclusão após desmontagem; cancelamento não altera carrinho. Usa fila e isolamento de loja do carrinho existente. TypeScript e testes existentes do carrinho passaram; esses testes não cobrem interação do novo componente. Teste em aparelho e compra completa com backend real seguem pendentes.
 Exportação Metro Android/iOS também passou; não equivale a build instalável.
+
+
+### Tratamento de links recebidos — 13/10/2026
+Expo Router native-intent traduz destinos web autorizados do cliente para telas nativas e preserva rotas permitidas do scheme voxcelular. URLs HTTPS limitadas aos dois hosts Vox, sem credenciais/porta alternativa; parâmetros são descartados, exceto id editorial validado. Links desconhecidos vão ao início. Testes Node e TypeScript passaram para destinos, hosts falsos, scheme, parâmetros privados e tamanho. Não configura nem comprova associação de domínio Android/iOS: assetlinks/AASA, assinatura real, intent filters/associatedDomains e instalação física continuam pendentes. Referências oficiais: https://docs.expo.dev/linking/android-app-links/ e https://docs.expo.dev/linking/ios-universal-links/.

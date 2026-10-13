@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { stripTypeScriptTypes } from 'node:module';
+const source = stripTypeScriptTypes(await readFile(new URL('../../apps/mobile/src/incomingLink.ts', import.meta.url), 'utf8'));
+const { incomingLink } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+assert.equal(incomingLink('https://www.voxcelular.com.br/area-cliente/pedidos?token=secret'), '/pedidos');
+assert.equal(incomingLink('https://voxcelular.com.br/novidades?id=news_1&redirect=https://evil.invalid'), '/novidades?id=news_1');
+assert.equal(incomingLink('/area-cliente/servicos'), '/servicos');
+assert.equal(incomingLink('voxcelular://pedidos'), '/pedidos');
+assert.equal(incomingLink('voxcelular:///carrinho?token=secret'), '/carrinho');
+assert.equal(incomingLink('voxcelular://admin'), '/');
+for (const path of ['https://evil.invalid/assistente', 'https://www.voxcelular.com.br.evil.invalid/assistente', 'http://voxcelular.com.br/assistente', 'https://user:pass@voxcelular.com.br/assistente', 'https://voxcelular.com.br:444/assistente', '//evil.invalid/assistente', '/admin', '/constructor', 'x'.repeat(2049)]) assert.equal(incomingLink(path), '/');
+assert.equal(incomingLink('/novidades?id=../../secret'), '/novidades');
+console.log('Native links: fixed hosts, allowlisted destinations, private query stripping and bounded editorial identifier passed.');

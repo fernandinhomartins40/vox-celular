@@ -156,6 +156,8 @@ jobs:
         run: node .github/scripts/test-mobile-offline-catalog.mjs
       - name: Validate offline operator guides
         run: node .github/scripts/test-mobile-offline-guides.mjs
+      - name: Validate incoming native links
+        run: node .github/scripts/test-mobile-links.mjs
       - name: Validate persistent reward redemption
         run: node .github/scripts/test-mobile-rewards.mjs
       - name: Check Expo dependency compatibility
