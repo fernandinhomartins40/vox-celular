@@ -19,6 +19,7 @@ const parent = path.resolve('.git/integration-postgres');
 const root = await mkdtemp(path.join(parent, 'http-'));
 const env = { ...process.env, PORT: '3197', NODE_ENV: 'test', CORS_ORIGIN: base,
   JWT_SECRET: 'local-disposable-api-secret-never-for-production', WEB_PUSH_ENABLED: 'false',
+  MOBILE_ANDROID_SHA256: Array(32).fill('AB').join(':'), MOBILE_APPLE_TEAM_ID: 'A123456789',
   UPLOADS_DIR: path.join(root, 'uploads'), MARKETPLACE_KEY_FILE: path.join(root, 'vault.key'),
   ADMIN_EMAIL: 'ci-http-admin@example.invalid', ADMIN_PASSWORD: 'ci-http-admin-password-123' };
 let api;
@@ -39,6 +40,20 @@ try {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   await request('/ready');
+  const androidAssociation = await fetch(base + '/.well-known/assetlinks.json', { redirect: 'manual' });
+  assert.equal(androidAssociation.status, 200);
+  assert.match(androidAssociation.headers.get('content-type'), /application\/json/);
+  assert.equal(androidAssociation.headers.get('cache-control'), 'public, max-age=300');
+  const androidDocument = await androidAssociation.json();
+  assert.equal(androidDocument[0].target.package_name, 'br.com.voxcelular.cliente');
+  assert.deepEqual(androidDocument[0].target.sha256_cert_fingerprints, [env.MOBILE_ANDROID_SHA256]);
+  const appleAssociation = await fetch(base + '/.well-known/apple-app-site-association', { redirect: 'manual' });
+  assert.equal(appleAssociation.status, 200);
+  assert.match(appleAssociation.headers.get('content-type'), /application\/json/);
+  const appleDocument = await appleAssociation.json();
+  assert.equal(appleDocument.applinks.details[0].appID, 'A123456789.br.com.voxcelular.cliente');
+  assert.ok(appleDocument.applinks.details[0].paths.includes('/area-cliente/pedidos'));
+  assert.ok(!appleDocument.applinks.details[0].paths.includes('*'));
   const loja = (await request('/loja')).data;
   const admin = (await request('/auth/login', null, { email: env.ADMIN_EMAIL, senha: env.ADMIN_PASSWORD, plataforma: 'native' })).data;
   const register = async name => (await request('/auth/register', null, { nome: name, email: `${name}@example.invalid`, senha: 'ci-http-client-password-123', lojaId: loja.id, plataforma: 'native' }, 'POST', [201])).data;

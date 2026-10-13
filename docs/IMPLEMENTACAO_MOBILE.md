@@ -617,3 +617,7 @@ Expo Router native-intent traduz destinos web autorizados do cliente para telas 
 
 ### Associação de domínio preparada — 13/10/2026
 API serve assetlinks.json e apple-app-site-association em endpoints públicos exatos, encaminhados pelo nginx da aplicação sem fallback HTML. Usa identificadores públicos MOBILE_ANDROID_SHA256 (até cinco fingerprints válidos) e MOBILE_APPLE_TEAM_ID; configuração ausente retorna associações vazias e configuração inválida é rejeitada no startup. Compose passa variáveis opcionais. Expo inclui intent filters HTTPS autoVerify dos hosts Vox e associatedDomains iOS. Build API, teste unitário dos documentos e TypeScript mobile passaram. Não houve validação HTTP/nginx, assinatura, associação no sistema operacional nem deploy deste incremento. Sem identidade real, links não estão verificados.
+
+
+### Documentos de associação validados via HTTP — 13/10/2026
+Suíte com API real e PostgreSQL descartável passou para assetlinks/AASA com identidades públicas exclusivamente de fixture: HTTP 200 sem redirect, application/json, cache Android de cinco minutos, package/fingerprint e Team ID corretos, destinos Apple explícitos sem wildcard. Aplicadas 32 migrations e demais integrações passaram; instância local encerrada. Teste dos geradores agora compila na imagem API e participa do workflow único. Build API e execução desse teste passaram novamente após mover o arquivo. HTTPS/nginx de produção, fingerprints reais e verificação nos sistemas Android/iOS permanecem pendentes.

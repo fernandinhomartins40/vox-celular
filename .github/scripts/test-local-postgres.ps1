@@ -31,6 +31,7 @@ try {
   $env:PUSH_DELIVERY_TEST = 'local-disposable'
   Run-Native 'npx.cmd' @('prisma', 'migrate', 'deploy', '--schema', 'apps/api/prisma/schema.prisma')
   Run-Native 'npm.cmd' @('run', 'build', '--workspace', '@vox/api')
+  Run-Native 'node' @('.github/scripts/test-mobile-association.mjs')
   foreach ($test in @('disposableDatabase.test', 'aiBudget.test', 'notificationRetention.integration.test', 'notificationDeliveryClaim.integration.test')) {
     Run-Native 'node' @("apps/api/dist/lib/$test.js")
   }
