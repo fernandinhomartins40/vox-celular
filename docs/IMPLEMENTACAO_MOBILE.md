@@ -580,3 +580,7 @@ Playwright com API simulada passou em 390/768/1440: entrada 125,50 vira 12550 ce
 
 ### Orçamento no acompanhamento nativo — 13/10/2026
 Histórico de atendimentos inclui consulta explícita de versões, valor/descrição/validade em Brasília e decisão com confirmação Alert. Proposta vencida no instante de consulta orienta nova proposta e não oferece decisão; servidor valida validade atual. RequestForSession usa revisão do histórico; duplo toque bloqueado por ref e respostas após desmontar/trocar conta descartadas. Typecheck e testes existentes do serviço de sessão passaram; não cobrem interação/renderização do componente. Exportação bundles deste incremento, aparelho, atualização automática do histórico após decisão e recuperação persistente continuam pendentes.
+
+
+### Histórico nativo após decisão de orçamento — 13/10/2026
+Aceitar ou recusar uma proposta agora solicita atualização do histórico do atendimento após a confirmação e consulta dos orçamentos, preservando a proteção por sessão e desmontagem. Typecheck e exportação Metro dos bundles Android/iOS passaram. Exportação não equivale a APK/AAB/archive instalável; interação em aparelho e publicação permanecem pendentes.

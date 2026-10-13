@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { requestForSession, sessionRevision } from './api';
 type Quote = { id: string; versao: number; valorCentavos: number; descricao: string; validoAte: string; status: string };
-export default function ServiceQuotes({ requestId, revision }: { requestId: string; revision: number }) {
+export default function ServiceQuotes({ requestId, revision, onUpdated }: { requestId: string; revision: number; onUpdated?: () => void }) {
   const [rows, setRows] = useState<Quote[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -17,7 +17,7 @@ export default function ServiceQuotes({ requestId, revision }: { requestId: stri
     try {
       if (quote) await requestForSession(revision, `/orcamentos-servico/${encodeURIComponent(quote.id)}/decisao`, { aceitar: accept });
       const data = await requestForSession<Quote[]>(revision, `/orcamentos-servico?solicitacaoId=${encodeURIComponent(requestId)}`);
-      if (active()) { setRows(data); setCheckedAt(Date.now()); }
+      if (active()) { setRows(data); setCheckedAt(Date.now()); if (quote) onUpdated?.(); }
     } catch (e) { if (active()) setError(e instanceof Error ? e.message : 'Não foi possível confirmar. Consulte novamente.'); }
     finally { running.current = false; if (active()) setBusy(false); }
   }
