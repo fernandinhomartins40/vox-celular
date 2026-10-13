@@ -481,3 +481,7 @@ Editor oferece Revisar conferência para relação cujo produto relacionado cont
 
 ### Base editorial de novidades — 13/10/2026
 Nova entidade por loja com título/resumo/texto, fonte HTTPS, revisão, validade e rascunho/publicação. CRUD inicial: listar admin, criar, editar; consulta pública lista 30 resumos vigentes e detalhe somente publicado/vigente da loja explícita. Validação exige revisão não futura, validade posterior e conteúdo publicado não vencido; nenhum HTML é interpretado nem fonte externa buscada. Criação serializada limita 100 registros por loja. PostgreSQL real aplicou 27 migrations; build e suíte HTTP passaram para papel cliente, rascunho oculto, publicação/detalhe, loja divergente e validade expirada. Interfaces editorial/web/native, auditoria do responsável, remoção/arquivo e conteúdo real continuam pendentes. Não declara módulo integral concluído.
+
+
+### Novidades no app nativo — 13/10/2026
+Início oferece Novidades da Vox. Tela lista resumos e abre leitura com fonte, revisão e validade; consulta loja explícita e API vigente ao receber foco. Conteúdo é texto simples; fonte abre somente HTTPS sem credenciais de URL. Estados de carregamento, vazio e erro/retry separados; respostas após sair são descartadas. Typecheck, suíte existente de sessão e exportação Android/iOS passaram. Não comprova interação em aparelho, conteúdo editorial real ou publicação instalável; gestão pelo lojista e interface web continuam pendentes.
