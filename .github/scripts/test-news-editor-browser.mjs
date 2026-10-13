@@ -76,6 +76,13 @@ try {
     await page.getByText('Restaurada como rascunho.', { exact: true }).waitFor();
     assert.equal(rows[0].publicado, false); assert.equal(rows[0].arquivado, false);
     assert.equal(archiveWrites.length, 2);
+    await page.getByLabel('Filtrar novidades', { exact: true }).selectOption('arquivo');
+    await page.getByText('Nenhuma novidade corresponde aos filtros.', { exact: true }).waitFor();
+    await page.getByLabel('Filtrar novidades', { exact: true }).selectOption('rascunho');
+    await page.getByRole('heading', { name: 'Conteúdo mais recente', exact: true }).waitFor();
+    await page.getByLabel('Buscar novidade', { exact: true }).fill('ausente');
+    await page.getByText('Nenhuma novidade corresponde aos filtros.', { exact: true }).waitFor();
+    await page.getByLabel('Buscar novidade', { exact: true }).fill('');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []); await page.close();
   }

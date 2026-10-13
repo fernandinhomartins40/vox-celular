@@ -528,3 +528,7 @@ Novidade pode ser arquivada/restaurada com versão esperada e autorização da l
 
 ### Arquivo editorial validado em Chromium — 13/10/2026
 Teste do editor ampliado passou com API simulada em 390/768/1440: cancelar confirmação não envia arquivo, arquivar preserva texto e remove edição, restaurar volta a rascunho sem publicação. Versão esperada é conferida também nas ações de arquivo. Testes anteriores de rascunho/publicação/conflito permanecem passando. Backend validado separadamente com PostgreSQL real; isso não comprova interação UI-backend real ou produção.
+
+
+### Filtros editoriais e marco de CI — 13/10/2026
+Painel Novidades oferece busca por título e filtro de rascunhos, publicadas, vencidas e arquivo, calculados sobre dados carregados/instante da consulta. Chromium com API simulada passou em três larguras, incluindo filtros sem resultado e restauração; nome acessível do seletor corrigido após falha inicial. Build/lint passaram. Workflow 38421023702 (commit 80c2e21) concluiu com sucesso builds/bundles e todos os testes das imagens, incluindo Chromium contra API/PostgreSQL reais e painéis em sete larguras. Job de deploy 115382545767 nem iniciou: anotação de pagamento/limite de gastos. Portanto não há deploy comprovado; este marco valida somente aquele commit, não alterações posteriores.
