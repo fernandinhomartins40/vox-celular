@@ -325,3 +325,6 @@ Minha conta do cliente inclui consulta sob demanda de assinaturas, estado ativo/
 
 ### Assinaturas push na exportação do titular
 Coleção assinaturasPush adicionada à exportação em lotes/cursor, com id/ativo/datas de registros próprios e tenant explícito. Nenhum endpoint/hash/ciphertext/chave de autenticação exportado. Teste runtime CI cobre registro correspondente, ausência de campos sensíveis e outro titular vazio. Build/sintaxe passaram; execução PostgreSQL permanece pendente.
+
+### Claim transacional da fila
+Serviço interno claimNotification seleciona um evento pendente/valido com consentimento e assinatura ativa, usando FOR UPDATE SKIP LOCKED e marca PROCESSANDO/incrementa tentativa dentro da transação. Rede ficará fora da transação. Retirada de consentimento cancela também PROCESSANDO; worker deverá reconferir imediatamente antes de enviar. Não existe reclaim automático de processo interrompido, pois entrega pode ser ambígua; recibos por assinatura/reconciliação ainda necessários. Serviço não está agendado nem envia push. Build e teste de política de tentativas passaram; concorrência SQL ainda não executada em PostgreSQL.
