@@ -429,3 +429,7 @@ API de clientes inclui somente id/status/data da solicitação vinculada ao clie
 
 ### Início de análise de encerramento — 13/10/2026
 POST privacidade/encerramento/:id/analisar exige lojista da mesma loja e corpo vazio; bloqueio transacional serializa transição SOLICITADA para EM_ANALISE e repetição é idempotente. Não altera conta/dados nem sinaliza conclusão. Clientes web/native e detalhe administrativo apresentam Em análise com texto legível. HTTP/PostgreSQL real passou para restrição ao cliente, inexistente 404, duas chamadas simultâneas e status visível ao titular; 23 migrations, builds, typecheck e lint passaram. Botão do lojista, auditoria de responsável, encerramento efetivo e testes interativos desta transição permanecem pendentes.
+
+
+### Iniciar análise pelo detalhe do cliente — 13/10/2026
+Painel Clientes oferece ação Iniciar análise do encerramento no detalhe existente, atualizando status somente após confirmação API. Bloqueio por ref impede duplo clique; geração de sessão/identidade de operação descartam respostas antigas e cleanup invalida ao sair. Filtro e indicador incluem SOLICITADA e EM_ANALISE para manter pendências visíveis. Build e lint web passaram; API já validada com HTTP/PostgreSQL real. Interação browser deste botão, auditoria de responsável e encerramento efetivo permanecem pendentes.

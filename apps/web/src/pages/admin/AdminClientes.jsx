@@ -3,9 +3,9 @@ import { usePanelPagination } from '../../lib/usePanelPagination';
 import { PanelLoading, PanelError } from '../../components/panel/PanelFeedback';
 import PanelDialog from '../../components/panel/PanelDialog';
 import { PanelPageHeader } from '../../components/panel/PanelShell';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api } from '../../lib/api.js';
+import { api, getSessionGeneration } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
 import { brazilPhone } from '../../lib/catalog';
@@ -18,6 +18,7 @@ const STATUS_STYLE = {
   ENTREGUE:   'bg-zinc-100 text-zinc-600',
 };
 const STATUS_LABEL = { NOVO: 'Novo', EM_PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Entregue' };
+const pendingClosure = client => ['SOLICITADA', 'EM_ANALISE'].includes(client.encerramentoConta?.status);
 
 export default function AdminClientes() {
   const [clientes, setClientes] = useState([]);
@@ -29,6 +30,22 @@ export default function AdminClientes() {
   const setSelecionado = value => setPanelParams(setParams, { clienteDetalhe: value?.id }, false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [analysisBusy, setAnalysisBusy] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
+  const analysisOperation = useRef(null);
+  useEffect(() => () => { analysisOperation.current = null; }, []);
+  async function startAnalysis(client) {
+    if (analysisOperation.current || client.encerramentoConta?.status !== 'SOLICITADA') return;
+    const operation = Symbol(); analysisOperation.current = operation;
+    const generation = getSessionGeneration();
+    const active = () => analysisOperation.current === operation && generation === getSessionGeneration();
+    setAnalysisBusy(true); setAnalysisError('');
+    try {
+      const result = await api.post(`/privacidade/encerramento/${encodeURIComponent(client.encerramentoConta.id)}/analisar`, {});
+      if (active()) setClientes(rows => rows.map(row => row.id === client.id ? { ...row, encerramentoConta: result.solicitacao } : row));
+    } catch (e) { if (active()) setAnalysisError(e.message); }
+    finally { if (active()) { analysisOperation.current = null; setAnalysisBusy(false); } }
+  }
 
   useEffect(() => {
     api.get('/clientes')
@@ -38,7 +55,7 @@ export default function AdminClientes() {
   }, []);
 
   const filtrados = clientes.filter(c =>
-    (!closureOnly || c.encerramentoConta?.status === 'SOLICITADA') && (busca === '' ||
+    (!closureOnly || pendingClosure(c)) && (busca === '' ||
     normalizeSearch(`${c.nome ?? ''} ${c.email ?? ''} ${c.telefone ?? ''}`).includes(normalizeSearch(busca)))
   );
 
@@ -78,7 +95,7 @@ export default function AdminClientes() {
       </div>
 
       {/* Lista */}
-      <label className="flex items-center gap-3 mb-4"><input type="checkbox" checked={closureOnly} onChange={event => setPanelParams(setParams, { encerramento: event.target.checked ? 'solicitado' : null })} /><span>Solicitações de encerramento ({clientes.filter(client => client.encerramentoConta?.status === 'SOLICITADA').length})</span></label>
+      <label className="flex items-center gap-3 mb-4"><input type="checkbox" checked={closureOnly} onChange={event => setPanelParams(setParams, { encerramento: event.target.checked ? 'solicitado' : null })} /><span>Solicitações de encerramento ({clientes.filter(pendingClosure).length})</span></label>
       {busca && <button className="panel-secondary-button mb-4" onClick={() => setBusca('')}>Limpar busca</button>}
       <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -101,7 +118,7 @@ export default function AdminClientes() {
                       <div>
                         <div className="font-medium text-zinc-800">{c.nome}</div>
                         <div className="text-[11px] text-zinc-400">{c.email}</div>
-                        {c.encerramentoConta?.status === 'SOLICITADA' && <span className="text-xs font-semibold text-amber-800">Encerramento solicitado</span>}
+                        {pendingClosure(c) && <span className="text-xs font-semibold text-amber-800">{c.encerramentoConta.status === 'EM_ANALISE' ? 'Encerramento em análise' : 'Encerramento solicitado'}</span>}
                       </div>
                     </div>
                   </td>
@@ -161,6 +178,7 @@ export default function AdminClientes() {
             </div>
             <div className="overflow-y-auto p-6 space-y-5">
               <div className="panel-filter-bar"><Link className="panel-secondary-button" to={`/admin/pedidos?cliente=${encodeURIComponent(selecionado.id)}`}>Ver pedidos deste cliente</Link>{brazilPhone(selecionado.telefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(selecionado.telefone)}?text=${encodeURIComponent(`Olá ${selecionado.nome}! Aqui é da Vox Celular.`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Falar com cliente</a>}</div>
+              {analysisError && <p role="alert" className="panel-account-error">{analysisError}</p>}{selecionado.encerramentoConta?.status === 'SOLICITADA' && <button type="button" disabled={analysisBusy} onClick={() => startAnalysis(selecionado)} className="panel-primary-button my-3">{analysisBusy ? 'Registrando…' : 'Iniciar análise do encerramento'}</button>}
               {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status === 'EM_ANALISE' ? 'Em análise' : selecionado.encerramentoConta.status}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p><p>O encerramento ainda não foi concluído. Preserve os registros comerciais enquanto a solicitação é analisada.</p></div>}
               <div className="grid grid-cols-3 gap-3">
                 {[
