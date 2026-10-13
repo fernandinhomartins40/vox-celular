@@ -77,6 +77,13 @@ try {
   assert.equal(await prisma.$transaction(tx => consumeAccountToken(tx, loja.id, newToken.token, 'RECUPERAR_SENHA', async () => {})), true);
   await request('/dashboard', customer.token, null, 'GET', [403]);
   const me = (await request('/auth/me', customer.token)).data;
+  const recoveryUnknown = await request('/auth/recuperacao/solicitar', null, { lojaId: loja.id, email: 'unknown@example.com' }, 'POST', [202]);
+  const recoveryKnown = await request('/auth/recuperacao/solicitar', null, { lojaId: loja.id, email: me.email }, 'POST', [202]);
+  assert.deepEqual(recoveryUnknown.data, recoveryKnown.data);
+  await request('/auth/recuperacao/solicitar', null, { lojaId: loja.id, email: 'invalid' }, 'POST', [400]);
+  await request('/auth/email/solicitar', null, {}, 'POST', [401]);
+  const verifyRequested = await request('/auth/email/solicitar', customer.token, {}, 'POST', [202]);
+  assert.equal(verifyRequested.data.token, undefined);
   await request('/email/config', null, null, 'GET', [401]);
   await request('/email/config', customer.token, null, 'GET', [403]);
   assert.equal((await request('/email/config', admin.token)).data, null);

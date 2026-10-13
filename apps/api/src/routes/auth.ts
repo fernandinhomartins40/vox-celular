@@ -9,9 +9,22 @@ import { newPasswordSchema } from '../lib/passwordPolicy.js';
 import { createHash } from 'node:crypto';
 import { consumeAccountToken } from '../lib/accountTokenStore.js';
 import { accountTokenDigest, accountTokenUsable } from '../lib/accountToken.js';
+import { deliverAccountMail } from '../lib/accountMailDelivery.js';
 
 export const authRouter = Router();
-authRouter.use(['/login', '/register', '/refresh', '/senha', '/recuperacao/confirmar', '/email/confirmar'], authLimits);
+authRouter.use(['/login', '/register', '/refresh', '/senha', '/recuperacao/confirmar', '/email/confirmar', '/recuperacao/solicitar', '/email/solicitar'], authLimits);
+authRouter.post('/recuperacao/solicitar', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const parsed = z.object({ lojaId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), email: z.string().email().max(254) }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Informe sua loja e um e-mail válido.' }); return; }
+  res.status(202).json({ ok: true, mensagem: 'Se houver uma conta com esse e-mail, você poderá receber um link. Confira também o spam.' });
+  void deliverAccountMail(parsed.data.lojaId, { email: parsed.data.email }, 'RECUPERAR_SENHA');
+});
+authRouter.post('/email/solicitar', requireAuth, async (req: AuthRequest, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.status(202).json({ ok: true, mensagem: 'Se necessário, um link poderá ser enviado ao e-mail da sua conta. Confira também o spam.' });
+  void deliverAccountMail(req.user!.lojaId, { userId: req.user!.userId }, 'VERIFICAR_EMAIL');
+});
 const confirmationSchema = z.object({ lojaId: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict();
 let recoveryCalculations = 0;
 authRouter.post('/recuperacao/confirmar', async (req, res) => {
