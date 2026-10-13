@@ -469,3 +469,7 @@ Consulta admin autenticada apresenta relações atuais/desatualizadas sem expor 
 
 ### Editor de compatibilidade validado em Chromium — 13/10/2026
 Playwright com API simulada em 390/768/1440 passou: edição abre seção, aprovação exige produto/observação e envia par explícito, resposta atualiza lista/limpa campos, remoção elimina relação e reabertura mostra relação desatualizada como oculta. Sem overflow ou erros de página. Script incluído no job browser existente. Backend foi validado separadamente com PostgreSQL real; integração UI-backend real, Safari/aparelho e integração assistente ainda pendentes.
+
+
+### Consulta de compatibilidade junto ao assistente — 13/10/2026
+Resultados web consultam relações explícitas da loja/produto usando componente público, apresentando observação/data sem enviar relações a IA nem alterar ranking. App oferece Ver detalhes e compatibilidade diretamente em cada resultado. Typecheck mobile, build/lint web e teste Chromium do assistente em três larguras passaram com API simulada, incluindo acessório conferido e invariantes anteriores de orçamento/preço/especificações. Não declara ranking de acessórios, compra conjunta ou teste do link nativo em aparelho concluídos; esses fluxos permanecem pendentes.

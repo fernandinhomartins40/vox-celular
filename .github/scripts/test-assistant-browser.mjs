@@ -15,6 +15,12 @@ try {
     await page.route('**/api/**', async route => {
       const path = new URL(route.request().url()).pathname;
       if (path === '/api/loja') return route.fulfill({ json: { id: 'store' } });
+      if (path === '/api/compatibilidades') {
+        const url = new URL(route.request().url());
+        assert.equal(url.searchParams.get('lojaId'), 'store');
+        assert.equal(url.searchParams.get('produtoId'), 'device');
+        return route.fulfill({ json: [{ id: 'pair', aprovadoEm: '2026-10-13T12:00:00Z', observacao: 'Encaixe conferido pela loja fixture', acessorio: { id: 'case', nome: 'Capa compatível fixture' }, aparelho: { id: 'device', nome: device.nome } }] });
+      }
       if (path === '/api/produtos') return route.fulfill({ json: [{ ...device, preco: currentPrice, atributosTecnicos: currentAttributes }] });
       if (path === '/api/assistente/recomendar-ia') {
         externalSubmitted = route.request().postDataJSON();
@@ -33,6 +39,7 @@ try {
     assert.equal(await page.getByRole('checkbox').isChecked(), false);
     await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
     await page.getByRole('heading', { name: 'Suas opções' }).waitFor();
+    await page.getByText('Capa compatível fixture', { exact: true }).waitFor();
     assert.equal(submitted.orcamento, 2000);
     assert.equal(externalSubmitted, undefined, 'Default consultation must not use external AI');
     assert.equal(submitted.uso, 'trabalho');
