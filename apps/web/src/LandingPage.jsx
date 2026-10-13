@@ -93,7 +93,7 @@ export default function LandingPage() {
       <div className="desktop-wa"><FloatingWA /></div>
       <MobileNav />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cart} setItems={setCart} />
-      <ProductModal product={modalProduct} onClose={() => setModalProduct(null)} onAdd={addToCart} />
+      <ProductModal product={modalProduct} onClose={() => setModalProduct(null)} onAdd={addToCart} onSelect={setModalProduct} />
     </div></StoreContentContext.Provider>
   );
 }

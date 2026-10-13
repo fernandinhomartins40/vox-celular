@@ -5,13 +5,14 @@ import { formatBRL, badgeStyle } from '../utils';
 import { api } from '../lib/api';
 import { useAuth } from '../auth/useAuth';
 import { Link } from 'react-router-dom';
+import ProductCompatibility from './ProductCompatibility';
 
 export default function ProductModal(props) {
   if (!props.product) return null;
   return <ProductModalContent key={props.product.id} {...props} />;
 }
 
-function ProductModalContent({ product, onClose, onAdd }) {
+function ProductModalContent({ product, onClose, onAdd, onSelect }) {
   const { user } = useAuth();
   const [favoriteMessage, setFavoriteMessage] = useState('');
   const [savingFavorite, setSavingFavorite] = useState(false);
@@ -65,6 +66,7 @@ function ProductModalContent({ product, onClose, onAdd }) {
           </div>
 
           <p className="text-[14px] text-zinc-600 leading-relaxed mb-5 mt-3">{product.descricao}</p>
+          <ProductCompatibility product={product} onSelect={onSelect} />
           {user?.role === 'CLIENTE' ? <button disabled={savingFavorite} onClick={saveFavorite} className="text-blue-700 underline mb-3">{savingFavorite ? 'Salvando…' : 'Salvar nos favoritos'}</button> : <Link to="/area-cliente/login" className="text-blue-700 underline block mb-3">Entrar para salvar favoritos</Link>}
           {favoriteMessage && <p role="status" className="text-sm mb-3">{favoriteMessage} <Link to="/area-cliente/favoritos" className="underline">Ver favoritos</Link></p>}
 

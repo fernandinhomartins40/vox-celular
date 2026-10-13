@@ -449,3 +449,7 @@ Nova relação única acessório/aparelho com observação, responsável e data 
 
 ### Compatibilidades nos detalhes nativos — 13/10/2026
 Detalhe consulta relações públicas da mesma loja após carregar produto e apresenta item relacionado, observação e data da aprovação; link abre diretamente detalhe relacionado. Estados de carga, erro/retry e vazio são distintos, com orientação para confirmar acessório quando não cadastrado. Respostas após sair/mudar produto são descartadas e falha de compatibilidade não impede exibir o produto. Typecheck, testes existentes de sessão e exportação Android/iOS passaram; esses testes não validam interação da tela nem compra em aparelho. Gestão web, exibição web, integração assistente e revisão ao mudar atributos ainda pendentes.
+
+
+### Compatibilidade no detalhe web — 13/10/2026
+Modal público consulta relações da loja/produto e mostra nome, observação e data conferida. Botão Ver este produto consulta produto ativo atual e abre no mesmo modal, sem voltar à busca. Falha é distinta de compatibilidade ausente; ausência orienta confirmar antes de comprar. Consulta é de leitura e não deduz compatibilidade. Respostas após fechamento são descartadas. Build e lint passaram. Validação interativa/responsiva deste componente e gestão de relações pelo lojista permanecem pendentes; API de consulta foi validada separadamente com PostgreSQL real.
