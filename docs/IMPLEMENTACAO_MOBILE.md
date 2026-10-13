@@ -516,3 +516,7 @@ Workflow 38419361655 passou builds/bundles mas falhou no teste geral por endpoin
 
 ### Responsável pela revisão editorial — 13/10/2026
 Novidade registra referência ao lojista autenticado na criação e última edição, sem permitir enviar responsável no payload. FK restritiva preserva referência e registros anteriores ficam sem responsável inventado. Lista administrativa inclui nome para exibição; endpoints públicos mantêm seleção explícita sem identificação. PostgreSQL real aplicou 28 migrations e suíte HTTP passou para responsável correto, nome administrativo e ausência de id na leitura pública. Builds API/web e lint passaram. Histórico completo de versões editoriais não foi implementado; registro representa apenas última revisão. Conteúdo real e integração UI-backend completa continuam pendentes.
+
+
+### Proteção contra sobrescrita editorial — 13/10/2026
+Novidade tem versão incremental. PUT exige versão carregada e atualiza somente se corresponder, retornando 409 em edição antiga e 404 para registro fora da loja/inexistente. Editor envia versão e oferece descartar formulário/carregar dados atuais explicitamente após erro, sem descartar texto antes da decisão. PostgreSQL real aplicou 29 migrations e suíte HTTP passou para recusa de versão antiga/conteúdo preservado. Chromium com API simulada em três larguras passou para publicação/despublicação com versões, conflito preservando formulário e recarga explícita do conteúdo mais recente. Builds e lint passaram. Teste UI com backend real e histórico completo de versões permanecem pendentes.

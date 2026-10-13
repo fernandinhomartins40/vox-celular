@@ -36,10 +36,14 @@ novidadesRouter.post('/', requireLojista, async (req: AuthRequest, res) => {
   } catch { res.status(409).json({ error: 'Não foi possível cadastrar; limite de 100 novidades por loja.' }); }
 });
 novidadesRouter.put('/:id', requireLojista, async (req: AuthRequest, res) => {
-  const parsed = content.safeParse(req.body); const key = id.safeParse(req.params.id);
-  if (!parsed.success || !key.success) { res.status(400).json({ error: 'Confira conteúdo, fonte, revisão e validade.' }); return; }
+  const { versaoEsperada, ...payload } = req.body || {};
+  const version = z.number().int().nonnegative().max(2147483646).safeParse(versaoEsperada);
+  const parsed = content.safeParse(payload); const key = id.safeParse(req.params.id);
+  if (!parsed.success || !key.success || !version.success) { res.status(400).json({ error: 'Confira conteúdo, fonte, revisão, validade e versão carregada.' }); return; }
   try {
-    const changed = await prisma.novidade.updateMany({ where: { id: key.data, lojaId: req.user!.lojaId }, data: { ...parsed.data, revisadoPorId: req.user!.userId, revisadoEm: new Date(parsed.data.revisadoEm), validoAte: new Date(parsed.data.validoAte) } });
-    res.status(changed.count ? 200 : 404).json(changed.count ? { ok: true } : { error: 'Novidade não encontrada.' });
+    const changed = await prisma.novidade.updateMany({ where: { id: key.data, lojaId: req.user!.lojaId, versao: version.data }, data: { ...parsed.data, versao: { increment: 1 }, revisadoPorId: req.user!.userId, revisadoEm: new Date(parsed.data.revisadoEm), validoAte: new Date(parsed.data.validoAte) } });
+    if (changed.count) { res.json({ ok: true }); return; }
+    const exists = await prisma.novidade.findFirst({ where: { id: key.data, lojaId: req.user!.lojaId }, select: { id: true } });
+    res.status(exists ? 409 : 404).json({ error: exists ? 'Outra edição foi salva. Reabra a novidade para carregar a versão atual antes de salvar.' : 'Novidade não encontrada.' });
   } catch { res.status(503).json({ error: 'Não foi possível salvar.' }); }
 });

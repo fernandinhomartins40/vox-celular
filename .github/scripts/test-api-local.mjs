@@ -53,7 +53,9 @@ try {
   assert.equal((await request('/novidades/admin', admin.token)).data[0].revisadoPor.nome, admin.user.nome);
   assert.deepEqual((await request(`/novidades?lojaId=${loja.id}`)).data, []);
   await request(`/novidades/${news.id}?lojaId=${loja.id}`, null, null, 'GET', [404]);
-  await request(`/novidades/${news.id}`, admin.token, { ...newsBody, publicado: true }, 'PUT');
+  await request(`/novidades/${news.id}`, admin.token, { ...newsBody, publicado: true, versaoEsperada: news.versao }, 'PUT');
+  await request(`/novidades/${news.id}`, admin.token, { ...newsBody, titulo: 'Stale overwrite', versaoEsperada: news.versao }, 'PUT', [409]);
+  assert.equal((await prisma.novidade.findUniqueOrThrow({ where: { id: news.id } })).titulo, newsBody.titulo);
   assert.equal((await request(`/novidades?lojaId=${loja.id}`)).data.length, 1);
   assert.equal((await request(`/novidades/${news.id}?lojaId=${loja.id}`)).data.texto, newsBody.texto);
   assert.equal((await request(`/novidades/${news.id}?lojaId=${loja.id}`)).data.revisadoPorId, undefined);

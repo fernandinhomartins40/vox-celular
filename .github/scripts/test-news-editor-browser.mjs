@@ -13,11 +13,13 @@ try {
       const req = route.request(); const pathname = new URL(req.url()).pathname;
       if (pathname.endsWith('/novidades/admin')) return route.fulfill({ json: rows });
       if (pathname.endsWith('/novidades') && req.method() === 'POST') {
-        const body = req.postDataJSON(); writes.push(body); rows = [{ ...body, id: 'news-one' }];
+        const body = req.postDataJSON(); writes.push(body); rows = [{ ...body, id: 'news-one', versao: 0 }];
         return route.fulfill({ status: 201, json: rows[0] });
       }
       if (pathname.endsWith('/novidades/news-one') && req.method() === 'PUT') {
-        const body = req.postDataJSON(); writes.push(body); rows = [{ ...body, id: 'news-one' }];
+        const body = req.postDataJSON();
+        if (body.versaoEsperada !== rows[0].versao) return route.fulfill({ status: 409, json: { error: 'Outra edição foi salva. Reabra a novidade para carregar a versão atual antes de salvar.' } });
+        writes.push(body); rows = [{ ...body, id: 'news-one', versao: rows[0].versao + 1 }];
         return route.fulfill({ json: { ok: true } });
       }
       return route.fulfill({ json: { id: 'fixture' } });
@@ -48,6 +50,14 @@ try {
     await form.getByRole('button', { name: 'Salvar novidade', exact: true }).click();
     await page.getByText('Rascunho salvo.', { exact: true }).waitFor();
     assert.equal(writes[2].publicado, false);
+    await page.getByRole('button', { name: 'Editar novidade', exact: true }).click();
+    rows = [{ ...rows[0], versao: rows[0].versao + 1, titulo: 'Conteúdo mais recente' }];
+    await form.getByRole('button', { name: 'Salvar novidade', exact: true }).click();
+    await page.getByRole('alert').waitFor();
+    assert.equal(await form.getByLabel('Título', { exact: true }).inputValue(), 'Novidade fixture');
+    assert.equal(writes.length, 3, 'Stale write must not mutate stored content');
+    await page.getByRole('button', { name: 'Descartar formulário e carregar versão atual' }).click();
+    await page.getByRole('heading', { name: 'Conteúdo mais recente', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []); await page.close();
   }

@@ -372,6 +372,7 @@ model Novidade {
   texto String
   fonte String
   publicado Boolean @default(false)
+  versao Int @default(0)
   revisadoEm DateTime
   revisadoPorId String?
   revisadoPor Usuario? @relation(fields: [revisadoPorId], references: [id], onDelete: Restrict)
