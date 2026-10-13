@@ -621,3 +621,7 @@ API serve assetlinks.json e apple-app-site-association em endpoints públicos ex
 
 ### Documentos de associação validados via HTTP — 13/10/2026
 Suíte com API real e PostgreSQL descartável passou para assetlinks/AASA com identidades públicas exclusivamente de fixture: HTTP 200 sem redirect, application/json, cache Android de cinco minutos, package/fingerprint e Team ID corretos, destinos Apple explícitos sem wildcard. Aplicadas 32 migrations e demais integrações passaram; instância local encerrada. Teste dos geradores agora compila na imagem API e participa do workflow único. Build API e execução desse teste passaram novamente após mover o arquivo. HTTPS/nginx de produção, fingerprints reais e verificação nos sistemas Android/iOS permanecem pendentes.
+
+
+### Links de produto e notícia pelo scheme nativo — 13/10/2026
+Tratamento de entrada preserva id validado em voxcelular://produto e voxcelular://novidades, descartando outros parâmetros; produto sem id válido abre catálogo. Parser também reconhece URL HTTPS de produto, porém /produto ainda não consta da associação de domínio e não se declara universal link publicado. Tela de produto reconsulta API e loja explícita. Testes de links, TypeScript e bundles Android/iOS passaram; abertura física e associação assinada permanecem pendentes. Run 38433724739 terminou sem iniciar jobs por pagamentos/limite de gastos, sem deploy.
