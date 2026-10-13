@@ -5,6 +5,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../auth/useAuth';
 import { Icon } from '../../icons';
 import PanelPrivacy from './PanelPrivacy';
+import PanelAccountClosure from './PanelAccountClosure';
 import PanelPushSubscriptions from './PanelPushSubscriptions';
 import PanelSessions from './PanelSessions';
 export default function PanelAccount() {
@@ -42,7 +43,7 @@ export default function PanelAccount() {
       <div className="panel-account-heading"><span className="panel-action-icon"><Icon.user /></span><h2 id="account-profile-title">Seus dados</h2></div>
       <dl><div><dt>Nome</dt><dd>{user?.nome}</dd></div><div><dt>E-mail</dt><dd>{user?.email}</dd></div></dl>
       <PanelSessions />
-      {user?.role === 'CLIENTE' && <><PanelPrivacy /><PanelPushSubscriptions /></>}
+      {user?.role === 'CLIENTE' && <><PanelPrivacy /><PanelPushSubscriptions /><PanelAccountClosure /></>}
       {user?.role === 'CLIENTE' && <div className="mt-6"><h3 className="font-semibold mb-2">Seus dados com você</h3><p className="panel-account-help">Baixe uma cópia do seu cadastro, pedidos, favoritos e benefícios.</p><button disabled={exporting} onClick={exportData} className="panel-primary-button mt-3">{exporting ? 'Preparando arquivo…' : 'Baixar meus dados'}</button>{exportError && <p role="alert" className="panel-account-error">{exportError}</p>}</div>}
     </section>
     <form onSubmit={submit} className="panel-account-form" aria-labelledby="account-password-title">

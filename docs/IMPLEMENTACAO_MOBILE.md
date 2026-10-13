@@ -413,3 +413,7 @@ Nova entidade única por cliente com FK restritiva e status SOLICITADA, sem excl
 
 ### Solicitação de encerramento no aplicativo — 13/10/2026
 Privacidade inclui componente de solicitação/status: consulta ao receber foco, senha atual protegida e confirmação explícita antes do envio, protocolo somente após resposta do servidor. Explica conta ainda ativa e registros preservados; erro oferece consultar status antes de repetir. Operação e leitura vinculadas à sessão/foco; ref impede duplo toque e senha é limpa após tentativa/saída, sem persistência local. Typecheck e testes do serviço de sessão passaram. Interação em aparelho, tela web, gestão da solicitação e encerramento efetivo permanecem pendentes. Não representa conformidade final de publicação das lojas.
+
+
+### Solicitação de encerramento na web — 13/10/2026
+Minha conta do cliente inclui seção de solicitação/status com senha atual, confirmação explícita, bloqueio de envio duplicado, consulta após erro e protocolo somente após resposta da API. Usa geração da sessão e escopo ativo para descartar resposta após troca de conta/desmontagem. Senha não é persistida e é limpa após tentativa. Texto informa que solicitação não é exclusão concluída. Build e lint passaram após corrigir atualização síncrona no effect. Interação/layout em navegador, gestão pelo lojista e encerramento efetivo continuam pendentes.
