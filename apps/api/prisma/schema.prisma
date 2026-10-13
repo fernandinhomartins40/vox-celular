@@ -32,6 +32,7 @@ model Loja {
   solicitacoesServico SolicitacaoServico[]
   orcamentosIa OrcamentoIa[]
   configuracaoIa ConfiguracaoIa?
+  configuracaoEmail ConfiguracaoEmail?
   notificacoes NotificacaoCliente[]
 }
 
@@ -66,6 +67,14 @@ model NotificacaoCliente {
   @@unique([clienteId, chaveEvento])
   @@index([status, proximaTentativaEm])
   @@index([expiresAt, id])
+}
+
+model ConfiguracaoEmail {
+  id String @id @default(cuid())
+  lojaId String @unique
+  credenciais String
+  updatedAt DateTime @updatedAt
+  loja Loja @relation(fields: [lojaId], references: [id])
 }
 
 model ConfiguracaoIa {
