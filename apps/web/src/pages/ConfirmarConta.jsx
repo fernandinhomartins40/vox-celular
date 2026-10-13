@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
+function readLink() {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  return { token: params.get('token') || '', lojaId: params.get('lojaId') || '', verificar: params.get('acao') === 'verificar-email' };
+}
 export default function ConfirmarConta() {
-  const [link] = useState(() => {
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    return { token: params.get('token') || '', lojaId: params.get('lojaId') || '', verificar: params.get('acao') === 'verificar-email' };
-  });
+  const [link] = useState(readLink);
   const [password, setPassword] = useState(''), [confirmation, setConfirmation] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [done, setDone] = useState(false);
   const running = useRef(false), mounted = useRef(false);
   useEffect(() => {
     mounted.current = true;
     window.history.replaceState(window.history.state, '', window.location.pathname);
-    return () => { mounted.current = false; };
+    function incoming() {
+      // Reload for a second emailed link, resetting any in-flight form state.
+      if (window.location.hash) window.location.reload();
+    }
+    window.addEventListener('hashchange', incoming);
+    return () => { mounted.current = false; window.removeEventListener('hashchange', incoming); };
   }, []);
   const valid = /^[A-Za-z0-9_-]{43}$/.test(link.token) && /^[a-zA-Z0-9_-]{1,100}$/.test(link.lojaId);
   async function submit(event) {

@@ -657,3 +657,7 @@ Passagem do agendamento existente remove até 100 tokens com expiração anterio
 
 ### Tela web de confirmação de conta — 13/10/2026
 Rota pública lazy confirmar-conta recebe token/loja/ação pelo fragmento, limpa URL ao montar e mantém dados apenas em memória. Verificação requer botão explícito; recuperação exige senha e confirmação iguais, envia rota existente e limpa campos após tentativa. Bloqueio por ref impede duplicação e respostas após desmontagem não atualizam tela. Sucesso orienta login sem iniciar sessão automaticamente. Lint e build passaram, inclusive depois de separar chunk lazy. Teste interativo, envio real do link e tela nativa permanecem pendentes; não declarar recuperação ponta a ponta concluída.
+
+
+### Confirmação de conta validada em Chromium — 13/10/2026
+Playwright com API simulada passou em 390/768/1440: fragmento limpo, token ausente no storage, senhas divergentes sem POST, resposta de link vencido limpa senhas, sucesso oculta formulário, e-mail exige confirmação explícita e ausência de overflow/erros. Primeiro teste revelou estado anterior ao abrir segundo link na mesma aba; listener agora recarrega a página para ler novo fragmento e zerar estado. Lint/build passaram depois da correção; teste incluído no workflow. Não comprova entrega de e-mail, comportamento de cliente de e-mail específico ou integração browser/API real.
