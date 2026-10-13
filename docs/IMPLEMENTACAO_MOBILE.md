@@ -568,3 +568,7 @@ Exportação em streaming inclui coleção orcamentosServico com versões, valor
 
 ### Aviso consentido de orçamento emitido — 13/10/2026
 Emissão nova inclui outbox na transação comercial com chave por orçamento, destino serviços e mensagem genérica sem valor/descrição. Repetição retorna antes do enqueue, evitando avisos duplicados; consentimento usa bloqueio compartilhado existente. PostgreSQL real e suíte HTTP passaram para um aviso após repetir, conteúdo sem dados da proposta e nenhuma emissão de aviso após revogação. Build e 32 migrations passaram. Não comprova recebimento em aparelho nem aviso de decisão, que permanece pendente.
+
+
+### Emissão de orçamento no painel lojista — 13/10/2026
+Detalhe do atendimento inclui consulta de versões/decisões e formulário de valor em reais, descrição e validade nos estados de análise/aguardando cliente. Valor admite até duas casas sem arredondar entrada inválida; API recebe centavos. Tentativa mantém UUID/payload após falha, limpar após confirmação ou alterar campo cria nova tentativa. Consulta permite conferir emissão incerta; orienta aguardar aceite. Operação bloqueia duplo clique e descarta retorno após saída/troca de sessão. Build e lint passaram. Teste interativo, persistência de tentativa após recarregar e interface nativa permanecem pendentes. Backend já validado separadamente com PostgreSQL real.
