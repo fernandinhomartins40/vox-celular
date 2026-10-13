@@ -556,3 +556,7 @@ Consulta captura instante para indicar proposta PENDENTE vencida, orientar nova 
 
 ### Orçamento cliente validado em Chromium — 13/10/2026
 Playwright com API simulada em 390/768/1440 passou: consulta descrição/valor, cancelar confirmação não envia, aceite envia decisão explícita e atualiza status, proposta vencida oculta decisão e orienta nova proposta, sem overflow/erros. Script incluído no workflow. Backend foi validado separadamente com PostgreSQL real; teste não comprova integração browser-backend real, recusa interativa ou dispositivo nativo.
+
+
+### Revisão e recusa de orçamento validadas — 13/10/2026
+Suíte HTTP PostgreSQL real ampliada passou: segunda emissão cria versão 2 e preserva primeira como SUBSTITUIDO; primeira não pode ser aceita, recusa repetida da segunda gera único evento, atendimento volta à análise e não entra em execução sem aceite. Mesma rodada aplicou 32 migrations e passou build/integrações anteriores. Não representa teste interativo de recusa na web nem interface de emissão lojista concluída.
