@@ -381,3 +381,7 @@ Reprodução no Windows com binários PostgreSQL oficiais já extraídos: `power
 
 ### Privacidade e favoritos no HTTP real — 13/10/2026
 Suíte local ampliada e executada com código zero: três inclusões simultâneas de favorito permanecem únicas; outro cliente não lista/remove favorito do titular e lojista recebe 403. Exportação própria contém apenas metadados push, exportação alheia permanece vazia. Revogação do consentimento cancela aviso PROCESSANDO e entregas PENDENTE/PROCESSANDO, desativa inscrições e recusa novo cadastro. Renovação não ressuscita trabalho cancelado. Todas as verificações anteriores e 22 migrations também passaram na mesma execução; API/banco locais encerrados. Não comprova recall de mensagem já aceita por serviço remoto ou interação em aparelho.
+
+
+### Atendimento contextual de serviços no app — 13/10/2026
+Confirmação e histórico nativos oferecem Falar com a loja sobre este atendimento. Consulta perfil e telefone da loja usando a revisão da sessão, confere titular antes de abrir HTTPS wa.me e preenche somente protocolo; não inclui aparelho, problema ou dados pessoais. Helper compartilhado mantém destino fixo, valida telefone brasileiro e codifica texto. Usuário revisa/envia no WhatsApp; nenhum envio automático. Typecheck, testes de telefone/protocolo/encoding, concorrência de sessão e exportação de bundles Android/iOS passaram. Não equivale a APK/IPA, publicação ou abertura real no aparelho; mudança/cancelamento de horário continuam sujeitos ao atendimento e regras atuais.
