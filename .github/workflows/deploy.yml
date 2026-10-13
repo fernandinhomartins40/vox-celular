@@ -250,6 +250,8 @@ jobs:
         run: node .github/scripts/test-panels-browser.mjs
       - name: PWA installation resources and safe offline behavior
         run: node .github/scripts/test-pwa-browser.mjs
+      - name: Push worker privacy and safe notification destinations
+        run: node .github/scripts/test-push-worker.mjs
       - name: Favorites, comparison and current cart prices
         run: node .github/scripts/test-favorites-browser.mjs
       - name: Customer privacy choices and data download
