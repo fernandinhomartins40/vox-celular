@@ -298,3 +298,5 @@ Novos eventos expiram após sete dias; deduplicação não renova validade. Cons
 
 ### Retenção limitada da fila de avisos
 API agenda uma passagem a cada seis horas, sem processo adicional, removendo no máximo 100 avisos expirados há mais de 30 dias. Seleção ordenada por validade/id e revalidação no DELETE; índice aditivo correspondente. Não remove pedidos, serviços ou consentimentos. Não sobrepõe passagens no processo e cancela timer no shutdown. Build e teste de cálculo de corte passaram; operação de exclusão com PostgreSQL ainda requer validação de integração. Capacidade máxima de limpeza atual é 400 registros/dia; medir volume antes de ajustar frequência/lote. Não houve limpeza manual na VPS.
+
+Teste PostgreSQL de retenção acrescentado ao CI com guard NOTICE_RETENTION_TEST=ci-disposable: 105 avisos antigos, limite de 100 por passagem, preservação do corte exato e aviso válido, cadastro preservado e cleanup da fixture. Build e teste matemático passaram localmente. Teste de banco ainda não executado; função de retenção opera globalmente no banco descartável, portanto este script não deve ser usado em produção.

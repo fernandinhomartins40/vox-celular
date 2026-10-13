@@ -215,6 +215,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/aiProvider.test.js
       - name: Notification retention boundaries
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/notificationRetention.test.js
+      - name: Notification retention with disposable PostgreSQL
+        run: docker compose --profile tools run --rm --no-deps -e NOTICE_RETENTION_TEST=ci-disposable migrate node dist/lib/notificationRetention.integration.test.js
       - name: Bounded AI selection cache
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/aiCache.test.js
       - name: Credential vault recovery and tenant context
