@@ -653,3 +653,7 @@ POST auth/recuperacao/confirmar exige loja, token e nova senha válida; consome 
 
 ### Limpeza limitada de tokens de conta — 13/10/2026
 Passagem do agendamento existente remove até 100 tokens com expiração anterior a um dia, usando índice e nova condição no delete. Mantém janela diária de emissão e não cria processo/container; falha de notificações não impede tentar limpeza de tokens. Build e suíte PostgreSQL real (33 migrations) passaram para 101 expirados em dois lotes, preservação da fronteira exata e dos tokens recentes. Frequência de seis horas e lote inicial precisam ser medidos sob carga antes de ajustar; não comprova backlog controlado em qualquer volume. Emissão/envio público e telas de recuperação permanecem pendentes.
+
+
+### Tela web de confirmação de conta — 13/10/2026
+Rota pública lazy confirmar-conta recebe token/loja/ação pelo fragmento, limpa URL ao montar e mantém dados apenas em memória. Verificação requer botão explícito; recuperação exige senha e confirmação iguais, envia rota existente e limpa campos após tentativa. Bloqueio por ref impede duplicação e respostas após desmontagem não atualizam tela. Sucesso orienta login sem iniciar sessão automaticamente. Lint e build passaram, inclusive depois de separar chunk lazy. Teste interativo, envio real do link e tela nativa permanecem pendentes; não declarar recuperação ponta a ponta concluída.

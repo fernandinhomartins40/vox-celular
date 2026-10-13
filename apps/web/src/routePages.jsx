@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+export const ConfirmarConta = lazy(() => import('./pages/ConfirmarConta'));
 export const LandingPreview = lazy(() => import('./pages/admin/LandingPreview'));
 export const LandingPage = lazy(() => import('./LandingPage'));
 export const InstalarApp = lazy(() => import('./pages/InstalarApp'));

@@ -1,11 +1,13 @@
 import { LandingPreview, LandingPage, InstalarApp, Assistente, Ajuda, AdminLogin, AdminLayout, AdminDashboard, AdminPedidos, AdminProdutos, AdminClientes, AdminConfiguracoes, AdminIntegracoes, AdminConta, AdminServicos, AdminGuias, AdminIa, PanelAccount, ClienteLogin, ClienteLayout, ClienteHome, ClientePedidos, ClienteFavoritos, ClienteServicos, ClienteAvisos, ClienteBeneficios } from './routePages';
 import { createBrowserRouter } from 'react-router-dom';
+import { ConfirmarConta } from './routePages';
 import { Novidades, AdminNovidades } from './routePages';
 import { ProtectedAdmin, ProtectedCliente } from './auth/RouteGuards.jsx';
 
 
 export const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
+  { path: '/confirmar-conta', element: <ConfirmarConta /> },
   { path: '/instalar', element: <InstalarApp /> },
   { path: '/assistente', element: <Assistente /> },
   { path: '/ajuda', element: <Ajuda /> },
