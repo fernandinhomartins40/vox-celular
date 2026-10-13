@@ -1,3 +1,18 @@
+export async function disableBrowserPush(api, generation, readGeneration, browser = globalThis) {
+  const assertSession = () => { if (readGeneration() !== generation) throw new Error('A sessão mudou. Tente novamente.'); };
+  assertSession();
+  if (!browser.navigator?.serviceWorker) throw new Error('Este navegador não oferece notificações.');
+  const registration = await browser.navigator.serviceWorker.getRegistration('/');
+  assertSession();
+  const subscription = await registration?.pushManager?.getSubscription();
+  assertSession();
+  if (!subscription) return;
+  await api.post('/push/web/remover-atual', { endpoint: subscription.endpoint });
+  assertSession();
+  if (!await subscription.unsubscribe()) throw new Error('Cadastro removido do servidor. O navegador não confirmou a remoção; tente novamente.');
+  assertSession();
+}
+
 export async function prepareBrowserPush(api, generation, readGeneration, browser = globalThis) {
   const assertSession = () => {
     if (readGeneration() !== generation) throw new Error('A sessão mudou. Prepare as notificações novamente.');

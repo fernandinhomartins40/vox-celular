@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { createHash } from 'node:crypto';
 import { prisma } from '../lib/prisma.js';
 import { encryptCredentials } from '../lib/credentialVault.js';
-import { webPushSubscriptionSchema } from '../lib/pushSubscription.js';
+import { webPushSubscriptionSchema, allowedPushEndpoint } from '../lib/pushSubscription.js';
+import { z } from 'zod';
 import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
 import { loadVapidKeys } from '../lib/vapidKeys.js';
@@ -45,6 +46,19 @@ pushRouter.put('/web', async (req: AuthRequest, res) => {
     const reason = error instanceof Error ? error.message : '';
     res.status(reason === 'CONSENT_REQUIRED' ? 403 : ['OWNERSHIP', 'LIMIT'].includes(reason) ? 409 : 503).json({ error: reason === 'CONSENT_REQUIRED' ? 'Autorize notificações nas suas preferências primeiro.' : reason === 'LIMIT' ? 'Limite de dez assinaturas. Remova uma antiga antes de adicionar.' : reason === 'OWNERSHIP' ? 'Esta assinatura já pertence a outro acesso. Remova-a no navegador antes de continuar.' : 'Não foi possível salvar a assinatura.' });
   }
+});
+pushRouter.post('/web/remover-atual', async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  const parsed = z.object({ endpoint: z.string().max(2048).refine(allowedPushEndpoint) }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Assinatura inválida.' }); return; }
+  try {
+    const endpointHash = createHash('sha256').update(parsed.data.endpoint).digest('hex');
+    await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
+      await tx.assinaturaPush.deleteMany({ where: { endpointHash, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+    });
+    res.set('Cache-Control', 'no-store').json({ ok: true });
+  } catch { res.status(503).json({ error: 'Não foi possível remover a assinatura.' }); }
 });
 pushRouter.delete('/web/:id', async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }

@@ -567,10 +567,15 @@ await json('/api/push/web', { method: 'PUT', token: otherCustomer.token, body: p
 await json('/api/privacidade/preferencias', { method: 'PUT', token: otherCustomer.token, body: { personalizacao: false, notificacoes: true, versaoAviso: '2026-10-12' } });
 await json('/api/push/web', { method: 'PUT', token: otherCustomer.token, body: pushFixture, status: 409 });
 await json(`/api/push/web/${registeredPush[0].id}`, { method: 'DELETE', token: otherCustomer.token });
+await json('/api/push/web/remover-atual', { method: 'POST', token: otherCustomer.token, body: { endpoint: pushFixture.endpoint } });
+await json('/api/push/web/remover-atual', { method: 'POST', token: admin.token, body: { endpoint: pushFixture.endpoint }, status: 403 });
+await json('/api/push/web/remover-atual', { method: 'POST', token: customer.token, body: { endpoint: 'https://127.0.0.1/private' }, status: 400 });
 assert.equal((await json('/api/push/web', { token: customer.token })).length, 1);
 await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' } });
 assert.equal((await json('/api/push/web', { token: customer.token }))[0].ativo, false);
 assert.equal(sql(`SELECT status FROM "EntregaPush" WHERE id='ci-pending-delivery'`), 'CANCELADA');
 assert.equal(sql(`SELECT status FROM "EntregaPush" WHERE id='ci-processing-delivery'`), 'CANCELADA');
+await json('/api/push/web/remover-atual', { method: 'POST', token: customer.token, body: { endpoint: pushFixture.endpoint } });
+assert.equal(sql(`SELECT COUNT(*) FROM "EntregaPush" WHERE "assinaturaId"='${registeredPush[0].id}'`), '0');
 await json(`/api/push/web/${registeredPush[0].id}`, { method: 'DELETE', token: customer.token });
 assert.deepEqual(await json('/api/push/web', { token: customer.token }), []);

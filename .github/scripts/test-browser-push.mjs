@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { prepareBrowserPush } from '../../apps/web/src/lib/browserPush.js';
+import { prepareBrowserPush, disableBrowserPush } from '../../apps/web/src/lib/browserPush.js';
 
 function fixture() {
   let generation = 1;
@@ -50,3 +50,14 @@ outdated.browser.navigator.serviceWorker.getRegistration = async () => ({ active
 await assert.rejects((await prepareBrowserPush(outdated.api, 1, outdated.read, outdated.browser)).activate(), /assinatura antiga/);
 assert.ok(!outdated.calls.includes('/push/web'));
 assert.ok(!outdated.calls.includes('unsubscribe'), 'Existing subscriptions must not be deleted implicitly');
+const disable = fixture();
+disable.subscription.endpoint = 'fixture-endpoint';
+disable.browser.navigator.serviceWorker.getRegistration = async () => ({ pushManager: { getSubscription: async () => disable.subscription } });
+disable.api.post = async (path, body) => { assert.equal(path, '/push/web/remover-atual'); assert.equal(body.endpoint, 'fixture-endpoint'); disable.calls.push('server-remove'); };
+await disableBrowserPush(disable.api, 1, disable.read, disable.browser);
+assert.deepEqual(disable.calls, ['server-remove', 'unsubscribe']);
+const disableRace = fixture();
+disableRace.browser.navigator.serviceWorker.getRegistration = async () => ({ pushManager: { getSubscription: async () => disableRace.subscription } });
+disableRace.api.post = async () => { disableRace.change(); };
+await assert.rejects(disableBrowserPush(disableRace.api, 1, disableRace.read, disableRace.browser), /sessão mudou/);
+assert.ok(!disableRace.calls.includes('unsubscribe'));
