@@ -19,6 +19,7 @@ export const AdminConta = lazy(() => import('./pages/admin/AdminConta'));
 export const AdminServicos = lazy(() => import('./pages/admin/AdminServicos'));
 export const AdminGuias = lazy(() => import('./pages/admin/AdminGuias'));
 export const AdminIa = lazy(() => import('./pages/admin/AdminIa'));
+export const AdminEmail = lazy(() => import('./pages/admin/AdminEmail'));
 export const PanelAccount = lazy(() => import('./components/panel/PanelAccount'));
 export const ClienteLogin = lazy(() => import('./pages/cliente/ClienteLogin'));
 export const ClienteLayout = lazy(() => import('./pages/cliente/ClienteLayout'));

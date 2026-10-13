@@ -1,4 +1,4 @@
-import { LandingPreview, LandingPage, InstalarApp, Assistente, Ajuda, AdminLogin, AdminLayout, AdminDashboard, AdminPedidos, AdminProdutos, AdminClientes, AdminConfiguracoes, AdminIntegracoes, AdminConta, AdminServicos, AdminGuias, AdminIa, PanelAccount, ClienteLogin, ClienteLayout, ClienteHome, ClientePedidos, ClienteFavoritos, ClienteServicos, ClienteAvisos, ClienteBeneficios } from './routePages';
+import { LandingPreview, LandingPage, InstalarApp, Assistente, Ajuda, AdminLogin, AdminLayout, AdminDashboard, AdminPedidos, AdminProdutos, AdminClientes, AdminConfiguracoes, AdminIntegracoes, AdminConta, AdminServicos, AdminGuias, AdminIa, AdminEmail, PanelAccount, ClienteLogin, ClienteLayout, ClienteHome, ClientePedidos, ClienteFavoritos, ClienteServicos, ClienteAvisos, ClienteBeneficios } from './routePages';
 import { createBrowserRouter } from 'react-router-dom';
 import { ConfirmarConta } from './routePages';
 import { Novidades, AdminNovidades } from './routePages';
@@ -26,6 +26,7 @@ export const router = createBrowserRouter([
       { path: 'configuracoes',  element: <AdminConfiguracoes /> },
       { path: 'configuracoes/integracoes', element: <AdminIntegracoes /> },
       { path: 'configuracoes/ia', element: <AdminIa /> },
+      { path: 'configuracoes/email', element: <AdminEmail /> },
       { path: 'conta',          element: <AdminConta /> },
       { path: 'servicos',       element: <AdminServicos /> },
       { path: 'guias',          element: <AdminGuias /> },
