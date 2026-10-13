@@ -584,3 +584,7 @@ Histórico de atendimentos inclui consulta explícita de versões, valor/descri�
 
 ### Histórico nativo após decisão de orçamento — 13/10/2026
 Aceitar ou recusar uma proposta agora solicita atualização do histórico do atendimento após a confirmação e consulta dos orçamentos, preservando a proteção por sessão e desmontagem. Typecheck e exportação Metro dos bundles Android/iOS passaram. Exportação não equivale a APK/AAB/archive instalável; interação em aparelho e publicação permanecem pendentes.
+
+
+### Catálogo nativo salvo para consulta — 13/10/2026
+Consulta online salva apenas campos públicos de até 200 produtos, em uma chave por URL da API, com loja explícita, limite de 250 mil caracteres e validade de 48 horas. Falha de rede/servidor permite consulta salva; resposta 4xx não recupera cópia. Cópia inválida/vencida é removida; armazenamento cheio não interrompe catálogo online. Tela indica data, preço/estoque não confirmados e indisponibilidade possível de imagens; ações de compra/favorito ficam ausentes na cópia. Nenhuma imagem binária, credencial ou pedido é salvo por este recurso. Testes de parser/loader com armazenamento e rede simulados, TypeScript e exportação Android/iOS passaram. Testes em aparelho, cache de guias e offline web completo permanecem pendentes; exportação não representa build instalável.

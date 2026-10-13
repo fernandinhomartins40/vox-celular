@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 
 const base = process.env.EXPO_PUBLIC_API_URL || 'https://www.voxcelular.com.br/api';
+export const publicApiIdentity = base;
 if (!base.startsWith('https://')) throw new Error('Configure uma API HTTPS para o aplicativo.');
 let accessToken: string | null = null;
 let generation = 0;
