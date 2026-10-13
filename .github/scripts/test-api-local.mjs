@@ -8,6 +8,7 @@ import { createServer } from 'node:net';
 import { assertDisposableDatabase } from '../../apps/api/dist/lib/disposableDatabase.js';
 import { createAccountToken, consumeAccountToken } from '../../apps/api/dist/lib/accountTokenStore.js';
 import { pruneExpiredAccountTokens } from '../../apps/api/dist/lib/accountTokenRetention.js';
+import { issueAccountMail } from '../../apps/api/dist/lib/accountMailDelivery.js';
 
 assertDisposableDatabase('local-disposable');
 const { prisma } = await import('../../apps/api/dist/lib/prisma.js');
@@ -61,6 +62,19 @@ try {
   const register = async name => (await request('/auth/register', null, { nome: name, email: `${name}@example.invalid`, senha: 'ci-http-client-password-123', lojaId: loja.id, plataforma: 'native' }, 'POST', [201])).data;
   const customer = await register('cliente-one');
   const other = await register('cliente-two');
+  const mailCustomer = await register('cliente-mail');
+  const mailIssued = await Promise.all(Array.from({ length: 2 }, () => issueAccountMail(loja.id, { userId: mailCustomer.user.id }, 'VERIFICAR_EMAIL')));
+  assert.equal(mailIssued.filter(Boolean).length, 1);
+  assert.equal(await prisma.tokenConta.count({ where: { usuarioId: mailCustomer.user.id } }), 1);
+  assert.equal(mailIssued.find(Boolean).email, mailCustomer.user.email);
+  assert.equal(await issueAccountMail('other-store', { userId: mailCustomer.user.id }, 'RECUPERAR_SENHA'), null);
+  assert.equal(await issueAccountMail(loja.id, { email: mailCustomer.user.email }, 'RECUPERAR_SENHA'), null);
+  await prisma.tokenConta.updateMany({ where: { usuarioId: mailCustomer.user.id }, data: { createdAt: new Date(Date.now() - 120000) } });
+  await prisma.usuario.update({ where: { id: mailCustomer.user.id }, data: { emailVerificadoEm: new Date() } });
+  assert.equal(await issueAccountMail(loja.id, { userId: mailCustomer.user.id }, 'VERIFICAR_EMAIL'), null);
+  const mailRecovery = await issueAccountMail(loja.id, { email: mailCustomer.user.email }, 'RECUPERAR_SENHA');
+  assert.ok(mailRecovery);
+  assert.equal(mailRecovery.email, mailCustomer.user.email);
   const verification = await prisma.$transaction(tx => createAccountToken(tx, customer.user.id, loja.id, 'VERIFICAR_EMAIL'));
   assert.ok(verification);
   const persistedToken = await prisma.tokenConta.findFirstOrThrow({ where: { usuarioId: customer.user.id } });

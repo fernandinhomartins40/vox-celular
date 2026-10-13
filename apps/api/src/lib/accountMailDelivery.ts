@@ -30,20 +30,24 @@ export function createAccountMailDelivery(deps: DeliveryDependencies) {
   finally { try { sender?.close(); } catch { /* Closing must not leak provider errors. */ } finally { pending--; } }
  };
 }
+export async function issueAccountMail(lojaId: string, identity: Identity, purpose: AccountTokenPurpose) {
+    return prisma.$transaction(async tx => {
+      const where = { lojaId, ...('email' in identity ? { email: identity.email } : { id: identity.userId }) };
+      const candidate = await tx.usuario.findFirst({ where, select: { id: true } });
+      if (!candidate) return null;
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${candidate.id}))`;
+      const user = await tx.usuario.findFirst({ where: { ...where, id: candidate.id }, select: { id: true, email: true, emailVerificadoEm: true } });
+      if (!user || (purpose === 'VERIFICAR_EMAIL' && user.emailVerificadoEm)) return null;
+      if (await tx.tokenConta.findFirst({ where: { usuarioId: user.id, createdAt: { gte: new Date(Date.now() - 60000) } }, select: { id: true } })) return null;
+      const token = await createAccountToken(tx, user.id, lojaId, purpose);
+      return token ? { ...token, email: user.email } : null;
+    });
+}
 export const deliverAccountMail = createAccountMailDelivery({
   async configuration(lojaId) {
     const row = await prisma.configuracaoEmail.findUnique({ where: { lojaId } });
     return row ? decryptCredentials(row.credenciais, `${lojaId}:account-email`) : null;
   },
-  async issue(lojaId, identity, purpose) {
-    return prisma.$transaction(async tx => {
-      const user = await tx.usuario.findFirst({ where: { lojaId, ...('email' in identity ? { email: identity.email } : { id: identity.userId }) }, select: { id: true, email: true, emailVerificadoEm: true } });
-      if (!user || (purpose === 'VERIFICAR_EMAIL' && user.emailVerificadoEm)) return null;
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
-      if (await tx.tokenConta.findFirst({ where: { usuarioId: user.id, createdAt: { gte: new Date(Date.now() - 60000) } }, select: { id: true } })) return null;
-      const token = await createAccountToken(tx, user.id, lojaId, purpose);
-      return token ? { ...token, email: user.email } : null;
-    });
-  },
+  issue: issueAccountMail,
   sender: createAccountMailSender,
 });
