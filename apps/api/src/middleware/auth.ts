@@ -14,8 +14,8 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
   }
   try {
     const claims = verifyToken(header.slice(7));
-    const user = await prisma.usuario.findFirst({ where: { id: claims.userId, lojaId: claims.lojaId }, select: { role: true, tokenVersion: true } });
-    if (!user || user.role !== claims.role || (claims.tokenVersion ?? 0) !== user.tokenVersion) {
+    const user = await prisma.usuario.findFirst({ where: { id: claims.userId, lojaId: claims.lojaId }, select: { role: true, tokenVersion: true, encerradaEm: true } });
+    if (!user || user.encerradaEm || user.role !== claims.role || (claims.tokenVersion ?? 0) !== user.tokenVersion) {
       res.status(401).json({ error: 'Sua sessão expirou. Entre novamente.' }); return;
     }
     if (claims.sessionId && !await prisma.sessao.findFirst({ where: { id: claims.sessionId, usuarioId: claims.userId, tokenVersion: user.tokenVersion, expiresAt: { gt: new Date() } }, select: { id: true } })) {

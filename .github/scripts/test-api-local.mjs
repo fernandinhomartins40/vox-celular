@@ -339,6 +339,37 @@ try {
   assert.equal(await pruneExpiredAccountTokens(retentionNow), 1);
   assert.ok(await prisma.tokenConta.findUnique({ where: { id: 'retention-boundary' } }));
   assert.ok(await prisma.tokenConta.findUnique({ where: { id: persistedToken.id } }));
+  const closureAdmin = (await request('/auth/login', null, { email: env.ADMIN_EMAIL, senha: env.ADMIN_PASSWORD, plataforma: 'native' })).data;
+  const originalClosure = `/privacidade/encerramento/${closures[0].data.solicitacao.id}/concluir`;
+  const openClosure = await request(originalClosure, closureAdmin.token, { confirmacao: 'CONCLUIR_ENCERRAMENTO' }, 'POST', [409]);
+  assert.ok(openClosure.data.pendencias.pedidos + openClosure.data.pendencias.servicos > 0);
+  assert.equal((await prisma.usuario.findUniqueOrThrow({ where: { id: customer.user.id } })).encerradaEm, null);
+  const closing = await register('cliente-closure');
+  await request(originalClosure, closing.token, { confirmacao: 'CONCLUIR_ENCERRAMENTO' }, 'POST', [403]);
+  const closingClient = await prisma.cliente.findUniqueOrThrow({ where: { usuarioId: closing.user.id } });
+  const reward = await prisma.recompensaCatalogo.create({ data: { lojaId: loja.id, titulo: 'Fixture de encerramento', pontos: 10 } });
+  const redemption = await prisma.resgateRecompensa.create({ data: { clienteId: closingClient.id, recompensaId: reward.id, codigo: `CLOSE-${randomUUID()}` } });
+  const closingRequest = (await request('/privacidade/encerramento', closing.token, { senhaAtual: 'ci-http-client-password-123', confirmacao: 'SOLICITAR_ENCERRAMENTO' })).data.solicitacao;
+  const closePath = `/privacidade/encerramento/${closingRequest.id}/concluir`;
+  await request(closePath, closureAdmin.token, { confirmacao: 'CONCLUIR_ENCERRAMENTO' }, 'POST', [409]);
+  await request(`/privacidade/encerramento/${closingRequest.id}/analisar`, closureAdmin.token, {});
+  assert.equal((await request(closePath, closureAdmin.token, { confirmacao: 'CONCLUIR_ENCERRAMENTO' }, 'POST', [409])).data.pendencias.resgates, 1);
+  assert.equal((await prisma.usuario.findUniqueOrThrow({ where: { id: closing.user.id } })).encerradaEm, null);
+  await prisma.resgateRecompensa.update({ where: { id: redemption.id }, data: { usadoEm: new Date() } });
+  const closed = await request(closePath, closureAdmin.token, { confirmacao: 'CONCLUIR_ENCERRAMENTO' });
+  assert.equal(closed.data.solicitacao.status, 'CONCLUIDA');
+  assert.equal((await request(closePath, closureAdmin.token, { confirmacao: 'CONCLUIR_ENCERRAMENTO' })).data.solicitacao.status, 'CONCLUIDA');
+  await request('/auth/me', closing.token, null, 'GET', [401]);
+  await request('/auth/refresh', null, { plataforma: 'native', refreshToken: closing.refreshToken }, 'POST', [401]);
+  await request('/auth/login', null, { email: closing.user.email, senha: 'ci-http-client-password-123', plataforma: 'native' }, 'POST', [401]);
+  const closedUser = await prisma.usuario.findUniqueOrThrow({ where: { id: closing.user.id } });
+  assert.ok(closedUser.encerradaEm instanceof Date);
+  assert.notEqual(closedUser.email, closing.user.email);
+  assert.equal((await prisma.cliente.findUniqueOrThrow({ where: { id: closingClient.id } })).telefone, '');
+  assert.ok(await prisma.resgateRecompensa.findUnique({ where: { id: redemption.id } }), 'Commercial redemption is preserved');
+  await assert.rejects(prisma.resgateRecompensa.create({ data: { clienteId: closingClient.id, recompensaId: reward.id, codigo: `AFTER-${randomUUID()}` } }));
+  await assert.rejects(prisma.pedido.create({ data: { lojaId: loja.id, clienteId: closingClient.id, codigo: `AFTER-${randomUUID()}`, pagamento: 'Aguardando confirmação', total: 1 } }));
+  await assert.rejects(prisma.solicitacaoServico.create({ data: { lojaId: loja.id, clienteId: closingClient.id, servicoId: service.id, chaveIdempotencia: randomUUID(), protocolo: `AFTER-${randomUUID()}`, aparelho: 'Fixture', problema: 'Não deve registrar' } }));
   console.log('Real HTTP/PostgreSQL: account token confirmation, session revocation and existing product flows passed.');
 } finally {
   if (api && api.exitCode === null) {

@@ -155,6 +155,7 @@ model Usuario {
   senhaHash    String
   tokenVersion Int      @default(0)
   emailVerificadoEm DateTime?
+  encerradaEm DateTime?
   role         Role     @default(CLIENTE)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

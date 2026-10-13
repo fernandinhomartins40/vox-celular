@@ -100,7 +100,7 @@ authRouter.post('/login', async (req, res) => {
   const { email, senha, lojaId } = parse.data;
   const candidates = await prisma.usuario.findMany({ where: { email, ...(lojaId ? { lojaId } : {}) }, take: 2 });
   const usuario = candidates.length === 1 ? candidates[0] : null;
-  if (!usuario) { res.status(401).json({ error: 'Credenciais inválidas' }); return; }
+  if (!usuario || usuario.encerradaEm) { res.status(401).json({ error: 'Credenciais inválidas' }); return; }
 
   const ok = await bcrypt.compare(senha, usuario.senhaHash);
   if (!ok) { res.status(401).json({ error: 'Credenciais inválidas' }); return; }
@@ -152,7 +152,7 @@ authRouter.post('/refresh', async (req, res) => {
     const next = refreshValue();
     const result = await prisma.$transaction(async tx => {
       const row = await tx.sessao.findUnique({ where: { token: hashRefresh(value) }, include: { usuario: true } });
-      if (!row || row.expiresAt <= new Date() || row.tokenVersion !== row.usuario.tokenVersion) throw new Error('EXPIRED');
+      if (!row || row.usuario.encerradaEm || row.expiresAt <= new Date() || row.tokenVersion !== row.usuario.tokenVersion) throw new Error('EXPIRED');
       const changed = await tx.sessao.updateMany({ where: { id: row.id, token: row.token }, data: { token: hashRefresh(next) } });
       if (changed.count !== 1) throw new Error('REUSED');
       return sessionResponse(row.usuario, row.id);

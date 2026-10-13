@@ -36,8 +36,8 @@ export async function issueAccountMail(lojaId: string, identity: Identity, purpo
       const candidate = await tx.usuario.findFirst({ where, select: { id: true } });
       if (!candidate) return null;
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${candidate.id}))`;
-      const user = await tx.usuario.findFirst({ where: { ...where, id: candidate.id }, select: { id: true, email: true, emailVerificadoEm: true } });
-      if (!user || (purpose === 'VERIFICAR_EMAIL' && user.emailVerificadoEm)) return null;
+      const user = await tx.usuario.findFirst({ where: { ...where, id: candidate.id }, select: { id: true, email: true, emailVerificadoEm: true, encerradaEm: true } });
+      if (!user || user.encerradaEm || (purpose === 'VERIFICAR_EMAIL' && user.emailVerificadoEm)) return null;
       if (await tx.tokenConta.findFirst({ where: { usuarioId: user.id, createdAt: { gte: new Date(Date.now() - 60000) } }, select: { id: true } })) return null;
       const token = await createAccountToken(tx, user.id, lojaId, purpose);
       return token ? { ...token, email: user.email } : null;

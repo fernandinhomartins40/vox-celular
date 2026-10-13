@@ -4,10 +4,54 @@ import { requireAuth, requireLojista, AuthRequest } from '../middleware/auth.js'
 import { authLimits } from '../lib/authLimits.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
 
 export const privacidadeRouter = Router();
 const preferenceFields = { personalizacao: true, notificacoes: true, versaoPrivacidade: true, preferenciasAtualizadasEm: true } as const;
 const aviso = '2026-10-12';
+class OpenAccountObligations extends Error {
+  constructor(readonly orders: number, readonly services: number, readonly rewards: number) { super('Open commercial obligations'); }
+}
+privacidadeRouter.post('/encerramento/:id/concluir', requireLojista, authLimits, async (req: AuthRequest, res) => {
+  const id = z.string().min(1).max(100).safeParse(req.params.id);
+  const body = z.object({ confirmacao: z.literal('CONCLUIR_ENCERRAMENTO') }).strict().safeParse(req.body);
+  if (!id.success || !body.success) { res.status(400).json({ error: 'Confirme a conclusão do encerramento.' }); return; }
+  const senhaHash = await bcrypt.hash(randomBytes(32).toString('base64url'), 12);
+  try {
+    const result = await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id.data}))`;
+      const row = await tx.solicitacaoEncerramentoConta.findFirst({ where: { id: id.data, cliente: { lojaId: req.user!.lojaId } }, include: { cliente: { include: { usuario: true } } } });
+      if (!row) return { kind: 'missing' as const };
+      if (row.status === 'CONCLUIDA') return { kind: 'done' as const, id: row.id };
+      if (row.status !== 'EM_ANALISE' || row.cliente.usuario.encerradaEm) return { kind: 'stage' as const };
+      const userId = row.cliente.usuarioId, clientId = row.clienteId, now = new Date();
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+      // This update serializes with database guards on new orders, services and rewards.
+      await tx.usuario.update({ where: { id: userId }, data: { encerradaEm: now, nome: 'Conta encerrada', email: `closed+${userId}@accounts.invalid`, senhaHash, emailVerificadoEm: null, tokenVersion: { increment: 1 } } });
+      const [orders, services, rewards] = await Promise.all([
+        tx.pedido.count({ where: { clienteId: clientId, canceladoEm: null, status: { not: 'ENTREGUE' } } }),
+        tx.solicitacaoServico.count({ where: { clienteId: clientId, status: { notIn: ['CONCLUIDA', 'CANCELADA'] } } }),
+        tx.resgateRecompensa.count({ where: { clienteId: clientId, usadoEm: null } }),
+      ]);
+      if (orders || services || rewards) throw new OpenAccountObligations(orders, services, rewards);
+      await tx.sessao.deleteMany({ where: { usuarioId: userId } });
+      await tx.tokenConta.deleteMany({ where: { usuarioId: userId } });
+      await tx.favorito.deleteMany({ where: { clienteId: clientId } });
+      await tx.notificacaoCliente.deleteMany({ where: { clienteId: clientId } });
+      await tx.assinaturaPush.deleteMany({ where: { clienteId: clientId } });
+      await tx.cliente.update({ where: { id: clientId }, data: { telefone: '', cidade: '', personalizacao: false, notificacoes: false, versaoPrivacidade: null } });
+      await tx.solicitacaoEncerramentoConta.update({ where: { id: row.id }, data: { status: 'CONCLUIDA' } });
+      return { kind: 'done' as const, id: row.id };
+    });
+    res.set('Cache-Control', 'no-store');
+    if (result.kind === 'missing') { res.status(404).json({ error: 'Solicitação não encontrada nesta loja.' }); return; }
+    if (result.kind === 'stage') { res.status(409).json({ error: 'Inicie a análise antes de concluir.' }); return; }
+    res.json({ solicitacao: { id: result.id, status: 'CONCLUIDA' } });
+  } catch (error) {
+    if (error instanceof OpenAccountObligations) { res.status(409).json({ error: 'Conclua pedidos, serviços e resgates em aberto antes de encerrar.', pendencias: { pedidos: error.orders, servicos: error.services, resgates: error.rewards } }); return; }
+    res.status(503).json({ error: 'Não foi possível concluir o encerramento.' });
+  }
+});
 privacidadeRouter.post('/encerramento/:id/analisar', requireLojista, async (req: AuthRequest, res) => {
   const id = z.string().min(1).max(100).safeParse(req.params.id);
   if (!id.success || !z.object({}).strict().safeParse(req.body).success) { res.status(400).json({ error: 'Confira a solicitação.' }); return; }

@@ -46,6 +46,19 @@ export default function AdminClientes() {
     } catch (e) { if (active()) setAnalysisError(e.message); }
     finally { if (active()) { analysisOperation.current = null; setAnalysisBusy(false); } }
   }
+  async function completeClosure(client) {
+    if (analysisOperation.current || client.encerramentoConta?.status !== 'EM_ANALISE') return;
+    if (!window.confirm('Concluir o encerramento desta conta? O acesso será revogado e os dados de contato removidos. Pedidos, serviços e histórico comercial serão preservados.')) return;
+    const operation = Symbol(); analysisOperation.current = operation;
+    const generation = getSessionGeneration();
+    const active = () => analysisOperation.current === operation && generation === getSessionGeneration();
+    setAnalysisBusy(true); setAnalysisError('');
+    try {
+      const result = await api.post(`/privacidade/encerramento/${encodeURIComponent(client.encerramentoConta.id)}/concluir`, { confirmacao: 'CONCLUIR_ENCERRAMENTO' });
+      if (active()) setClientes(rows => rows.map(row => row.id === client.id ? { ...row, nome: 'Conta encerrada', email: '', telefone: '', cidade: '', encerramentoConta: { ...row.encerramentoConta, ...result.solicitacao } } : row));
+    } catch (e) { if (active()) setAnalysisError(e.message); }
+    finally { if (active()) { analysisOperation.current = null; setAnalysisBusy(false); } }
+  }
 
   useEffect(() => {
     api.get('/clientes')
@@ -179,7 +192,8 @@ export default function AdminClientes() {
             <div className="overflow-y-auto p-6 space-y-5">
               <div className="panel-filter-bar"><Link className="panel-secondary-button" to={`/admin/pedidos?cliente=${encodeURIComponent(selecionado.id)}`}>Ver pedidos deste cliente</Link>{brazilPhone(selecionado.telefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(selecionado.telefone)}?text=${encodeURIComponent(`Olá ${selecionado.nome}! Aqui é da Vox Celular.`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Falar com cliente</a>}</div>
               {analysisError && <p role="alert" className="panel-account-error">{analysisError}</p>}{selecionado.encerramentoConta?.status === 'SOLICITADA' && <button type="button" disabled={analysisBusy} onClick={() => startAnalysis(selecionado)} className="panel-primary-button my-3">{analysisBusy ? 'Registrando…' : 'Iniciar análise do encerramento'}</button>}
-              {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status === 'EM_ANALISE' ? 'Em análise' : selecionado.encerramentoConta.status}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p>{selecionado.encerramentoConta.analiseIniciadaEm && <p>Análise iniciada em {formatPanelDate(selecionado.encerramentoConta.analiseIniciadaEm)} por {selecionado.encerramentoConta.analisadoPor?.nome || 'responsável não informado'}.</p>}<p>O encerramento ainda não foi concluído. Preserve os registros comerciais enquanto a solicitação é analisada.</p></div>}
+              {selecionado.encerramentoConta?.status === 'EM_ANALISE' && <button type="button" disabled={analysisBusy} onClick={() => completeClosure(selecionado)} className="panel-primary-button my-3">{analysisBusy ? 'Concluindo…' : 'Concluir encerramento'}</button>}
+              {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status === 'EM_ANALISE' ? 'Em análise' : 'Concluída'}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p>{selecionado.encerramentoConta.analiseIniciadaEm && <p>Análise iniciada em {formatPanelDate(selecionado.encerramentoConta.analiseIniciadaEm)} por {selecionado.encerramentoConta.analisadoPor?.nome || 'responsável não informado'}.</p>}<p>{selecionado.encerramentoConta.status === 'CONCLUIDA' ? 'Acesso encerrado. Registros comerciais preservados.' : 'Confira as pendências comerciais antes de concluir.'}</p></div>}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Total gasto', valor: formatBRL(selecionado.totalGasto ?? 0) },
