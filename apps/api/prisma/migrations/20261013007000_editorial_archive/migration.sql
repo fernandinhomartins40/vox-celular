@@ -1,0 +1,1 @@
+ALTER TABLE "Novidade" ADD COLUMN "arquivado" BOOLEAN NOT NULL DEFAULT false;

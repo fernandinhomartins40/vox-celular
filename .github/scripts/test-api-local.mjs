@@ -59,6 +59,14 @@ try {
   assert.equal((await request(`/novidades?lojaId=${loja.id}`)).data.length, 1);
   assert.equal((await request(`/novidades/${news.id}?lojaId=${loja.id}`)).data.texto, newsBody.texto);
   assert.equal((await request(`/novidades/${news.id}?lojaId=${loja.id}`)).data.revisadoPorId, undefined);
+  await request(`/novidades/${news.id}/arquivo`, customer.token, { arquivado: true, versaoEsperada: 1 }, 'POST', [403]);
+  await request(`/novidades/${news.id}/arquivo`, admin.token, { arquivado: true, versaoEsperada: 1 });
+  await request(`/novidades/${news.id}?lojaId=${loja.id}`, null, null, 'GET', [404]);
+  assert.equal((await prisma.novidade.findUniqueOrThrow({ where: { id: news.id } })).texto, newsBody.texto);
+  await request(`/novidades/${news.id}`, admin.token, { ...newsBody, publicado: true, versaoEsperada: 2 }, 'PUT', [409]);
+  await request(`/novidades/${news.id}/arquivo`, admin.token, { arquivado: false, versaoEsperada: 2 });
+  assert.equal((await prisma.novidade.findUniqueOrThrow({ where: { id: news.id } })).publicado, false);
+  await request(`/novidades/${news.id}`, admin.token, { ...newsBody, publicado: true, versaoEsperada: 3 }, 'PUT');
   await request(`/novidades/${news.id}?lojaId=other-store`, null, null, 'GET', [404]);
   await prisma.novidade.update({ where: { id: news.id }, data: { validoAte: new Date(Date.now() - 1000) } });
   assert.deepEqual((await request(`/novidades?lojaId=${loja.id}`)).data, []);
