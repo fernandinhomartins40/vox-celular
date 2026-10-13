@@ -16,12 +16,13 @@ function fixture() {
     settle: async (_id, attempt, result) => { calls.push(`settle:${result.status}`); assert.equal(attempt, 1); return true; },
     now: () => now,
     finalize: async () => { calls.push('finalize'); return 0; },
+    expire: async () => { calls.push('expire'); return 0; },
   };
   return { deps, calls };
 }
 const normal = fixture();
 assert.deepEqual(await processNotification('https://vox.example', normal.deps), { processed: true, status: 'accepted', persisted: true });
-assert.deepEqual(normal.calls, ['keys', 'event', 'claim', 'authorize', 'decrypt', 'authorize', 'send', 'settle:accepted', 'finalize']);
+assert.deepEqual(normal.calls, ['keys', 'expire', 'event', 'claim', 'authorize', 'decrypt', 'authorize', 'send', 'settle:accepted', 'finalize']);
 for (const change of ['revoked', 'rotated'] as const) {
   const test = fixture(); let reads = 0;
   test.deps.authorize = async () => ++reads === 1 ? authorized : change === 'revoked' ? null : { ...authorized, credenciais: 'rotated' };
@@ -42,4 +43,7 @@ assert.deepEqual(badConfig.calls, []);
 const failedKeys = fixture(); failedKeys.deps.keys = async () => { throw new Error('restore-required'); };
 await assert.rejects(processNotification('https://vox.example', failedKeys.deps));
 assert.ok(!failedKeys.calls.includes('claim'));
+const failedExpiration = fixture(); failedExpiration.deps.expire = async () => { throw new Error('database-unavailable'); };
+await assert.rejects(processNotification('https://vox.example', failedExpiration.deps));
+assert.ok(!failedExpiration.calls.includes('claim'));
 console.log('Notification processing ordering, consent recheck, rotated keys and failure boundaries passed.');

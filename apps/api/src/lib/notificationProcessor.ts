@@ -5,6 +5,7 @@ import { settleNotificationDelivery } from './notificationDeliverySettlement.js'
 import { decryptCredentials } from './credentialVault.js';
 import { loadVapidKeys } from './vapidKeys.js';
 import { finalizeNotifications } from './notificationFinalization.js';
+import { expireNotifications } from './notificationExpiration.js';
 import { sendWebPush, validPushSubject, type PushTransportResult } from './webPushTransport.js';
 
 type Dependencies = {
@@ -17,12 +18,14 @@ type Dependencies = {
   settle: typeof settleNotificationDelivery;
   now: () => Date;
   finalize: typeof finalizeNotifications;
+  expire: typeof expireNotifications;
 };
 const defaults: Dependencies = {
   keys: loadVapidKeys, claimEvent: claimNotification, claimDelivery: claimNotificationDelivery,
   authorize: authorizeNotificationDelivery, decrypt: decryptCredentials,
   send: sendWebPush, settle: settleNotificationDelivery, now: () => new Date(),
   finalize: finalizeNotifications,
+  expire: expireNotifications,
 };
 
 // One event preparation and at most one network request per invocation. Scheduling
@@ -30,6 +33,7 @@ const defaults: Dependencies = {
 export async function processNotification(subject: string, deps: Dependencies = defaults) {
   if (!validPushSubject(subject)) throw new Error('INVALID_PUSH_SUBJECT');
   const keys = await deps.keys(); // Fail configuration before claiming work.
+  await deps.expire(deps.now());
   await deps.claimEvent();
   const claimed = await deps.claimDelivery();
   if (!claimed) { await deps.finalize(); return { processed: false }; }

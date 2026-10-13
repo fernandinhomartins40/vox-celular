@@ -6,6 +6,7 @@ import { claimNotificationDelivery } from './notificationDeliveryClaim.js';
 import { authorizeNotificationDelivery } from './notificationDeliveryAuthorization.js';
 import { settleNotificationDelivery } from './notificationDeliverySettlement.js';
 import { finalizeNotifications } from './notificationFinalization.js';
+import { expireNotifications } from './notificationExpiration.js';
 
 assertDisposableDatabase(process.env.PUSH_DELIVERY_TEST);
 const id = `ci-delivery-${randomUUID()}`;
@@ -82,6 +83,18 @@ try {
   assert.equal(await prisma.notificacaoCliente.count({ where: { lojaId: id, status: 'PROCESSANDO' } }), 5);
   await finalizeNotifications();
   assert.equal(await prisma.notificacaoCliente.count({ where: { lojaId: id, status: 'PROCESSANDO' } }), 0);
+  await prisma.notificacaoCliente.createMany({ data: Array.from({ length: 30 }, (_, n) => ({ id: `000-expire-${id}-${n}`, lojaId: id, clienteId: id, chaveEvento: `expire-${n}`, titulo: 'Fixture', mensagem: 'Fixture', destino: '/pedidos', expiresAt: new Date('2000-01-01T00:00:00Z') })) });
+  assert.equal(await expireNotifications(now), 25, 'Expiration must respect its batch bound');
+  assert.equal(await prisma.notificacaoCliente.count({ where: { lojaId: id, status: 'PENDENTE' } }), 5);
+  await expireNotifications(now);
+  assert.equal(await prisma.notificacaoCliente.count({ where: { lojaId: id, status: 'PENDENTE' } }), 0);
+  await prisma.notificacaoCliente.update({ where: { id }, data: { status: 'PROCESSANDO', expiresAt: now } });
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO' } });
+  await prisma.entregaPush.update({ where: { id: `${id}-other` }, data: { status: 'PENDENTE' } });
+  await expireNotifications(now);
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'INCERTA');
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id: `${id}-other` } })).status, 'EXPIRADA');
+  assert.equal((await prisma.notificacaoCliente.findUniqueOrThrow({ where: { id } })).status, 'INCERTA');
   console.log('Delivery claims, authorization and idempotent settlements passed.');
 } finally {
   await prisma.notificacaoCliente.deleteMany({ where: { lojaId: id } });
