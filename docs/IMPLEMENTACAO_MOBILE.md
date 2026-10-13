@@ -576,3 +576,7 @@ Detalhe do atendimento inclui consulta de versões/decisões e formulário de va
 
 ### Emissão lojista validada em Chromium — 13/10/2026
 Playwright com API simulada passou em 390/768/1440: entrada 125,50 vira 12550 centavos; erro 503 preserva campos, repetir usa UUID/payload idênticos e resposta confirmada limpa formulário, sem overflow/erros. Teste incluído no workflow. Não comprova recuperação após reload ou integração UI-backend real, apenas comportamento do formulário e tentativa em memória.
+
+
+### Orçamento no acompanhamento nativo — 13/10/2026
+Histórico de atendimentos inclui consulta explícita de versões, valor/descrição/validade em Brasília e decisão com confirmação Alert. Proposta vencida no instante de consulta orienta nova proposta e não oferece decisão; servidor valida validade atual. RequestForSession usa revisão do histórico; duplo toque bloqueado por ref e respostas após desmontar/trocar conta descartadas. Typecheck e testes existentes do serviço de sessão passaram; não cobrem interação/renderização do componente. Exportação bundles deste incremento, aparelho, atualização automática do histórico após decisão e recuperação persistente continuam pendentes.
