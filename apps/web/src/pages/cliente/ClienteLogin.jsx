@@ -11,7 +11,7 @@ export default function ClienteLogin() {
   const { login, register, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const destination = panelReturnTo(location.state?.returnTo, '/area-cliente');
+  const destination = location.state?.returnTo === '/?carrinho=1' ? '/?carrinho=1' : panelReturnTo(location.state?.returnTo, '/area-cliente');
   const [form, setForm] = useState({ nome: '', email: '', senha: '', telefone: '' });
   const [creating, setCreating] = useState(false);
   const [recovering, setRecovering] = useState(false);

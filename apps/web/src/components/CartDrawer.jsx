@@ -15,14 +15,14 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
     if (pending) return;
     setPending(true); setError('');
     try {
-      const signature = JSON.stringify(items.map(p => [p.id, p.qty]));
+      const signature = JSON.stringify([user.id, items.map(p => [p.id, p.qty, Math.round(p.preco * 100)])]);
       let attempt;
       try { attempt = JSON.parse(sessionStorage.getItem('vox_checkout_attempt')); } catch { /* new attempt */ }
       if (!attempt || attempt.signature !== signature) {
         attempt = { signature, key: crypto.randomUUID() };
         sessionStorage.setItem('vox_checkout_attempt', JSON.stringify(attempt));
       }
-      const result = await api.post('/pedidos', { checkoutKey: attempt.key, itens: items.map(p => ({ produtoId: p.id, qty: p.qty })) });
+      const result = await api.post('/pedidos', { checkoutKey: attempt.key, itens: items.map(p => ({ produtoId: p.id, qty: p.qty, precoCentavos: Math.round(p.preco * 100) })) });
       setPedido(result); setItems([]); sessionStorage.removeItem('vox_checkout_attempt');
     } catch (e) { setError(e.message); }
     finally { setPending(false); }
@@ -68,7 +68,7 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
                 <Icon.cart className="w-7 h-7 text-zinc-400"/>
               </div>
               <div className="font-display font-bold text-[18px] text-zinc-700">Seu carrinho está vazio</div>
-              <div className="text-[13px] mt-1">Adicione produtos para finalizar via WhatsApp.</div>
+              <div className="text-[13px] mt-1">Escolha os produtos para montar seu pedido.</div>
             </div>
           )}
           {items.map(it => (
@@ -81,18 +81,18 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
                 <div className="text-[11px] text-zinc-500 mb-2">{it.sub}</div>
                 <div className="flex items-center justify-between">
                   <div className="inline-flex items-center border border-[var(--line)] rounded-full overflow-hidden">
-                    <button onClick={() => updateQty(it.id, -1)} className="w-7 h-7 grid place-items-center hover:bg-zinc-100">
+                    <button disabled={pending} aria-label={`Diminuir quantidade de ${it.nome}`} onClick={() => updateQty(it.id, -1)} className="w-11 h-11 grid place-items-center hover:bg-zinc-100 disabled:opacity-50">
                       <Icon.minus className="w-3.5 h-3.5" />
                     </button>
                     <span className="w-7 text-center font-display font-bold text-[13px]">{it.qty}</span>
-                    <button onClick={() => updateQty(it.id, 1)} className="w-7 h-7 grid place-items-center hover:bg-zinc-100">
+                    <button disabled={pending || it.qty >= it.estoque} aria-label={`Aumentar quantidade de ${it.nome}`} onClick={() => updateQty(it.id, 1)} className="w-11 h-11 grid place-items-center hover:bg-zinc-100 disabled:opacity-50">
                       <Icon.plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   <div className="font-display font-bold text-[14px]">{formatBRL(it.preco * it.qty)}</div>
                 </div>
               </div>
-              <button onClick={() => remove(it.id)} className="self-start text-zinc-400 hover:text-[var(--red-500)] p-1">
+              <button disabled={pending} aria-label={`Remover ${it.nome}`} onClick={() => remove(it.id)} className="self-start min-w-11 min-h-11 grid place-items-center text-zinc-400 hover:text-[var(--red-500)] disabled:opacity-50">
                 <Icon.trash className="w-4 h-4" />
               </button>
             </div>
@@ -102,7 +102,6 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
         {items.length > 0 && (
           <div className="p-6 border-t border-[var(--line)] bg-[var(--paper)]">
             {error && <p role="alert" className="text-red-600 mb-3">{error}</p>}
-            {user?.role === 'CLIENTE' ? <button onClick={confirmar} disabled={pending} className="panel-primary-button w-full mb-3">{pending ? 'Registrando pedido…' : 'Confirmar pedido'}</button> : <Link to="/area-cliente/login" state={{ returnTo: '/' }} className="panel-primary-button w-full mb-3">Entrar para confirmar pedido</Link>}
             <div className="flex items-baseline justify-between mb-1">
               <span className="text-[13px] text-zinc-600">Subtotal</span>
               <span className="font-display font-bold text-[14px]">{formatBRL(total)}</span>
@@ -111,13 +110,15 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
               <span className="font-display font-bold text-[18px]">Total</span>
               <span className="price font-bold text-[32px] text-[var(--ink)]">{formatBRL(total)}</span>
             </div>
+            <p className="text-sm text-zinc-600 mb-3">Confira os itens e o total. A loja combinará o pagamento e a entrega após receber seu pedido.</p>
+            {user?.role === 'CLIENTE' ? <button onClick={confirmar} disabled={pending} className="panel-primary-button w-full mb-3">{pending ? 'Registrando pedido…' : 'Confirmar pedido'}</button> : <Link to="/area-cliente/login" state={{ returnTo: '/?carrinho=1' }} className="panel-primary-button w-full mb-3">Entrar para confirmar pedido</Link>}
             <a href={checkoutUrl} target="_blank" rel="noopener"
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold text-[15px] tracking-wide transition">
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border border-emerald-600 text-emerald-700 hover:bg-emerald-50 rounded-full font-semibold text-[15px] transition">
               <Icon.whatsapp className="w-5 h-5" />
-              Finalizar via WhatsApp
+              Preciso de ajuda pelo WhatsApp
             </a>
             <div className="text-[11px] text-zinc-500 text-center mt-3">
-              Você será redirecionado para confirmar o pedido com nossa equipe.
+              O pedido será registrado após a confirmação. O pagamento será combinado com a loja.
             </div>
           </div>
         )}

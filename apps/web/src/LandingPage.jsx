@@ -25,7 +25,7 @@ export default function LandingPage() {
     catch { return []; }
   });
   useEffect(() => { sessionStorage.setItem('vox_cart', JSON.stringify(cart)); }, [cart]);
-  const [cartOpen, setCartOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(() => new URLSearchParams(window.location.search).get('carrinho') === '1');
   const [modalProduct, setModalProduct] = useState(null);
   const [products, setProducts] = useState([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
