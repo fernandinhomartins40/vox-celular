@@ -40,6 +40,9 @@ model SolicitacaoEncerramentoConta {
   status String @default("SOLICITADA")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  analiseIniciadaEm DateTime?
+  analisadoPorId String?
+  analisadoPor Usuario? @relation(fields: [analisadoPorId], references: [id], onDelete: Restrict)
   cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Restrict)
 }
 
@@ -148,6 +151,7 @@ model Usuario {
   loja         Loja     @relation(fields: [lojaId], references: [id])
   cliente      Cliente?
   sessoes      Sessao[]
+  analisesEncerramento SolicitacaoEncerramentoConta[]
 
   @@unique([lojaId, email])
   @@index([email])

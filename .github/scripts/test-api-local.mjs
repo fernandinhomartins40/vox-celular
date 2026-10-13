@@ -62,6 +62,11 @@ try {
   await request('/privacidade/encerramento/missing/analisar', admin.token, {}, 'POST', [404]);
   const analyses = await Promise.all([request(analysisPath, admin.token, {}), request(analysisPath, admin.token, {})]);
   assert.ok(analyses.every(result => result.data.solicitacao.status === 'EM_ANALISE'));
+  const audit = await prisma.solicitacaoEncerramentoConta.findUniqueOrThrow({ where: { id: closures[0].data.solicitacao.id } });
+  assert.equal(audit.analisadoPorId, admin.user.id);
+  assert.ok(audit.analiseIniciadaEm instanceof Date);
+  await request(analysisPath, admin.token, {});
+  assert.equal((await prisma.solicitacaoEncerramentoConta.findUniqueOrThrow({ where: { id: audit.id } })).analiseIniciadaEm.getTime(), audit.analiseIniciadaEm.getTime());
   assert.equal((await request('/privacidade/encerramento', customer.token)).data.solicitacao.status, 'EM_ANALISE');
   await request('/auth/me', customer.token); // Request alone must not claim completed deletion.
   const product = (await request('/produtos', admin.token, { nome: 'Local accessory', sub: 'Integration', categoria: 'Acessórios', preco: 10.25, descricao: 'Disposable HTTP fixture', estoque: 1 }, 'POST', [201])).data;

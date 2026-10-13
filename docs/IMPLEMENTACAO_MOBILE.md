@@ -433,3 +433,7 @@ POST privacidade/encerramento/:id/analisar exige lojista da mesma loja e corpo v
 
 ### Iniciar análise pelo detalhe do cliente — 13/10/2026
 Painel Clientes oferece ação Iniciar análise do encerramento no detalhe existente, atualizando status somente após confirmação API. Bloqueio por ref impede duplo clique; geração de sessão/identidade de operação descartam respostas antigas e cleanup invalida ao sair. Filtro e indicador incluem SOLICITADA e EM_ANALISE para manter pendências visíveis. Build e lint web passaram; API já validada com HTTP/PostgreSQL real. Interação browser deste botão, auditoria de responsável e encerramento efetivo permanecem pendentes.
+
+
+### Auditoria do início de análise — 13/10/2026
+Solicitação registra id do lojista autenticado e instante de início na mesma transação que muda status. FK restritiva preserva referência; campos opcionais não fabricam histórico para registros antigos. Repetição/concorrrência mantêm responsável/data originais. Auditoria não é exposta nos endpoints do cliente. PostgreSQL real aplicou 24 migrations; build e suíte HTTP passaram, incluindo responsável correto, data válida e data inalterada após repetição. Exibição administrativa da auditoria, encerramento efetivo e validação interativa permanecem pendentes.

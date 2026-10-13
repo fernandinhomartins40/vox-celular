@@ -18,7 +18,7 @@ privacidadeRouter.post('/encerramento/:id/analisar', requireLojista, async (req:
       if (!row) return null;
       if (row.status === 'EM_ANALISE') return row;
       if (row.status !== 'SOLICITADA') throw new Error('INVALID_TRANSITION');
-      return tx.solicitacaoEncerramentoConta.update({ where: { id: row.id }, data: { status: 'EM_ANALISE' }, select: { id: true, status: true, createdAt: true } });
+      return tx.solicitacaoEncerramentoConta.update({ where: { id: row.id }, data: { status: 'EM_ANALISE', analiseIniciadaEm: new Date(), analisadoPorId: req.user!.userId }, select: { id: true, status: true, createdAt: true } });
     });
     if (!result) { res.status(404).json({ error: 'Solicitação não encontrada nesta loja.' }); return; }
     res.set('Cache-Control', 'no-store').json({ solicitacao: { id: result.id, status: result.status, createdAt: result.createdAt } });
