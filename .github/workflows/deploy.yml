@@ -221,6 +221,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/pushSubscription.test.js
       - name: Persistent VAPID key generation and recovery
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/vapidKeys.test.js
+      - name: Encrypted web push transport and bounded network handling
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/webPushTransport.test.js
       - name: Notification retention with disposable PostgreSQL
         run: docker compose --profile tools run --rm --no-deps -e CI=true -e NOTICE_RETENTION_TEST=ci-disposable migrate node dist/lib/notificationRetention.integration.test.js
       - name: Verify push delivery claims in disposable PostgreSQL
