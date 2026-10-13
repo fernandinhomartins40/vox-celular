@@ -24,6 +24,7 @@ import { notificacoesRouter } from './routes/notificacoes.js';
 import { pushRouter } from './routes/push.js';
 import { compatibilidadesRouter } from './routes/compatibilidades.js';
 import { novidadesRouter } from './routes/novidades.js';
+import { orcamentosServicoRouter } from './routes/orcamentosServico.js';
 import { pruneExpiredNotifications } from './lib/notificationRetention.js';
 import { startConfiguredNotificationWorker } from './lib/notificationWorker.js';
 
@@ -68,6 +69,7 @@ app.use('/api/notificacoes', notificacoesRouter);
 app.use('/api/push', pushRouter);
 app.use('/api/compatibilidades', compatibilidadesRouter);
 app.use('/api/novidades', novidadesRouter);
+app.use('/api/orcamentos-servico', orcamentosServicoRouter);
 
 const server = app.listen(PORT, () => console.log(`API running on port ${PORT}`));
 const notificationWorker = startConfiguredNotificationWorker();

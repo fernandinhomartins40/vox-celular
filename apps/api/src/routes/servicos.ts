@@ -81,6 +81,10 @@ servicosRouter.patch('/solicitacoes/:id/status', requireLojista, async (req: Aut
     if (current.status === parsed.data.status) return 'ok';
     const transitions: Record<string, string[]> = { RECEBIDA: ['EM_ANALISE', 'CANCELADA'], EM_ANALISE: ['AGUARDANDO_CLIENTE', 'EM_EXECUCAO', 'CANCELADA'], AGUARDANDO_CLIENTE: ['EM_ANALISE', 'EM_EXECUCAO', 'CANCELADA'], EM_EXECUCAO: ['AGUARDANDO_CLIENTE', 'CONCLUIDA', 'CANCELADA'] };
     if (!transitions[current.status]?.includes(parsed.data.status)) return 'conflict';
+    if (parsed.data.status === 'EM_EXECUCAO') {
+      const quote = await tx.orcamentoServico.findFirst({ where: { solicitacaoId: id }, orderBy: { versao: 'desc' } });
+      if (quote && quote.status !== 'ACEITO') return 'conflict';
+    }
     if (current.horarioId && parsed.data.status === 'CANCELADA') await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${current.horarioId}))`;
     const changed = await tx.solicitacaoServico.update({ where: { id }, data: { status: parsed.data.status, historico: { create: parsed.data } } });
     await enqueueClientNotification(tx, { lojaId: req.user!.lojaId, clienteId: current.clienteId, chaveEvento: `service:${id}:${changed.updatedAt.toISOString()}:${parsed.data.status}`, titulo: 'Seu atendimento foi atualizado', mensagem: 'Há uma atualização no seu atendimento. Consulte os detalhes na sua conta Vox.', destino: '/servicos' });

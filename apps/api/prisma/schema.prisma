@@ -154,6 +154,7 @@ model Usuario {
   sessoes      Sessao[]
   analisesEncerramento SolicitacaoEncerramentoConta[]
   novidadesRevisadas Novidade[]
+  orcamentosServicoEmitidos OrcamentoServico[]
   compatibilidadesAprovadas CompatibilidadeProduto[]
 
   @@unique([lojaId, email])
@@ -289,10 +290,27 @@ model SolicitacaoServico {
   servico Servico @relation(fields: [servicoId], references: [id])
   horario HorarioServico? @relation(fields: [horarioId], references: [id])
   historico HistoricoServico[]
+  orcamentos OrcamentoServico[]
   @@unique([clienteId, chaveIdempotencia])
   @@index([lojaId, createdAt])
   @@index([clienteId, createdAt])
   @@index([horarioId, status])
+}
+
+model OrcamentoServico {
+  id String @id @default(cuid())
+  solicitacaoId String
+  versao Int
+  valorCentavos Int
+  descricao String
+  validoAte DateTime
+  status String @default("PENDENTE")
+  decididoEm DateTime?
+  emitidoPorId String
+  createdAt DateTime @default(now())
+  solicitacao SolicitacaoServico @relation(fields: [solicitacaoId], references: [id], onDelete: Restrict)
+  emitidoPor Usuario @relation(fields: [emitidoPorId], references: [id], onDelete: Restrict)
+  @@unique([solicitacaoId, versao])
 }
 
 model HorarioServico {

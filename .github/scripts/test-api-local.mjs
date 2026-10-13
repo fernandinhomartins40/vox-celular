@@ -145,6 +145,18 @@ try {
   const booked = bookings.find(row => row.status === 201).data;
   await request(`/servicos/solicitacoes/${booked.id}/status`, admin.token, { status: 'CANCELADA', mensagem: 'Fixture cancellation' }, 'PATCH');
   assert.equal((await request(`/agenda?lojaId=${loja.id}&servicoId=${service.id}`)).data[0].vagas, 1);
+  const ticket = (await request('/servicos/solicitacoes', customer.token, { servicoId: service.id, chaveIdempotencia: randomUUID(), aparelho: 'Fixture phone', problema: 'Quote integration fixture' }, 'POST', [201])).data;
+  const ticketStatus = `/servicos/solicitacoes/${ticket.id}/status`;
+  await request(ticketStatus, admin.token, { status: 'EM_ANALISE', mensagem: 'Avaliação fixture' }, 'PATCH');
+  const proposal = { solicitacaoId: ticket.id, valorCentavos: 12550, descricao: 'Troca de componente fixture', validoAte: new Date(Date.now() + 86400000).toISOString() };
+  const quote = (await request('/orcamentos-servico', admin.token, proposal, 'POST', [201])).data;
+  await request(ticketStatus, admin.token, { status: 'EM_EXECUCAO', mensagem: 'Sem aceite fixture' }, 'PATCH', [409]);
+  assert.deepEqual((await request(`/orcamentos-servico?solicitacaoId=${ticket.id}`, other.token)).data, []);
+  assert.equal((await request(`/orcamentos-servico?solicitacaoId=${ticket.id}`, customer.token)).data[0].valorCentavos, 12550);
+  await request(`/orcamentos-servico/${quote.id}/decisao`, other.token, { aceitar: true }, 'POST', [404]);
+  for (let i = 0; i < 2; i++) await request(`/orcamentos-servico/${quote.id}/decisao`, customer.token, { aceitar: true });
+  await request(`/orcamentos-servico/${quote.id}/decisao`, customer.token, { aceitar: false }, 'POST', [409]);
+  await request(ticketStatus, admin.token, { status: 'EM_EXECUCAO', mensagem: 'Aceite fixture confirmado' }, 'PATCH');
   const key = createECDH('prime256v1'); key.generateKeys();
   const subscription = { endpoint: 'https://fcm.googleapis.com/local-fixture', keys: { p256dh: key.getPublicKey().toString('base64url'), auth: randomBytes(16).toString('base64url') } };
   await request('/push/web', customer.token, subscription, 'PUT', [403]);
