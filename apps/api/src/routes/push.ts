@@ -40,7 +40,10 @@ pushRouter.put('/web', async (req: AuthRequest, res) => {
 pushRouter.delete('/web/:id', async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
   try {
-    await prisma.assinaturaPush.deleteMany({ where: { id: String(req.params.id), lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+    await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
+      await tx.assinaturaPush.deleteMany({ where: { id: String(req.params.id), lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+    });
     res.set('Cache-Control', 'no-store').json({ ok: true });
   } catch { res.status(503).json({ error: 'Não foi possível remover a assinatura.' }); }
 });
