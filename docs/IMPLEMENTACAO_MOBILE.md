@@ -604,3 +604,8 @@ Histórico inclui consulta de vagas, seleção e Alert de confirmação antes de
 
 ### Acessórios compatíveis no assistente web — 13/10/2026
 Resultado oferece adicionar acessório explicitamente relacionado ao aparelho. Ação reconsulta relações atuais e produto da mesma loja, verifica estoque/preço finito, impede mistura de lojas e exige confirmação do valor adicional, sem alterar o orçamento do aparelho ou adicionar itens automaticamente. Inclusão usa carrinho existente; checkout segue regras do servidor. Operação bloqueia repetição e não confirma após desmontar a tela. Build, lint e Chromium com API simulada em 390/768/1440 passaram para relação removida, estoque esgotado, valor confirmado, cancelamento sem inclusão e inclusão de uma unidade. Teste não cobre integração UI-backend real, compra conjunta efetiva ou variante nativa; esses pontos seguem pendentes.
+
+
+### Acessórios no assistente nativo — 13/10/2026
+Resultados incluem consulta explícita de acessórios aprovados para o aparelho. Antes da inclusão, reconsulta relação e produto da mesma loja, valida estoque/preço e apresenta Alert com valor adicional opcional. Operação bloqueia duplo toque e impede inclusão após desmontagem; cancelamento não altera carrinho. Usa fila e isolamento de loja do carrinho existente. TypeScript e testes existentes do carrinho passaram; esses testes não cobrem interação do novo componente. Teste em aparelho e compra completa com backend real seguem pendentes.
+Exportação Metro Android/iOS também passou; não equivale a build instalável.
