@@ -11,3 +11,11 @@ uploads
 # Credenciais de teste: documento exclusivamente local
 /CREDENCIAIS_TESTE.md
 secrets/
+
+# Generated native projects and private signing material
+/apps/mobile/android/
+/apps/mobile/ios/
+*.keystore
+*.jks
+*.p12
+*.mobileprovision

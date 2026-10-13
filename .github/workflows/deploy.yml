@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      build_android_test:
+        description: 'Build standalone Android APK with test signing (not for store publication)'
+        type: boolean
+        default: false
       create_test_admin:
         description: 'Create non-destructive test operator access'
         type: boolean
@@ -170,6 +174,49 @@ jobs:
         with:
           name: vox-native-bundles
           path: apps/mobile/dist
+          retention-days: 7
+
+  build-android-test:
+    name: Build standalone Android test APK
+    if: github.event_name == 'workflow_dispatch' && inputs.build_android_test
+    needs: verify-mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_PUBLIC_API_URL: https://www.voxcelular.com.br/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install native workspace
+        run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
+      - name: Generate Android project from Expo configuration
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+      - name: Build APK with embedded bundle and template test signing
+        working-directory: apps/mobile/android
+        run: ./gradlew app:assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=arm64-v8a,x86_64
+      - name: Verify APK exists and record checksum
+        working-directory: apps/mobile/android
+        run: |
+          test -s app/build/outputs/apk/release/app-release.apk
+          sha256sum app/build/outputs/apk/release/app-release.apk > app/build/outputs/apk/release/app-release.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vox-android-test-${{ github.sha }}
+          path: |
+            apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            apps/mobile/android/app/build/outputs/apk/release/app-release.apk.sha256
+          if-no-files-found: error
           retention-days: 7
 
   verify:

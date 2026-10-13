@@ -30,3 +30,6 @@ Referências: [Expo Router](https://docs.expo.dev/router/installation/),
 
 ## Associação de links
 O app declara os domínios www.voxcelular.com.br e voxcelular.com.br. A API gera os documentos públicos em /.well-known/assetlinks.json e /.well-known/apple-app-site-association. Configure MOBILE_ANDROID_SHA256 com fingerprints SHA-256 do certificado de assinatura (separados por vírgula) e MOBILE_APPLE_TEAM_ID com o Team ID de dez caracteres. São identificadores públicos, nunca arquivos/chaves privadas. Sem configuração, a associação fica vazia. Ativação na VPS requer o fluxo autorizado de configuração/Actions; verificar HTTPS sem redirect em ambos os hosts e instalar app assinado para validar. Não considerar este recurso verificado somente por compilar.
+
+## APK de teste no GitHub
+No workflow Build and Deploy Production, execução manual com build_android_test habilitado prepara APK standalone com assinatura de teste. Artefato vox-android-test-COMMIT fica disponível por sete dias se a compilação passar. Não é assinatura de distribuição, não publica na loja e ainda exige instalação/validação em aparelho. A execução manual também percorre o workflow normal de deploy autorizado. Builds ocorrem no GitHub, nunca na VPS. Referência: https://docs.expo.dev/guides/local-app-production/.
