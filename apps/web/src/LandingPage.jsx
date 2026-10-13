@@ -40,6 +40,11 @@ export default function LandingPage() {
         const loja = await api.get('/loja');
         if (active) setStoreConfig(loja.config);
         const items = await api.get(`/produtos?lojaId=${encodeURIComponent(loja.id)}`);
+        try {
+          const offlineModule = new URL('/offline-catalog.js', window.location.origin).href;
+          const { savePublicCatalog } = await import(/* @vite-ignore */ offlineModule);
+          if (active) savePublicCatalog(loja.id, items);
+        } catch { /* Offline storage is optional and must not block the live catalogue. */ }
         if (active) setProducts(items.map(p => ({ ...p, img: assetUrl(p.imgUrl) })));
       } catch (error) {
         if (active) setCatalogError(error.message);

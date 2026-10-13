@@ -365,6 +365,10 @@ jobs:
         run: node .github/scripts/test-pwa-browser.mjs
       - name: PWA update without interrupting active pages
         run: node .github/scripts/test-pwa-update-browser.mjs
+      - name: Bounded public catalogue offline
+        run: |
+          node .github/scripts/test-web-offline-catalog.mjs
+          node .github/scripts/test-web-offline-catalog-browser.mjs
       - name: Push worker privacy and safe notification destinations
         run: node .github/scripts/test-push-worker.mjs
       - name: Browser push consent and explicit permission flow
