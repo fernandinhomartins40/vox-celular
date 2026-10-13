@@ -417,3 +417,7 @@ Privacidade inclui componente de solicitação/status: consulta ao receber foco,
 
 ### Solicitação de encerramento na web — 13/10/2026
 Minha conta do cliente inclui seção de solicitação/status com senha atual, confirmação explícita, bloqueio de envio duplicado, consulta após erro e protocolo somente após resposta da API. Usa geração da sessão e escopo ativo para descartar resposta após troca de conta/desmontagem. Senha não é persistida e é limpa após tentativa. Texto informa que solicitação não é exclusão concluída. Build e lint passaram após corrigir atualização síncrona no effect. Interação/layout em navegador, gestão pelo lojista e encerramento efetivo continuam pendentes.
+
+
+### Formulário web de encerramento validado em Chromium — 13/10/2026
+Playwright executou UI de produção em 390/768/1440 px com API simulada: botão exige senha e confirmação, erro de senha aparece, consulta/retry limpa senha e confirmação, protocolo exibido após resposta e recuperado na recarga, sem overflow ou erros de página. Script incluído no job browser existente. API/PostgreSQL reais foram validados separadamente na entrega anterior; este teste não comprova integração browser-backend real, Safari, encerramento efetivo ou dispositivo nativo.
