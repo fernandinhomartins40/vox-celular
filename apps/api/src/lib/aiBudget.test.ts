@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { prisma } from './prisma.js';
 import { reserveAiBudget, settleAiBudget } from './aiBudget.js';
-if (process.env.AI_BUDGET_TEST !== 'ci-disposable') throw new Error('Run only against the disposable CI database');
+import { assertDisposableDatabase } from './disposableDatabase.js';
+assertDisposableDatabase(process.env.AI_BUDGET_TEST);
 const lojaId = `ci-ai-${randomUUID()}`;
 await prisma.loja.create({ data: { id: lojaId, nome: 'Disposable AI budget fixture', telefone: '', endereco: '', cidade: '', mapsUrl: '' } });
 try {

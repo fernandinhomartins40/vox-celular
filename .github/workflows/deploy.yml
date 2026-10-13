@@ -216,7 +216,7 @@ jobs:
       - name: Notification retention boundaries
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/notificationRetention.test.js
       - name: Notification retention with disposable PostgreSQL
-        run: docker compose --profile tools run --rm --no-deps -e NOTICE_RETENTION_TEST=ci-disposable migrate node dist/lib/notificationRetention.integration.test.js
+        run: docker compose --profile tools run --rm --no-deps -e CI=true -e NOTICE_RETENTION_TEST=ci-disposable migrate node dist/lib/notificationRetention.integration.test.js
       - name: Bounded AI selection cache
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/aiCache.test.js
       - name: Credential vault recovery and tenant context
@@ -226,7 +226,7 @@ jobs:
       - name: AI call orchestration and conservative failure accounting
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/aiRecommendation.test.js
       - name: AI budget concurrency with real PostgreSQL
-        run: docker compose --profile tools run --rm --no-deps -e AI_BUDGET_TEST=ci-disposable migrate node dist/lib/aiBudget.test.js
+        run: docker compose --profile tools run --rm --no-deps -e CI=true -e AI_BUDGET_TEST=ci-disposable migrate node dist/lib/aiBudget.test.js
       - name: Official operator sources and editorial guide validation
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/operatorGuides.test.js
       - name: Product search and customer contact regression tests
