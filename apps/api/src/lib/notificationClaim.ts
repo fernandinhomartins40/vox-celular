@@ -8,8 +8,8 @@ export async function claimNotification(now = new Date()) {
     const rows = await tx.$queryRaw<{ id: string }[]>`
       SELECT n.id FROM "NotificacaoCliente" n
       JOIN "Cliente" c ON c.id = n."clienteId" AND c."lojaId" = n."lojaId"
-      WHERE n.status = 'PENDENTE' AND n."proximaTentativaEm" <= ${now}
-        AND n."expiresAt" > ${now} AND n.tentativas < 5 AND c.notificacoes = true
+      WHERE n.status = 'PENDENTE' AND n."proximaTentativaEm" <= ${now.toISOString()}::timestamp
+        AND n."expiresAt" > ${now.toISOString()}::timestamp AND n.tentativas < 5 AND c.notificacoes = true
         AND EXISTS (SELECT 1 FROM "AssinaturaPush" s WHERE s."clienteId" = c.id AND s."lojaId" = n."lojaId" AND s.ativo = true)
       ORDER BY n."proximaTentativaEm", n.id
       LIMIT 1 FOR UPDATE OF n SKIP LOCKED`;

@@ -6,7 +6,7 @@ export async function expireNotifications(now = new Date()) {
   return prisma.$transaction(async tx => {
     const events = await tx.$queryRaw<{ id: string }[]>`
       SELECT id FROM "NotificacaoCliente"
-      WHERE status IN ('PENDENTE', 'PROCESSANDO') AND "expiresAt" <= ${now}
+      WHERE status IN ('PENDENTE', 'PROCESSANDO') AND "expiresAt" <= ${now.toISOString()}::timestamp
       ORDER BY "expiresAt", id LIMIT 25 FOR UPDATE SKIP LOCKED`;
     if (!events.length) return 0;
     const ids = events.map(event => event.id);

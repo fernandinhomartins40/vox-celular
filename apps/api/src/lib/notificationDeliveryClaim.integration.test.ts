@@ -12,6 +12,10 @@ assertDisposableDatabase(process.env.PUSH_DELIVERY_TEST);
 const id = `ci-delivery-${randomUUID()}`;
 const now = new Date('2026-10-12T12:00:00Z');
 try {
+  // Prisma stores DateTime as UTC wall time (timestamp without time zone).
+  // A non-UTC session catches accidental timestamptz comparisons in raw SQL.
+  await prisma.$executeRawUnsafe("ALTER DATABASE voxcelular SET TIME ZONE 'America/Sao_Paulo'");
+  await prisma.$disconnect(); // Apply the setting to every connection in the pool.
   await prisma.loja.create({ data: { id, nome: 'Delivery fixture', telefone: '', endereco: '', cidade: '', mapsUrl: '' } });
   await prisma.usuario.create({ data: { id, lojaId: id, nome: 'Fixture', email: `${id}@example.invalid`, senhaHash: 'not-a-login-hash', cliente: { create: { id, lojaId: id, telefone: '', cidade: '', notificacoes: true } } } });
   await prisma.assinaturaPush.create({ data: { id, lojaId: id, clienteId: id, endpointHash: id, credenciais: 'fixture-not-real-credentials' } });
