@@ -301,6 +301,7 @@ model OrcamentoServico {
   id String @id @default(cuid())
   solicitacaoId String
   versao Int
+  chaveIdempotencia String?
   valorCentavos Int
   descricao String
   validoAte DateTime
@@ -311,6 +312,7 @@ model OrcamentoServico {
   solicitacao SolicitacaoServico @relation(fields: [solicitacaoId], references: [id], onDelete: Restrict)
   emitidoPor Usuario @relation(fields: [emitidoPorId], references: [id], onDelete: Restrict)
   @@unique([solicitacaoId, versao])
+  @@unique([solicitacaoId, chaveIdempotencia])
 }
 
 model HorarioServico {

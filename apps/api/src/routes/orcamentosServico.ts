@@ -11,7 +11,7 @@ orcamentosServicoRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
     res.set('Cache-Control', 'no-store').json(rows);
   } catch { res.status(503).json({ error: 'Não foi possível consultar orçamentos.' }); }
 });
-const proposal = z.object({ solicitacaoId: z.string().min(1).max(100), valorCentavos: z.number().int().min(0).max(100000000), descricao: z.string().trim().min(5).max(2000), validoAte: z.string().datetime() }).strict().refine(value => Date.parse(value.validoAte) > Date.now() && Date.parse(value.validoAte) <= Date.now() + 90 * 86400000, 'Use validade futura de até 90 dias.');
+const proposal = z.object({ chaveIdempotencia: z.string().uuid(), solicitacaoId: z.string().min(1).max(100), valorCentavos: z.number().int().min(0).max(100000000), descricao: z.string().trim().min(5).max(2000), validoAte: z.string().datetime() }).strict().refine(value => Date.parse(value.validoAte) > Date.now() && Date.parse(value.validoAte) <= Date.now() + 90 * 86400000, 'Use validade futura de até 90 dias.');
 orcamentosServicoRouter.post('/', requireLojista, async (req: AuthRequest, res) => {
   const parsed = proposal.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'Confira valor, descrição e validade do orçamento.' }); return; }
@@ -21,6 +21,11 @@ orcamentosServicoRouter.post('/', requireLojista, async (req: AuthRequest, res) 
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${data.solicitacaoId}))`;
       const request = await tx.solicitacaoServico.findFirst({ where: { id: data.solicitacaoId, lojaId: req.user!.lojaId } });
       if (!request) throw new Error('MISSING');
+      const existing = await tx.orcamentoServico.findUnique({ where: { solicitacaoId_chaveIdempotencia: { solicitacaoId: request.id, chaveIdempotencia: data.chaveIdempotencia } } });
+      if (existing) {
+        if (existing.valorCentavos !== data.valorCentavos || existing.descricao !== data.descricao || existing.validoAte.getTime() !== Date.parse(data.validoAte)) throw new Error('KEY_REUSED');
+        return { id: existing.id, versao: existing.versao, status: existing.status };
+      }
       if (!['EM_ANALISE', 'AGUARDANDO_CLIENTE'].includes(request.status)) throw new Error('STATE');
       const last = await tx.orcamentoServico.findFirst({ where: { solicitacaoId: request.id }, orderBy: { versao: 'desc' } });
       if ((last?.versao || 0) >= 20) throw new Error('LIMIT');

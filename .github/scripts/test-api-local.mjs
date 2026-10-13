@@ -148,8 +148,12 @@ try {
   const ticket = (await request('/servicos/solicitacoes', customer.token, { servicoId: service.id, chaveIdempotencia: randomUUID(), aparelho: 'Fixture phone', problema: 'Quote integration fixture' }, 'POST', [201])).data;
   const ticketStatus = `/servicos/solicitacoes/${ticket.id}/status`;
   await request(ticketStatus, admin.token, { status: 'EM_ANALISE', mensagem: 'Avaliação fixture' }, 'PATCH');
-  const proposal = { solicitacaoId: ticket.id, valorCentavos: 12550, descricao: 'Troca de componente fixture', validoAte: new Date(Date.now() + 86400000).toISOString() };
+  const proposal = { chaveIdempotencia: randomUUID(), solicitacaoId: ticket.id, valorCentavos: 12550, descricao: 'Troca de componente fixture', validoAte: new Date(Date.now() + 86400000).toISOString() };
   const quote = (await request('/orcamentos-servico', admin.token, proposal, 'POST', [201])).data;
+  const retries = await Promise.all([request('/orcamentos-servico', admin.token, proposal, 'POST', [201]), request('/orcamentos-servico', admin.token, proposal, 'POST', [201])]);
+  assert.ok(retries.every(result => result.data.id === quote.id));
+  assert.equal(await prisma.orcamentoServico.count({ where: { solicitacaoId: ticket.id } }), 1);
+  await request('/orcamentos-servico', admin.token, { ...proposal, valorCentavos: 20000 }, 'POST', [409]);
   await request(ticketStatus, admin.token, { status: 'EM_EXECUCAO', mensagem: 'Sem aceite fixture' }, 'PATCH', [409]);
   assert.deepEqual((await request(`/orcamentos-servico?solicitacaoId=${ticket.id}`, other.token)).data, []);
   assert.equal((await request(`/orcamentos-servico?solicitacaoId=${ticket.id}`, customer.token)).data[0].valorCentavos, 12550);
