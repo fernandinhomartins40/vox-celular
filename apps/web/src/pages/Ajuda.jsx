@@ -21,7 +21,11 @@ export default function Ajuda() {
   }, []);
   useEffect(() => {
     let active = true;
-    api.get('/loja').then(store => api.get(`/guias?lojaId=${encodeURIComponent(store.id)}`)).then(rows => { if (active) { setGuides(rows); setError(''); } }).catch(e => { if (active) setError(e.message); });
+    api.get('/loja').then(async store => {
+      const rows = await api.get(`/guias?lojaId=${encodeURIComponent(store.id)}`);
+      try { const moduleUrl = new URL('/offline-guides.js', window.location.origin).href; const { savePublicGuides } = await import(/* @vite-ignore */ moduleUrl); if (active) savePublicGuides(store.id, rows); } catch { /* Offline copy is optional. */ }
+      return rows;
+    }).then(rows => { if (active) { setGuides(rows); setError(''); } }).catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
   }, [reload]);
   const available = (guides || []).filter(guide => guide.operadora === operator && guide.topico === topic && Date.parse(guide.validoAte) > now);

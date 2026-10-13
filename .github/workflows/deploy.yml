@@ -368,6 +368,7 @@ jobs:
       - name: Bounded public catalogue offline
         run: |
           node .github/scripts/test-web-offline-catalog.mjs
+          node .github/scripts/test-web-offline-guides.mjs
           node .github/scripts/test-web-offline-catalog-browser.mjs
       - name: Push worker privacy and safe notification destinations
         run: node .github/scripts/test-push-worker.mjs

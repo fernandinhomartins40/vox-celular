@@ -1,6 +1,6 @@
 /* Only public offline resources: never cache API, credentials or customer pages. */
-const CACHE = 'vox-offline-v2';
-const PUBLIC_FILES = ['/offline.html', '/brand/icon-192.png', '/offline-catalog.js'];
+const CACHE = 'vox-offline-v3';
+const PUBLIC_FILES = ['/offline.html', '/brand/icon-192.png', '/offline-catalog.js', '/offline-guides.js'];
 const PUSH_DESTINATIONS = Object.freeze({
   '/pedidos': '/area-cliente/pedidos',
   '/servicos': '/area-cliente/servicos',
