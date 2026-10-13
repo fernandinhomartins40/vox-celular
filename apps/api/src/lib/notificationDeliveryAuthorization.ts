@@ -1,7 +1,8 @@
 import { prisma } from './prisma.js';
 
-type AuthorizedDelivery = {
+export type AuthorizedDelivery = {
   id: string;
+  notificacaoId: string;
   lojaId: string;
   clienteId: string;
   assinaturaId: string;
@@ -18,7 +19,7 @@ type AuthorizedDelivery = {
 export async function authorizeNotificationDelivery(id: string, now = new Date()): Promise<AuthorizedDelivery | null> {
   if (!id || id.length > 200 || !Number.isFinite(now.getTime())) throw new Error('INVALID_NOTIFICATION_DELIVERY');
   const rows = await prisma.$queryRaw<AuthorizedDelivery[]>`
-    SELECT d.id, n."lojaId", n."clienteId", d."assinaturaId", s.credenciais,
+    SELECT d.id, d."notificacaoId", n."lojaId", n."clienteId", d."assinaturaId", s.credenciais,
       n.titulo, n.mensagem, n.destino, n."expiresAt"
     FROM "EntregaPush" d
     JOIN "NotificacaoCliente" n ON n.id = d."notificacaoId"

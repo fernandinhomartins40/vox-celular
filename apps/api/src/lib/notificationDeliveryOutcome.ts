@@ -4,6 +4,7 @@ import type { PushTransportResult } from './webPushTransport.js';
 export function notificationDeliveryOutcome(attempt: number, result: PushTransportResult, expiresAt: Date, now = new Date()) {
   if (!Number.isInteger(attempt) || attempt < 1 || attempt > 5 || !Number.isFinite(expiresAt.getTime()) || !Number.isFinite(now.getTime())) throw new Error('INVALID_DELIVERY_OUTCOME');
   switch (result.status) {
+    case 'cancelled': return { status: 'CANCELADA' };
     case 'accepted': return { status: 'ACEITA', confirmadaEm: now };
     case 'invalid-subscription': return { status: 'INVALIDA' };
     case 'ambiguous': return { status: 'INCERTA' };

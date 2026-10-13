@@ -3,11 +3,11 @@ import { createHash } from 'node:crypto';
 import { webPushSubscriptionSchema } from './pushSubscription.js';
 
 export type PushTransportResult =
-  | { status: 'accepted' | 'invalid-subscription' | 'temporary' | 'rejected' | 'ambiguous' | 'expired' };
+  | { status: 'accepted' | 'invalid-subscription' | 'temporary' | 'rejected' | 'ambiguous' | 'expired' | 'cancelled' };
 type Notice = { id: string; destino: string; expiresAt: Date };
 type Configuration = { subject: string; publicKey: string; privateKey: string };
 const destinations = ['/pedidos', '/servicos', '/beneficios'];
-function validSubject(value: string) {
+export function validPushSubject(value: string) {
   try {
     const url = new URL(value);
     if (url.protocol === 'mailto:') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url.pathname) && !url.search && !url.hash;
@@ -19,7 +19,7 @@ function validSubject(value: string) {
 // after network errors: the remote service may already have accepted the message.
 export async function sendWebPush(subscription: unknown, notice: Notice, config: Configuration, fetchImpl: typeof fetch = fetch, now = new Date()): Promise<PushTransportResult> {
   const parsed = webPushSubscriptionSchema.safeParse(subscription);
-  if (!parsed.success || !/^[a-zA-Z0-9_-]{1,100}$/.test(notice.id) || !destinations.includes(notice.destino) || !validSubject(config.subject) || !Number.isFinite(now.getTime()) || !Number.isFinite(notice.expiresAt.getTime())) throw new Error('INVALID_PUSH_TRANSPORT_INPUT');
+  if (!parsed.success || !/^[a-zA-Z0-9_-]{1,100}$/.test(notice.id) || !destinations.includes(notice.destino) || !validPushSubject(config.subject) || !Number.isFinite(now.getTime()) || !Number.isFinite(notice.expiresAt.getTime())) throw new Error('INVALID_PUSH_TRANSPORT_INPUT');
   const remaining = Math.floor((notice.expiresAt.getTime() - now.getTime()) / 1000);
   if (remaining <= 0) return { status: 'expired' };
   const request = webpush.generateRequestDetails(parsed.data, JSON.stringify({ id: notice.id, destino: notice.destino }), {
