@@ -504,3 +504,7 @@ Nova rota administrativa/menu Novidades permite criar rascunho, editar texto/fon
 
 
 Correção do registro anterior: o build inicial passou, mas lint falhou por Date.now durante renderização; commit d9078d6 foi enviado antes da correção. Editor agora calcula vencimento usando instante capturado na consulta, sem função impura no render. Lint e build foram executados novamente e terminaram com código zero após ajuste. Teste interativo ainda pendente.
+
+
+### Editor editorial validado em Chromium — 13/10/2026
+Playwright com API simulada em 390/768/1440 passou: rascunho com datas ISO, prévia literal sem script, campos preservados ao editar, publicação e retorno a rascunho. Sem overflow/erros de página. Teste incluído no job browser existente. API/PostgreSQL editorial foi validada separadamente; não representa integração UI-backend real, conteúdo editorial real ou auditoria de responsável concluídos.
