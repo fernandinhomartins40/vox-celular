@@ -331,3 +331,6 @@ Serviço interno claimNotification seleciona um evento pendente/valido com conse
 
 ### Registros por assinatura para entrega
 Migração aditiva EntregaPush cria chave única aviso/assinatura, tentativas, próximo envio e confirmação. Claim prepara até dez registros na mesma transação, skipDuplicates sem redefinir estado existente. Remover aviso/assinatura limpa registros relacionados por cascade; não altera pedidos/serviços. Prisma generate e build final passaram. Transporte, confirmação real, recuperação e testes SQL concorrentes continuam pendentes; esquema não garante sozinho ausência de duplicação remota.
+
+### Revogação das entregas por assinatura
+Revogar notificações cancela EntregaPush PENDENTE e PROCESSANDO do titular e da loja na mesma transação que desativa assinaturas e cancela avisos. O teste runtime cria dois eventos distintos para respeitar a chave única aviso/assinatura e verifica ambos os cancelamentos. Build API, sintaxe do teste e git diff --check passaram localmente; execução da integração PostgreSQL ainda pendente. Essa alteração não constitui transporte push nem pode recolher uma mensagem já enviada.

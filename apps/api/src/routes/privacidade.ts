@@ -27,6 +27,7 @@ privacidadeRouter.put('/preferencias', requireAuth, authLimits, async (req: Auth
       const { personalizacao, notificacoes } = parsed.data;
       if (!notificacoes) await tx.notificacaoCliente.updateMany({ where: { clienteId: cliente.id, lojaId: req.user!.lojaId, status: { in: ['PENDENTE', 'PROCESSANDO'] } }, data: { status: 'CANCELADA' } });
       if (!notificacoes) await tx.assinaturaPush.updateMany({ where: { clienteId: cliente.id, lojaId: req.user!.lojaId, ativo: true }, data: { ativo: false } });
+      if (!notificacoes) await tx.entregaPush.updateMany({ where: { notificacao: { clienteId: cliente.id, lojaId: req.user!.lojaId }, status: { in: ['PENDENTE', 'PROCESSANDO'] } }, data: { status: 'CANCELADA' } });
       if (cliente.personalizacao !== personalizacao || cliente.notificacoes !== notificacoes || cliente.versaoPrivacidade !== aviso) {
         await tx.consentimentoCliente.create({ data: { clienteId: cliente.id, personalizacao, notificacoes, versaoAviso: aviso } });
         return tx.cliente.update({ where: { id: cliente.id }, data: { personalizacao, notificacoes, versaoPrivacidade: aviso, preferenciasAtualizadasEm: new Date() }, select: preferenceFields });

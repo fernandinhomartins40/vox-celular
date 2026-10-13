@@ -548,6 +548,9 @@ await json('/api/push/web', { token: admin.token, status: 403 });
 await json('/api/push/web', { method: 'PUT', token: customer.token, body: pushFixture });
 const registeredPush = await json('/api/push/web', { token: customer.token });
 assert.equal(registeredPush.length, 1);
+const retainedNoticeId = sql(`SELECT id FROM "NotificacaoCliente" WHERE "clienteId"='${me.cliente.id}' LIMIT 1`);
+sql(`INSERT INTO "NotificacaoCliente" (id,"lojaId","clienteId","chaveEvento",titulo,mensagem,destino,status,"expiresAt") SELECT 'ci-processing-notice',"lojaId","clienteId",'ci-processing-notice',titulo,mensagem,destino,'PROCESSANDO',NOW()+INTERVAL '1 day' FROM "NotificacaoCliente" WHERE id='${retainedNoticeId}';`);
+sql(`INSERT INTO "EntregaPush" (id,"notificacaoId","assinaturaId",status) VALUES ('ci-pending-delivery','${retainedNoticeId}','${registeredPush[0].id}','PENDENTE'), ('ci-processing-delivery','ci-processing-notice','${registeredPush[0].id}','PROCESSANDO');`);
 const pushExport = await json('/api/privacidade/exportar', { token: customer.token });
 assert.equal(pushExport.assinaturasPush.length, 1);
 assert.equal(pushExport.assinaturasPush[0].id, registeredPush[0].id);
@@ -561,5 +564,7 @@ await json(`/api/push/web/${registeredPush[0].id}`, { method: 'DELETE', token: o
 assert.equal((await json('/api/push/web', { token: customer.token })).length, 1);
 await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' } });
 assert.equal((await json('/api/push/web', { token: customer.token }))[0].ativo, false);
+assert.equal(sql(`SELECT status FROM "EntregaPush" WHERE id='ci-pending-delivery'`), 'CANCELADA');
+assert.equal(sql(`SELECT status FROM "EntregaPush" WHERE id='ci-processing-delivery'`), 'CANCELADA');
 await json(`/api/push/web/${registeredPush[0].id}`, { method: 'DELETE', token: customer.token });
 assert.deepEqual(await json('/api/push/web', { token: customer.token }), []);
