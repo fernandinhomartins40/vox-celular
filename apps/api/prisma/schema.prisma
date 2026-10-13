@@ -34,6 +34,15 @@ model Loja {
   notificacoes NotificacaoCliente[]
 }
 
+model SolicitacaoEncerramentoConta {
+  id String @id @default(cuid())
+  clienteId String @unique
+  status String @default("SOLICITADA")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+}
+
 model NotificacaoCliente {
   id String @id @default(cuid())
   lojaId String
@@ -186,6 +195,7 @@ model Cliente {
   filaNotificacoes NotificacaoCliente[]
   assinaturasPush AssinaturaPush[]
   solicitacoesServico SolicitacaoServico[]
+  encerramentoConta SolicitacaoEncerramentoConta?
   @@index([lojaId, createdAt])
 }
 

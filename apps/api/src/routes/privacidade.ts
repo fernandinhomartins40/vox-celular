@@ -3,10 +3,36 @@ import { prisma } from '../lib/prisma.js';
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
 
 export const privacidadeRouter = Router();
 const preferenceFields = { personalizacao: true, notificacoes: true, versaoPrivacidade: true, preferenciasAtualizadasEm: true } as const;
 const aviso = '2026-10-12';
+privacidadeRouter.get('/encerramento', requireAuth, async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  try {
+    const row = await prisma.solicitacaoEncerramentoConta.findFirst({ where: { cliente: { usuarioId: req.user!.userId, lojaId: req.user!.lojaId } }, select: { id: true, status: true, createdAt: true } });
+    res.set('Cache-Control', 'no-store').json({ solicitacao: row });
+  } catch { res.status(503).json({ error: 'Não foi possível consultar a solicitação.' }); }
+});
+privacidadeRouter.post('/encerramento', requireAuth, authLimits, async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  const parsed = z.object({ senhaAtual: z.string().min(1).max(72), confirmacao: z.literal('SOLICITAR_ENCERRAMENTO') }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Confirme a solicitação e informe sua senha atual.' }); return; }
+  try {
+    const user = await prisma.usuario.findFirst({ where: { id: req.user!.userId, lojaId: req.user!.lojaId }, select: { senhaHash: true } });
+    if (!user || !await bcrypt.compare(parsed.data.senhaAtual, user.senhaHash)) { res.status(400).json({ error: 'Senha atual incorreta.' }); return; }
+    const row = await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
+      const client = await tx.cliente.findFirstOrThrow({ where: { usuarioId: req.user!.userId, lojaId: req.user!.lojaId } });
+      // Recheck password identity after locking, so a concurrent password change
+      // cannot authorize this request with the previous password.
+      if (!await tx.usuario.findFirst({ where: { id: req.user!.userId, senhaHash: user.senhaHash } })) throw new Error('ACCOUNT_CHANGED');
+      return tx.solicitacaoEncerramentoConta.upsert({ where: { clienteId: client.id }, create: { clienteId: client.id }, update: {}, select: { id: true, status: true, createdAt: true } });
+    });
+    res.set('Cache-Control', 'no-store').json({ solicitacao: row, mensagem: 'Solicitação registrada. A conta ainda não foi encerrada; os registros comerciais foram preservados.' });
+  } catch { res.status(409).json({ error: 'Não foi possível registrar. Entre novamente e tente com a mesma conta.' }); }
+});
 privacidadeRouter.get('/preferencias', requireAuth, async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
   try {

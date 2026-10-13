@@ -46,6 +46,15 @@ try {
   const other = await register('cliente-two');
   await request('/dashboard', customer.token, null, 'GET', [403]);
   const me = (await request('/auth/me', customer.token)).data;
+  assert.equal((await request('/privacidade/encerramento', customer.token)).data.solicitacao, null);
+  await request('/privacidade/encerramento', admin.token, null, 'GET', [403]);
+  await request('/privacidade/encerramento', customer.token, { senhaAtual: 'wrong', confirmacao: 'SOLICITAR_ENCERRAMENTO' }, 'POST', [400]);
+  const closure = { senhaAtual: 'ci-http-client-password-123', confirmacao: 'SOLICITAR_ENCERRAMENTO' };
+  const closures = await Promise.all(Array.from({ length: 2 }, () => request('/privacidade/encerramento', customer.token, closure)));
+  assert.equal(closures[0].data.solicitacao.id, closures[1].data.solicitacao.id);
+  assert.equal(await prisma.solicitacaoEncerramentoConta.count({ where: { clienteId: me.cliente.id } }), 1);
+  assert.equal((await request('/privacidade/encerramento', other.token)).data.solicitacao, null);
+  await request('/auth/me', customer.token); // Request alone must not claim completed deletion.
   const product = (await request('/produtos', admin.token, { nome: 'Local accessory', sub: 'Integration', categoria: 'Acessórios', preco: 10.25, descricao: 'Disposable HTTP fixture', estoque: 1 }, 'POST', [201])).data;
   assert.equal((await request(`/produtos/${product.id}?lojaId=${loja.id}`)).data.id, product.id);
   await request(`/produtos/${product.id}?lojaId=other-store`, null, null, 'GET', [404]);

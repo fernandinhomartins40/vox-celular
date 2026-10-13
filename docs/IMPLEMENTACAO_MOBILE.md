@@ -405,3 +405,7 @@ Registro do service worker detecta worker waiting ou nova instalação concluíd
 
 ### Atualização PWA validada em Chromium real — 13/10/2026
 Novo teste serve duas versões do worker real em origem local exclusiva e abre duas abas. Primeira instalação não exibe aviso; update instala worker waiting, exibe aviso responsivo, mantém marcador da página (sem reload), permite dispensar e preserva waiting. Após fechar ambas as abas, reabertura verifica ativação sem aviso. Execução Playwright Chromium terminou com código zero e sem erros de página. Teste adicionado ao job browser existente, usando mesmo servidor/ferramentas. Safari/iOS e checkout interativo completo continuam pendentes; este teste comprova ciclo do worker e preservação de página, não compra real.
+
+
+### Solicitação autenticada de encerramento — 13/10/2026
+Nova entidade única por cliente com FK restritiva e status SOLICITADA, sem exclusão automática ou alegação de anonimização concluída. GET/POST privacidade/encerramento exigem cliente e isolam loja/titular. POST exige senha atual, confirmação explícita e limite de tentativas; transação revalida hash e reaproveita solicitação existente. Resposta esclarece conta ainda ativa e preservação de registros. PostgreSQL real aplicou 23 migrations; build e suíte HTTP passaram, incluindo senha incorreta, papel lojista, duas solicitações simultâneas únicas, isolamento e conta preservada. UI web/native, tratamento pelo lojista, decisão de retenção e encerramento efetivo permanecem pendentes; esta entrega é somente a primeira parte do fluxo.
