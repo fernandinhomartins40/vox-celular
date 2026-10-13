@@ -457,3 +457,7 @@ Modal público consulta relações da loja/produto e mostra nome, observação e
 
 ### Compatibilidade web validada em navegador — 13/10/2026
 Playwright Chromium em 390/768/1440 com API simulada passou: detalhe exibe observação aprovada, botão consulta produto relacionado e troca modal, item sem cadastro mostra desconhecimento e erro 503 aparece como falha sem alegar ausência. URL consultada usa loja explícita; sem overflow/erros de página. Script incluído no job browser existente. Não comprova UI com backend real nem interação nativa/Safari; gestão e revisão de compatibilidade seguem pendentes.
+
+
+### Compatibilidade vinculada aos atributos conferidos — 13/10/2026
+Aprovação guarda cópia dos atributos técnicos dos dois produtos. Consulta compara conteúdo com ordenação estável de campos e omite relações com atributos divergentes; preço/estoque não invalidam conferência. Reaprovar atualiza cópias/responsável/data. Relações anteriores à migration recebem cópias vazias e exigem conferência correspondente antes de aparecer com atributos tipados. Se atributos forem restaurados exatamente ao conteúdo aprovado, a conferência original volta a corresponder; não há inferência por nome. PostgreSQL real aplicou 26 migrations e suíte HTTP passou para alteração, reaprovação, mudança só de preço e DELETE restrito ao lojista. Build passou. Gestão e indicação administrativa de relações desatualizadas continuam pendentes.

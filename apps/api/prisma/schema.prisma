@@ -351,6 +351,8 @@ model CompatibilidadeProduto {
   acessorioId String
   aparelhoId String
   observacao String
+  atributosAcessorio Json @default("{}")
+  atributosAparelho Json @default("{}")
   aprovadoPorId String
   aprovadoEm DateTime @default(now())
   acessorio Produto @relation("AcessorioCompativel", fields: [acessorioId], references: [id], onDelete: Cascade)

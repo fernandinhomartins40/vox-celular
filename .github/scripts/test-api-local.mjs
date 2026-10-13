@@ -82,9 +82,17 @@ try {
   const pairs = (await request(`/compatibilidades?lojaId=${loja.id}&produtoId=${phone.id}`)).data;
   assert.equal(pairs.length, 1); assert.equal(pairs[0].acessorio.id, product.id);
   assert.equal(pairs[0].aprovadoPorId, undefined);
+  await prisma.produto.update({ where: { id: phone.id }, data: { atributosTecnicos: { tipo: 'celular', modelo: 'Changed fixture' } } });
+  assert.deepEqual((await request(`/compatibilidades?lojaId=${loja.id}&produtoId=${phone.id}`)).data, []);
+  await request('/compatibilidades', admin.token, compatibility, 'PUT');
+  await prisma.produto.update({ where: { id: phone.id }, data: { preco: 120 } });
+  assert.equal((await request(`/compatibilidades?lojaId=${loja.id}&produtoId=${phone.id}`)).data.length, 1);
   assert.deepEqual((await request(`/compatibilidades?lojaId=other-store&produtoId=${phone.id}`)).data, []);
   await prisma.produto.update({ where: { id: phone.id }, data: { ativo: false } });
   assert.deepEqual((await request(`/compatibilidades?lojaId=${loja.id}&produtoId=${product.id}`)).data, []);
+  await request(`/compatibilidades/${savedPair.id}`, customer.token, null, 'DELETE', [403]);
+  await request(`/compatibilidades/${savedPair.id}`, admin.token, null, 'DELETE');
+  assert.equal(await prisma.compatibilidadeProduto.count({ where: { id: savedPair.id } }), 0);
   await Promise.all(Array.from({ length: 3 }, () => request(`/favoritos/${product.id}`, customer.token, {}, 'PUT')));
   assert.equal((await request('/favoritos', customer.token)).data.length, 1, 'Repeated favorite must remain unique');
   assert.deepEqual((await request('/favoritos', other.token)).data, []);
