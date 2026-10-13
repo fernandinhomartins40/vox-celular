@@ -477,3 +477,7 @@ Resultados web consultam relações explícitas da loja/produto usando component
 
 ### Revisar conferência sem refazer seleção — 13/10/2026
 Editor oferece Revisar conferência para relação cujo produto relacionado continua elegível. Ação preenche seleção/observação e foca o texto; nenhuma aprovação é enviada até confirmação explícita. Teste Chromium existente ampliado passou em três larguras com API simulada: preenche dados anteriores, não envia automaticamente e reaprovando atualiza lista. Build e lint passaram. Novo goal criado após remoção do anterior, mantendo escopo integral e dependências. Backend, dispositivo e demais pendências continuam conforme auditoria; não há deploy comprovado deste incremento.
+
+
+### Base editorial de novidades — 13/10/2026
+Nova entidade por loja com título/resumo/texto, fonte HTTPS, revisão, validade e rascunho/publicação. CRUD inicial: listar admin, criar, editar; consulta pública lista 30 resumos vigentes e detalhe somente publicado/vigente da loja explícita. Validação exige revisão não futura, validade posterior e conteúdo publicado não vencido; nenhum HTML é interpretado nem fonte externa buscada. Criação serializada limita 100 registros por loja. PostgreSQL real aplicou 27 migrations; build e suíte HTTP passaram para papel cliente, rascunho oculto, publicação/detalhe, loja divergente e validade expirada. Interfaces editorial/web/native, auditoria do responsável, remoção/arquivo e conteúdo real continuam pendentes. Não declara módulo integral concluído.

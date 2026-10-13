@@ -46,6 +46,17 @@ try {
   const other = await register('cliente-two');
   await request('/dashboard', customer.token, null, 'GET', [403]);
   const me = (await request('/auth/me', customer.token)).data;
+  const newsBody = { titulo: 'Novidade fixture', resumo: 'Conteúdo editorial de integração', texto: 'Texto de fixture sem publicação real.', fonte: 'https://example.invalid/source', revisadoEm: new Date(Date.now() - 1000).toISOString(), validoAte: new Date(Date.now() + 86400000).toISOString(), publicado: false };
+  await request('/novidades', customer.token, newsBody, 'POST', [403]);
+  const news = (await request('/novidades', admin.token, newsBody, 'POST', [201])).data;
+  assert.deepEqual((await request(`/novidades?lojaId=${loja.id}`)).data, []);
+  await request(`/novidades/${news.id}?lojaId=${loja.id}`, null, null, 'GET', [404]);
+  await request(`/novidades/${news.id}`, admin.token, { ...newsBody, publicado: true }, 'PUT');
+  assert.equal((await request(`/novidades?lojaId=${loja.id}`)).data.length, 1);
+  assert.equal((await request(`/novidades/${news.id}?lojaId=${loja.id}`)).data.texto, newsBody.texto);
+  await request(`/novidades/${news.id}?lojaId=other-store`, null, null, 'GET', [404]);
+  await prisma.novidade.update({ where: { id: news.id }, data: { validoAte: new Date(Date.now() - 1000) } });
+  assert.deepEqual((await request(`/novidades?lojaId=${loja.id}`)).data, []);
   assert.equal((await request('/privacidade/encerramento', customer.token)).data.solicitacao, null);
   await request('/privacidade/encerramento', admin.token, null, 'GET', [403]);
   await request('/privacidade/encerramento', customer.token, { senhaAtual: 'wrong', confirmacao: 'SOLICITAR_ENCERRAMENTO' }, 'POST', [400]);
