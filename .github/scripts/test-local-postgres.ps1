@@ -34,6 +34,7 @@ try {
   foreach ($test in @('disposableDatabase.test', 'aiBudget.test', 'notificationRetention.integration.test', 'notificationDeliveryClaim.integration.test')) {
     Run-Native 'node' @("apps/api/dist/lib/$test.js")
   }
+  Run-Native 'node' @('.github/scripts/test-api-local.mjs')
 } finally {
   try {
     if ($started) { Run-Native (Join-Path $bin 'pg_ctl.exe') @('-D', $data, '-m', 'fast', '-w', 'stop') }
