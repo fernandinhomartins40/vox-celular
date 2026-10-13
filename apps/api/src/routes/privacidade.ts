@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { requireAuth, requireLojista, AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
@@ -8,6 +8,22 @@ import bcrypt from 'bcryptjs';
 export const privacidadeRouter = Router();
 const preferenceFields = { personalizacao: true, notificacoes: true, versaoPrivacidade: true, preferenciasAtualizadasEm: true } as const;
 const aviso = '2026-10-12';
+privacidadeRouter.post('/encerramento/:id/analisar', requireLojista, async (req: AuthRequest, res) => {
+  const id = z.string().min(1).max(100).safeParse(req.params.id);
+  if (!id.success || !z.object({}).strict().safeParse(req.body).success) { res.status(400).json({ error: 'Confira a solicitação.' }); return; }
+  try {
+    const result = await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id.data}))`;
+      const row = await tx.solicitacaoEncerramentoConta.findFirst({ where: { id: id.data, cliente: { lojaId: req.user!.lojaId } } });
+      if (!row) return null;
+      if (row.status === 'EM_ANALISE') return row;
+      if (row.status !== 'SOLICITADA') throw new Error('INVALID_TRANSITION');
+      return tx.solicitacaoEncerramentoConta.update({ where: { id: row.id }, data: { status: 'EM_ANALISE' }, select: { id: true, status: true, createdAt: true } });
+    });
+    if (!result) { res.status(404).json({ error: 'Solicitação não encontrada nesta loja.' }); return; }
+    res.set('Cache-Control', 'no-store').json({ solicitacao: { id: result.id, status: result.status, createdAt: result.createdAt } });
+  } catch { res.status(409).json({ error: 'Esta solicitação não pode iniciar análise nesta etapa.' }); }
+});
 privacidadeRouter.get('/encerramento', requireAuth, async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
   try {

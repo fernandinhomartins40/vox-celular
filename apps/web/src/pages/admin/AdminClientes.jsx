@@ -161,7 +161,7 @@ export default function AdminClientes() {
             </div>
             <div className="overflow-y-auto p-6 space-y-5">
               <div className="panel-filter-bar"><Link className="panel-secondary-button" to={`/admin/pedidos?cliente=${encodeURIComponent(selecionado.id)}`}>Ver pedidos deste cliente</Link>{brazilPhone(selecionado.telefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(selecionado.telefone)}?text=${encodeURIComponent(`Olá ${selecionado.nome}! Aqui é da Vox Celular.`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Falar com cliente</a>}</div>
-              {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p><p>O encerramento ainda não foi concluído. Preserve os registros comerciais enquanto a solicitação é analisada.</p></div>}
+              {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status === 'EM_ANALISE' ? 'Em análise' : selecionado.encerramentoConta.status}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p><p>O encerramento ainda não foi concluído. Preserve os registros comerciais enquanto a solicitação é analisada.</p></div>}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Total gasto', valor: formatBRL(selecionado.totalGasto ?? 0) },

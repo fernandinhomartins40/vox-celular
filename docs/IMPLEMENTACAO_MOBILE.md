@@ -425,3 +425,7 @@ Playwright executou UI de produção em 390/768/1440 px com API simulada: botão
 
 ### Visibilidade de solicitações para o lojista — 13/10/2026
 API de clientes inclui somente id/status/data da solicitação vinculada ao cliente da loja autenticada, com no-store. Painel Clientes oferece filtro persistido em URL, contagem, indicador e protocolo no detalhe existente, evitando criar outra página. Nenhum botão declara conclusão ou apaga registros. Builds API/web, lint e 23 migrations/suíte HTTP PostgreSQL real passaram, incluindo metadados corretos para lojista e 403 para cliente. Interação/renderização do filtro no navegador e encerramento efetivo ainda pendentes.
+
+
+### Início de análise de encerramento — 13/10/2026
+POST privacidade/encerramento/:id/analisar exige lojista da mesma loja e corpo vazio; bloqueio transacional serializa transição SOLICITADA para EM_ANALISE e repetição é idempotente. Não altera conta/dados nem sinaliza conclusão. Clientes web/native e detalhe administrativo apresentam Em análise com texto legível. HTTP/PostgreSQL real passou para restrição ao cliente, inexistente 404, duas chamadas simultâneas e status visível ao titular; 23 migrations, builds, typecheck e lint passaram. Botão do lojista, auditoria de responsável, encerramento efetivo e testes interativos desta transição permanecem pendentes.
