@@ -497,3 +497,7 @@ Rota /novidades acessível pelo rodapé mostra resumos vigentes e leitura por id
 
 ### Leitura de novidades validada em Chromium — 13/10/2026
 Playwright com API simulada passou em 390/768/1440: lista abre artigo, conteúdo com aparência de script permanece literal sem executar, fonte tem proteção de nova aba, volta à lista vazia e consulta loja explícita. Sem overflow/erros de página. Script incluído no workflow. Não comprova integração UI-backend real, Safari ou dispositivo nativo; gestão editorial segue pendente.
+
+
+### Editor de novidades no painel — 13/10/2026
+Nova rota administrativa/menu Novidades permite criar rascunho, editar texto/fonte/datas, revisar prévia literal e publicar/despublicar. Datas indicam fuso do dispositivo e são enviadas como instantes ISO; API valida revisão/validade. Lista distingue rascunho, publicada e vencida/oculta. Operação vinculada à geração da sessão, bloqueio por ref e campos desabilitados durante envio. Build e lint passaram; teste interativo do editor, auditoria do responsável e remoção/arquivo permanecem pendentes. Backend editorial já foi validado separadamente com PostgreSQL real; isso não comprova integração desta tela com produção.

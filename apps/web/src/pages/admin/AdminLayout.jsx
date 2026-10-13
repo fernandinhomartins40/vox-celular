@@ -25,7 +25,7 @@ const groups = [
         "icon": "users"
       },
       { "to": "/admin/servicos", "label": "Serviços", "icon": "package" },
-      { "to": "/admin/guias", "label": "Guias de ajuda", "icon": "settings" }, { "to": "/admin/configuracoes/ia", "label": "Assistente de IA", "icon": "settings" }
+      { "to": "/admin/novidades", "label": "Novidades", "icon": "settings" }, { "to": "/admin/guias", "label": "Guias de ajuda", "icon": "settings" }, { "to": "/admin/configuracoes/ia", "label": "Assistente de IA", "icon": "settings" }
     ]
   },
   {
