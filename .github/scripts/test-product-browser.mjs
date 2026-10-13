@@ -101,7 +101,7 @@ try {
   await page.getByRole('heading', { name: 'CI landing editor real', exact: true }).waitFor();
   await page.getByText('Seg–Sex 9h–18h CI', { exact: false }).first().waitFor();
   await page.goto(`${base}/admin/conta`);
-  await page.getByLabel('Senha atual', { exact: true }).fill('ci-admin-password-only-123');
+  await page.getByRole('form', { name: 'Alterar senha' }).getByLabel('Senha atual', { exact: true }).fill('ci-admin-password-only-123');
   await page.getByLabel('Nova senha', { exact: true }).fill('ci-browser-admin-password');
   await page.getByLabel('Confirmar nova senha', { exact: true }).fill('ci-browser-admin-password');
   await page.getByRole('button', { name: 'Alterar senha', exact: true }).click();
@@ -119,7 +119,7 @@ try {
   await customerPage.goto(`${base}/area-cliente/fidelidade`);
   await customerPage.getByText('SEU SALDO', { exact: true }).waitFor();
   await customerPage.goto(`${base}/area-cliente/conta`);
-  await customerPage.getByLabel('Senha atual', { exact: true }).fill('ci-browser-password-123');
+  await customerPage.getByRole('form', { name: 'Alterar senha' }).getByLabel('Senha atual', { exact: true }).fill('ci-browser-password-123');
   await customerPage.getByLabel('Nova senha', { exact: true }).fill('ci-browser-new-password');
   await customerPage.getByLabel('Confirmar nova senha', { exact: true }).fill('ci-browser-new-password');
   await customerPage.getByRole('button', { name: 'Alterar senha', exact: true }).click();

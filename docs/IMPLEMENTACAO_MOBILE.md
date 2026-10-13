@@ -485,3 +485,7 @@ Nova entidade por loja com título/resumo/texto, fonte HTTPS, revisão, validade
 
 ### Novidades no app nativo — 13/10/2026
 Início oferece Novidades da Vox. Tela lista resumos e abre leitura com fonte, revisão e validade; consulta loja explícita e API vigente ao receber foco. Conteúdo é texto simples; fonte abre somente HTTPS sem credenciais de URL. Estados de carregamento, vazio e erro/retry separados; respostas após sair são descartadas. Typecheck, suíte existente de sessão e exportação Android/iOS passaram. Não comprova interação em aparelho, conteúdo editorial real ou publicação instalável; gestão pelo lojista e interface web continuam pendentes.
+
+
+### Correção do seletor de senha no CI real — 13/10/2026
+Workflow 38417964982 concluiu builds API/web e exportação mobile com sucesso, mas teste Chromium contra API/PostgreSQL real falhou por seletor Senha atual ambíguo entre formulários Alterar senha e Solicitar encerramento. Teste agora delimita formulário de alteração antes de selecionar campo. Sintaxe validada; execução integral da correção aguarda novo workflow. Deploy do run anterior foi pulado; não está comprovado. Não altera comportamento de autenticação.
