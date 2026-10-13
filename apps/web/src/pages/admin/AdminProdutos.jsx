@@ -1,3 +1,4 @@
+import PanelProductCompatibility from '../../components/panel/PanelProductCompatibility';
 import PanelPagination from '../../components/panel/PanelPagination';
 import { usePanelPagination } from '../../lib/usePanelPagination';
 import { useSearchParams } from 'react-router-dom';
@@ -352,7 +353,7 @@ export default function AdminProdutos() {
 
       {modalMode && (
         <ProductFormModal
-          mode={modalMode}
+          mode={modalMode} product={editando} products={produtos}
           activeTab={activeTab}
           setActiveTab={goStep}
           onAdjust={() => setCropDraft({ ...imageState, autoFit: false })}
@@ -381,7 +382,7 @@ export default function AdminProdutos() {
   );
 }
 
-function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formError, saving, onClose, onSave, onFile, onAdjust, categorias, currentImage, imageState }) {
+function ProductFormModal({ product, products, mode, activeTab, setActiveTab, form, setForm, formError, saving, onClose, onSave, onFile, onAdjust, categorias, currentImage, imageState }) {
   const current = tabs.findIndex(t => t.id === activeTab);
   const contentRef = useRef(null);
   useEffect(() => {
@@ -393,7 +394,7 @@ function ProductFormModal({ mode, activeTab, setActiveTab, form, setForm, formEr
       <header><div><h2>{mode === 'create' ? 'Cadastrar produto' : 'Editar produto'}</h2><p className="panel-muted">Produto, venda e revisão. Seus dados ficam preenchidos ao voltar.</p></div><button disabled={saving} aria-label="Fechar produto" onClick={onClose}><Icon.close /></button></header>
       <div ref={contentRef} className="panel-product-content">
         <PanelSteps steps={tabs.map(t => t.label)} current={current} />
-        {formError && <p tabIndex={-1} role="alert" className="panel-inline-notice">{formError}</p>}
+        {mode === 'edit' && product && <PanelProductCompatibility key={product.id} product={product} products={products} />}{formError && <p tabIndex={-1} role="alert" className="panel-inline-notice">{formError}</p>}
         {activeTab === 'basico' && <div className="space-y-4">
           <TextField label="Nome do produto" value={form.nome} onChange={nome => setForm(v => ({ ...v, nome }))} />
           <details><summary>Características para comparação e assistente</summary><div className="space-y-4 mt-4">

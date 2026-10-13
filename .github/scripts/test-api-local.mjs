@@ -82,8 +82,11 @@ try {
   const pairs = (await request(`/compatibilidades?lojaId=${loja.id}&produtoId=${phone.id}`)).data;
   assert.equal(pairs.length, 1); assert.equal(pairs[0].acessorio.id, product.id);
   assert.equal(pairs[0].aprovadoPorId, undefined);
+  await request(`/compatibilidades/admin?produtoId=${product.id}`, customer.token, null, 'GET', [403]);
+  assert.equal((await request(`/compatibilidades/admin?produtoId=${product.id}`, admin.token)).data[0].atual, true);
   await prisma.produto.update({ where: { id: phone.id }, data: { atributosTecnicos: { tipo: 'celular', modelo: 'Changed fixture' } } });
   assert.deepEqual((await request(`/compatibilidades?lojaId=${loja.id}&produtoId=${phone.id}`)).data, []);
+  assert.equal((await request(`/compatibilidades/admin?produtoId=${product.id}`, admin.token)).data[0].atual, false);
   await request('/compatibilidades', admin.token, compatibility, 'PUT');
   await prisma.produto.update({ where: { id: phone.id }, data: { preco: 120 } });
   assert.equal((await request(`/compatibilidades?lojaId=${loja.id}&produtoId=${phone.id}`)).data.length, 1);

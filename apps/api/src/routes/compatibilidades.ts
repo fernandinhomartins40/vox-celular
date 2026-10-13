@@ -7,6 +7,14 @@ export const compatibilidadesRouter = Router();
 const id = z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/);
 const pair = z.object({ acessorioId: id, aparelhoId: id, observacao: z.string().trim().min(2).max(500) }).strict();
 const attributesKey = (value: unknown) => JSON.stringify(Object.entries((value || {}) as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)));
+compatibilidadesRouter.get('/admin', requireLojista, async (req: AuthRequest, res) => {
+  const produtoId = id.safeParse(req.query.produtoId);
+  if (!produtoId.success) { res.status(400).json({ error: 'Informe o produto.' }); return; }
+  try {
+    const rows = await prisma.compatibilidadeProduto.findMany({ where: { OR: [{ acessorioId: produtoId.data }, { aparelhoId: produtoId.data }], acessorio: { lojaId: req.user!.lojaId }, aparelho: { lojaId: req.user!.lojaId } }, take: 100, orderBy: { aprovadoEm: 'desc' }, include: { acessorio: { select: { id: true, nome: true, ativo: true, atributosTecnicos: true } }, aparelho: { select: { id: true, nome: true, ativo: true, atributosTecnicos: true } } } });
+    res.set('Cache-Control', 'no-store').json(rows.map(row => ({ id: row.id, observacao: row.observacao, aprovadoEm: row.aprovadoEm, atual: row.acessorio.ativo && row.aparelho.ativo && attributesKey(row.atributosAcessorio) === attributesKey(row.acessorio.atributosTecnicos) && attributesKey(row.atributosAparelho) === attributesKey(row.aparelho.atributosTecnicos), acessorio: { id: row.acessorio.id, nome: row.acessorio.nome }, aparelho: { id: row.aparelho.id, nome: row.aparelho.nome } })));
+  } catch { res.status(503).json({ error: 'Não foi possível consultar as relações.' }); }
+});
 compatibilidadesRouter.delete('/:id', requireLojista, async (req: AuthRequest, res) => {
   const parsed = id.safeParse(req.params.id);
   if (!parsed.success) { res.status(400).json({ error: 'Informe a relação.' }); return; }
