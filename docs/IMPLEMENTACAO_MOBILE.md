@@ -322,3 +322,6 @@ GET /push/web lista até dez assinaturas próprias com id/ativo/datas, sem endpo
 
 ### Gerenciamento web das assinaturas
 Minha conta do cliente inclui consulta sob demanda de assinaturas, estado ativo/desativado e data, sem metadados inventados de aparelho nem segredo. Remoção individual pede confirmação e só atualiza lista após DELETE confirmado. Estado vazio/carga/erro e sucesso acessíveis. Build/lint passaram; teste visual específico e persistência real ainda pendentes. Cadastro via permissão do navegador e entrega push continuam em implementação.
+
+### Assinaturas push na exportação do titular
+Coleção assinaturasPush adicionada à exportação em lotes/cursor, com id/ativo/datas de registros próprios e tenant explícito. Nenhum endpoint/hash/ciphertext/chave de autenticação exportado. Teste runtime CI cobre registro correspondente, ausência de campos sensíveis e outro titular vazio. Build/sintaxe passaram; execução PostgreSQL permanece pendente.
