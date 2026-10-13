@@ -385,3 +385,7 @@ Suíte local ampliada e executada com código zero: três inclusões simultânea
 
 ### Atendimento contextual de serviços no app — 13/10/2026
 Confirmação e histórico nativos oferecem Falar com a loja sobre este atendimento. Consulta perfil e telefone da loja usando a revisão da sessão, confere titular antes de abrir HTTPS wa.me e preenche somente protocolo; não inclui aparelho, problema ou dados pessoais. Helper compartilhado mantém destino fixo, valida telefone brasileiro e codifica texto. Usuário revisa/envia no WhatsApp; nenhum envio automático. Typecheck, testes de telefone/protocolo/encoding, concorrência de sessão e exportação de bundles Android/iOS passaram. Não equivale a APK/IPA, publicação ou abertura real no aparelho; mudança/cancelamento de horário continuam sujeitos ao atendimento e regras atuais.
+
+
+### Estado assíncrono dos serviços vinculado à sessão — 13/10/2026
+Envio nativo registra a revisão da sessão no bloqueio de operação. Mudança de conta no foco reinicia bloqueio e indicadores; finally de envio anterior só libera sua própria revisão, evitando interferir no envio da nova conta. Erros, histórico e indicadores de contato também exigem revisão atual do formulário e da sessão. Typecheck e testes existentes de concorrência do serviço de sessão passaram; estes não validam a interação React Native da tela, que continua pendente em aparelho. Sem alteração de regras comerciais ou banco.

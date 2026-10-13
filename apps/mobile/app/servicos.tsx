@@ -28,7 +28,7 @@ export default function Services() {
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState<Ticket | null>(null);
   const attempt = useRef<string | null>(null);
-  const sending = useRef(false);
+  const sending = useRef<number | null>(null);
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [historyError, setHistoryError] = useState('');
   const [historyBusy, setHistoryBusy] = useState(false);
@@ -40,6 +40,7 @@ export default function Services() {
     setTickets(null); setHistoryError(''); setHistoryBusy(false); setContactError('');
     if (formRevision.current !== revision) {
       formRevision.current = revision;
+      sending.current = null; setBusy(false); setContactBusy(false);
       setReceipt(null);
       attempt.current = null;
       setService(null); setStep(1); setDevice(''); setProblem(''); setSlotId(''); setError('');
@@ -73,24 +74,24 @@ export default function Services() {
     setStep(3);
   }
   async function send() {
-    if (!service || sending.current) return;
+    if (!service || sending.current !== null) return;
     const revision = formRevision.current;
-    sending.current = true;
+    sending.current = revision;
     setBusy(true); setError('');
     try {
       attempt.current ||= randomUUID();
       const result = await requestForSession<Ticket>(revision, '/servicos/solicitacoes', { servicoId: service.id, aparelho: device.trim(), problema: problem.trim(), chaveIdempotencia: attempt.current, ...(slotId ? { horarioId: slotId } : {}) });
       if (formRevision.current === revision && sessionRevision() === revision) { setReceipt(result); setTickets(null); }
-    } catch (e) { if (formRevision.current === revision) setError(e instanceof Error ? e.message : 'Não foi possível confirmar. Tente novamente sem alterar os dados.'); }
-    finally { sending.current = false; setBusy(false); }
+    } catch (e) { if (formRevision.current === revision && sessionRevision() === revision) setError(e instanceof Error ? e.message : 'Não foi possível confirmar. Tente novamente sem alterar os dados.'); }
+    finally { if (sending.current === revision) { sending.current = null; if (formRevision.current === revision && sessionRevision() === revision) setBusy(false); } }
   }
   async function loadHistory() {
     if (historyBusy) return;
     const revision = formRevision.current;
     setHistoryBusy(true); setHistoryError('');
-    try { const rows = await requestForSession<Ticket[]>(revision, '/servicos/solicitacoes'); if (formRevision.current === revision) setTickets(rows); }
-    catch (e) { if (formRevision.current === revision) setHistoryError(e instanceof Error ? e.message : 'Não foi possível consultar seus atendimentos.'); }
-    finally { if (formRevision.current === revision) setHistoryBusy(false); }
+    try { const rows = await requestForSession<Ticket[]>(revision, '/servicos/solicitacoes'); if (formRevision.current === revision && sessionRevision() === revision) setTickets(rows); }
+    catch (e) { if (formRevision.current === revision && sessionRevision() === revision) setHistoryError(e instanceof Error ? e.message : 'Não foi possível consultar seus atendimentos.'); }
+    finally { if (formRevision.current === revision && sessionRevision() === revision) setHistoryBusy(false); }
   }
   async function contact(ticket: Ticket) {
     if (contactBusy) return;
@@ -101,8 +102,8 @@ export default function Services() {
       const store = await requestForSession<{ telefone: string }>(revision, `/loja?lojaId=${encodeURIComponent(profile.lojaId)}`);
       if (sessionRevision() !== revision) throw new Error('Sua conta mudou. Atualize os atendimentos.');
       await Linking.openURL(serviceContactUrl(store.telefone, ticket.protocolo));
-    } catch (e) { if (formRevision.current === revision) setContactError(e instanceof Error ? e.message : 'Não foi possível abrir o atendimento.'); }
-    finally { setContactBusy(false); }
+    } catch (e) { if (formRevision.current === revision && sessionRevision() === revision) setContactError(e instanceof Error ? e.message : 'Não foi possível abrir o atendimento.'); }
+    finally { if (formRevision.current === revision && sessionRevision() === revision) setContactBusy(false); }
   }
   function startAgain() { setReceipt(null); setService(null); setStep(1); setDevice(''); setProblem(''); setSlotId(''); edit(); }
   const selectedSlot = slots.find(row => row.id === slotId);
