@@ -15,12 +15,13 @@ function fixture() {
     send: async (_subscription, notice) => { calls.push('send'); assert.equal(notice.id, 'notice'); assert.ok(!('titulo' in notice)); return { status: 'accepted' }; },
     settle: async (_id, attempt, result) => { calls.push(`settle:${result.status}`); assert.equal(attempt, 1); return true; },
     now: () => now,
+    finalize: async () => { calls.push('finalize'); return 0; },
   };
   return { deps, calls };
 }
 const normal = fixture();
 assert.deepEqual(await processNotification('https://vox.example', normal.deps), { processed: true, status: 'accepted', persisted: true });
-assert.deepEqual(normal.calls, ['keys', 'event', 'claim', 'authorize', 'decrypt', 'authorize', 'send', 'settle:accepted']);
+assert.deepEqual(normal.calls, ['keys', 'event', 'claim', 'authorize', 'decrypt', 'authorize', 'send', 'settle:accepted', 'finalize']);
 for (const change of ['revoked', 'rotated'] as const) {
   const test = fixture(); let reads = 0;
   test.deps.authorize = async () => ++reads === 1 ? authorized : change === 'revoked' ? null : { ...authorized, credenciais: 'rotated' };

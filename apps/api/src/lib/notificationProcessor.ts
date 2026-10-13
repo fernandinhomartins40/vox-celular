@@ -4,6 +4,7 @@ import { authorizeNotificationDelivery } from './notificationDeliveryAuthorizati
 import { settleNotificationDelivery } from './notificationDeliverySettlement.js';
 import { decryptCredentials } from './credentialVault.js';
 import { loadVapidKeys } from './vapidKeys.js';
+import { finalizeNotifications } from './notificationFinalization.js';
 import { sendWebPush, validPushSubject, type PushTransportResult } from './webPushTransport.js';
 
 type Dependencies = {
@@ -15,11 +16,13 @@ type Dependencies = {
   send: typeof sendWebPush;
   settle: typeof settleNotificationDelivery;
   now: () => Date;
+  finalize: typeof finalizeNotifications;
 };
 const defaults: Dependencies = {
   keys: loadVapidKeys, claimEvent: claimNotification, claimDelivery: claimNotificationDelivery,
   authorize: authorizeNotificationDelivery, decrypt: decryptCredentials,
   send: sendWebPush, settle: settleNotificationDelivery, now: () => new Date(),
+  finalize: finalizeNotifications,
 };
 
 // One event preparation and at most one network request per invocation. Scheduling
@@ -29,7 +32,7 @@ export async function processNotification(subject: string, deps: Dependencies = 
   const keys = await deps.keys(); // Fail configuration before claiming work.
   await deps.claimEvent();
   const claimed = await deps.claimDelivery();
-  if (!claimed) return { processed: false };
+  if (!claimed) { await deps.finalize(); return { processed: false }; }
   let outcome: PushTransportResult = { status: 'cancelled' };
   const first = await deps.authorize(claimed.id, deps.now());
   if (first) {
@@ -49,5 +52,6 @@ export async function processNotification(subject: string, deps: Dependencies = 
     }
   }
   const persisted = await deps.settle(claimed.id, claimed.tentativas, outcome, deps.now());
+  await deps.finalize();
   return { processed: true, status: outcome.status, persisted };
 }

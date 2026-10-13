@@ -5,6 +5,7 @@ import { assertDisposableDatabase } from './disposableDatabase.js';
 import { claimNotificationDelivery } from './notificationDeliveryClaim.js';
 import { authorizeNotificationDelivery } from './notificationDeliveryAuthorization.js';
 import { settleNotificationDelivery } from './notificationDeliverySettlement.js';
+import { finalizeNotifications } from './notificationFinalization.js';
 
 assertDisposableDatabase(process.env.PUSH_DELIVERY_TEST);
 const id = `ci-delivery-${randomUUID()}`;
@@ -61,6 +62,26 @@ try {
   assert.equal(await settleNotificationDelivery(id, 4, { status: 'accepted' }, now), true);
   assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'CANCELADA');
   assert.equal(await settleNotificationDelivery(id, 4, { status: 'temporary' }, now), false, 'Canceled delivery must never be revived');
+  for (const [deliveryStatus, eventStatus] of [['PENDENTE', 'PROCESSANDO'], ['PROCESSANDO', 'PROCESSANDO'], ['unknown-state', 'PROCESSANDO'], ['ACEITA', 'CONCLUIDA'], ['INCERTA', 'INCERTA'], ['INVALIDA', 'FALHA'], ['CANCELADA', 'CANCELADA']] as const) {
+    await prisma.notificacaoCliente.update({ where: { id }, data: { status: 'PROCESSANDO' } });
+    await prisma.entregaPush.update({ where: { id }, data: { status: deliveryStatus } });
+    await finalizeNotifications();
+    assert.equal((await prisma.notificacaoCliente.findUniqueOrThrow({ where: { id } })).status, eventStatus);
+  }
+  await prisma.notificacaoCliente.update({ where: { id }, data: { status: 'CANCELADA' } });
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'ACEITA' } });
+  await finalizeNotifications();
+  assert.equal((await prisma.notificacaoCliente.findUniqueOrThrow({ where: { id } })).status, 'CANCELADA', 'Finalization must preserve revoked events');
+  await prisma.assinaturaPush.create({ data: { id: `${id}-other`, lojaId: id, clienteId: id, endpointHash: `${id}-other`, credenciais: 'fixture-not-real-credentials' } });
+  await prisma.entregaPush.create({ data: { id: `${id}-other`, notificacaoId: id, assinaturaId: `${id}-other`, status: 'FALHA' } });
+  await prisma.notificacaoCliente.update({ where: { id }, data: { status: 'PROCESSANDO' } });
+  await finalizeNotifications();
+  assert.equal((await prisma.notificacaoCliente.findUniqueOrThrow({ where: { id } })).status, 'PARCIAL', 'Mixed acceptance and failure must not claim full success');
+  await prisma.notificacaoCliente.createMany({ data: Array.from({ length: 30 }, (_, n) => ({ id: `000-${id}-${n}`, lojaId: id, clienteId: id, chaveEvento: `finalize-${n}`, titulo: 'Fixture', mensagem: 'Fixture', destino: '/pedidos', status: 'PROCESSANDO', expiresAt: new Date('2100-01-01T00:00:00Z') })) });
+  assert.equal(await finalizeNotifications(), 25, 'Finalization must respect its batch bound');
+  assert.equal(await prisma.notificacaoCliente.count({ where: { lojaId: id, status: 'PROCESSANDO' } }), 5);
+  await finalizeNotifications();
+  assert.equal(await prisma.notificacaoCliente.count({ where: { lojaId: id, status: 'PROCESSANDO' } }), 0);
   console.log('Delivery claims, authorization and idempotent settlements passed.');
 } finally {
   await prisma.notificacaoCliente.deleteMany({ where: { lojaId: id } });
