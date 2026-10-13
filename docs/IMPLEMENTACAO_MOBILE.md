@@ -560,3 +560,7 @@ Playwright com API simulada em 390/768/1440 passou: consulta descrição/valor, 
 
 ### Revisão e recusa de orçamento validadas — 13/10/2026
 Suíte HTTP PostgreSQL real ampliada passou: segunda emissão cria versão 2 e preserva primeira como SUBSTITUIDO; primeira não pode ser aceita, recusa repetida da segunda gera único evento, atendimento volta à análise e não entra em execução sem aceite. Mesma rodada aplicou 32 migrations e passou build/integrações anteriores. Não representa teste interativo de recusa na web nem interface de emissão lojista concluída.
+
+
+### Orçamentos na exportação privada — 13/10/2026
+Exportação em streaming inclui coleção orcamentosServico com versões, valor, descrição, validade/status/decisão, limitada por lotes de 100 e instante da exportação. Consulta restringe solicitação ao titular/loja; omite emissor e chave de tentativa. PostgreSQL real, 32 migrations, build e suíte HTTP passaram para três versões próprias, estado ACEITO, ausência de campos internos e exportação alheia vazia. Teste não cobre volume superior a 100 orçamentos nem interface nativa de exportação; esses pontos permanecem pendentes.

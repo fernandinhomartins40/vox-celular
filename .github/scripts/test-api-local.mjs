@@ -191,6 +191,10 @@ try {
   assert.equal(metadata.length, 2);
   assert.ok(metadata.every(row => !row.credenciais && !row.endpoint && !row.endpointHash));
   const exported = (await request('/privacidade/exportar', customer.token)).data;
+  assert.equal(exported.orcamentosServico.length, 3);
+  assert.ok(exported.orcamentosServico.every(row => row.emitidoPorId === undefined && row.chaveIdempotencia === undefined));
+  assert.equal(exported.orcamentosServico.find(row => row.id === quote.id).status, 'ACEITO');
+  assert.deepEqual((await request('/privacidade/exportar', other.token)).data.orcamentosServico, []);
   assert.equal(exported.assinaturasPush.length, 2);
   assert.ok(exported.assinaturasPush.every(row => !row.credenciais && !row.endpointHash && !row.endpoint));
   assert.deepEqual((await request('/privacidade/exportar', other.token)).data.assinaturasPush, []);
