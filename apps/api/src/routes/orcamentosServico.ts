@@ -11,7 +11,7 @@ orcamentosServicoRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
     res.set('Cache-Control', 'no-store').json(rows);
   } catch { res.status(503).json({ error: 'Não foi possível consultar orçamentos.' }); }
 });
-const proposal = z.object({ chaveIdempotencia: z.string().uuid(), solicitacaoId: z.string().min(1).max(100), valorCentavos: z.number().int().min(0).max(100000000), descricao: z.string().trim().min(5).max(2000), validoAte: z.string().datetime() }).strict().refine(value => Date.parse(value.validoAte) > Date.now() && Date.parse(value.validoAte) <= Date.now() + 90 * 86400000, 'Use validade futura de até 90 dias.');
+const proposal = z.object({ chaveIdempotencia: z.string().uuid(), solicitacaoId: z.string().min(1).max(100), valorCentavos: z.number().int().min(0).max(100000000), descricao: z.string().trim().min(5).max(2000), validoAte: z.string().datetime() }).strict();
 orcamentosServicoRouter.post('/', requireLojista, async (req: AuthRequest, res) => {
   const parsed = proposal.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'Confira valor, descrição e validade do orçamento.' }); return; }
@@ -26,6 +26,8 @@ orcamentosServicoRouter.post('/', requireLojista, async (req: AuthRequest, res) 
         if (existing.valorCentavos !== data.valorCentavos || existing.descricao !== data.descricao || existing.validoAte.getTime() !== Date.parse(data.validoAte)) throw new Error('KEY_REUSED');
         return { id: existing.id, versao: existing.versao, status: existing.status };
       }
+      const now = Date.now();
+      if (Date.parse(data.validoAte) <= now || Date.parse(data.validoAte) > now + 90 * 86400000) throw new Error('VALIDITY');
       if (!['EM_ANALISE', 'AGUARDANDO_CLIENTE'].includes(request.status)) throw new Error('STATE');
       const last = await tx.orcamentoServico.findFirst({ where: { solicitacaoId: request.id }, orderBy: { versao: 'desc' } });
       if ((last?.versao || 0) >= 20) throw new Error('LIMIT');

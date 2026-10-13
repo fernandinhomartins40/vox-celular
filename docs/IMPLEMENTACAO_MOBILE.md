@@ -540,3 +540,7 @@ Orçamento por solicitação tem versão única, valor inteiro em centavos, desc
 
 ### Emissão de orçamento sem duplicar tentativas — 13/10/2026
 POST de orçamento exige UUID de tentativa; índice único por solicitação/chave e bloqueio existente serializam repetição. Mesma proposta retorna orçamento original antes de validar estado comercial, preservando versão/histórico; chave com valor/descrição/validade diferente é recusada. Validação inicial ainda exige validade futura, portanto recuperação de tentativa após vencimento continua pendente e deve usar consulta. PostgreSQL real aplicou 32 migrations; build e suíte HTTP passaram para repetição simultânea, uma proposta persistida e reutilização divergente recusada. Interfaces ainda não implementadas; não houve mudança em produção.
+
+
+### Recuperação de orçamento após validade — 13/10/2026
+Validação de instante futuro foi movida para emissão nova dentro da transação, após consulta de chave existente. Recuperação de proposta existente com conteúdo idêntico funciona mesmo vencida; não cria nova versão nem permite aceite vencido. Nova chave vencida continua recusada. PostgreSQL real, 32 migrations, build e suíte HTTP passaram para recuperação da fixture vencida, recusa de nova emissão vencida e aceite vencido. Fixture altera validade diretamente no banco descartável para simular passagem do tempo; não é teste de relógio real. Interfaces continuam pendentes.

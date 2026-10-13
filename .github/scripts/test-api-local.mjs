@@ -153,6 +153,13 @@ try {
   const retries = await Promise.all([request('/orcamentos-servico', admin.token, proposal, 'POST', [201]), request('/orcamentos-servico', admin.token, proposal, 'POST', [201])]);
   assert.ok(retries.every(result => result.data.id === quote.id));
   assert.equal(await prisma.orcamentoServico.count({ where: { solicitacaoId: ticket.id } }), 1);
+  const expiredAt = new Date(Date.now() - 1000);
+  await prisma.orcamentoServico.update({ where: { id: quote.id }, data: { validoAte: expiredAt } });
+  const recovered = (await request('/orcamentos-servico', admin.token, { ...proposal, validoAte: expiredAt.toISOString() }, 'POST', [201])).data;
+  assert.equal(recovered.id, quote.id, 'Existing expired attempt must be recovered without issuing a new quote');
+  await request('/orcamentos-servico', admin.token, { ...proposal, chaveIdempotencia: randomUUID(), validoAte: expiredAt.toISOString() }, 'POST', [409]);
+  await request(`/orcamentos-servico/${quote.id}/decisao`, customer.token, { aceitar: true }, 'POST', [409]);
+  await prisma.orcamentoServico.update({ where: { id: quote.id }, data: { validoAte: new Date(proposal.validoAte) } });
   await request('/orcamentos-servico', admin.token, { ...proposal, valorCentavos: 20000 }, 'POST', [409]);
   await request(ticketStatus, admin.token, { status: 'EM_EXECUCAO', mensagem: 'Sem aceite fixture' }, 'PATCH', [409]);
   assert.deepEqual((await request(`/orcamentos-servico?solicitacaoId=${ticket.id}`, other.token)).data, []);
