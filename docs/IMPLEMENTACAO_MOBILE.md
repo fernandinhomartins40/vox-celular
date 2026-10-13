@@ -552,3 +552,7 @@ Cada atendimento web oferece consulta explícita de orçamentos, versões, valor
 
 ### Estado de validade no orçamento web — 13/10/2026
 Consulta captura instante para indicar proposta PENDENTE vencida, orientar nova proposta e ocultar botões de decisão. Estado visual corresponde ao momento da consulta; API segue verificando instante real ao enviar. Cleanup impede atualizações após desmontagem e geração protege troca de conta. Build/lint passaram; teste interativo/relógio da tela e interface nativa seguem pendentes.
+
+
+### Orçamento cliente validado em Chromium — 13/10/2026
+Playwright com API simulada em 390/768/1440 passou: consulta descrição/valor, cancelar confirmação não envia, aceite envia decisão explícita e atualiza status, proposta vencida oculta decisão e orienta nova proposta, sem overflow/erros. Script incluído no workflow. Backend foi validado separadamente com PostgreSQL real; teste não comprova integração browser-backend real, recusa interativa ou dispositivo nativo.
