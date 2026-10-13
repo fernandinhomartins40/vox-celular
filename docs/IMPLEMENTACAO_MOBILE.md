@@ -316,3 +316,6 @@ Validação das chaves web push reforçada: p256dh deve decodificar para ponto n
 
 ### Persistência protegida de assinaturas web push
 Migração aditiva AssinaturaPush, endpoint hash único e conteúdo criptografado com contexto loja/cliente. PUT autenticado exige cliente/consentimento, serializa com revogação e endpoint, limite dez registros por cliente e recusa transferência entre titulares. DELETE remove somente assinatura própria/loja. Revogar consentimento desativa assinaturas sem reativá-las automaticamente depois; cofre ausente também exige restauração se houver assinaturas. Resposta nunca devolve endpoint/chaves e informa entregaConfigurada false. Prisma/build/testes de validação passaram. Testes PostgreSQL de cadastro/ownership, UI de permissão, transportes e worker continuam pendentes; não comprova entrega real.
+
+### Consulta e testes das assinaturas push
+GET /push/web lista até dez assinaturas próprias com id/ativo/datas, sem endpoint/hash/ciphertext. Build passou. Runtime CI ganhou fixtures de chave P-256 local e endpoint fictício: cadastro consentido, segredo ausente da lista, cliente sem consentimento recusado, tentativa de assumir endpoint de outra conta em conflito, remoção estrangeira sem efeito, revogação desativa e remoção própria. Sintaxe passou; execução PostgreSQL ainda pendente. Nenhum endpoint fictício recebe envio.

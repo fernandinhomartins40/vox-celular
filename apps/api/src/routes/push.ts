@@ -7,6 +7,13 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
 export const pushRouter = Router();
 pushRouter.use(requireAuth, authLimits);
+pushRouter.get('/web', async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  try {
+    const rows = await prisma.assinaturaPush.findMany({ where: { lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } }, select: { id: true, ativo: true, createdAt: true, updatedAt: true }, orderBy: { createdAt: 'desc' }, take: 10 });
+    res.set('Cache-Control', 'no-store').json(rows);
+  } catch { res.status(503).json({ error: 'Não foi possível consultar as assinaturas.' }); }
+});
 pushRouter.put('/web', async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
   const parsed = webPushSubscriptionSchema.safeParse(req.body);

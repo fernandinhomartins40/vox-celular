@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
+import { createECDH, randomBytes } from 'node:crypto';
 
 // This script writes only to a disposable CI/local Docker project. Never run on VPS.
 const env = { ...process.env, ADMIN_EMAIL: 'ci-admin@example.com', ADMIN_PASSWORD: 'ci-admin-password-only-123' };
@@ -541,3 +542,19 @@ const noticesExport = await json('/api/privacidade/exportar', { token: customer.
 assert.ok(noticesExport.avisos.length > 0, 'Export includes retained notices even after expiry');
 assert.ok(noticesExport.avisos.every(row => row.clienteId === undefined && row.lojaId === undefined && row.chaveEvento === undefined));
 assert.deepEqual((await json('/api/privacidade/exportar', { token: otherCustomer.token })).avisos, [], 'Export does not include another client notices');
+const pushCurve = createECDH('prime256v1');
+const pushFixture = { endpoint: 'https://fcm.googleapis.com/ci-disposable-endpoint', keys: { p256dh: pushCurve.generateKeys().toString('base64url'), auth: randomBytes(16).toString('base64url') } };
+await json('/api/push/web', { token: admin.token, status: 403 });
+await json('/api/push/web', { method: 'PUT', token: customer.token, body: pushFixture });
+const registeredPush = await json('/api/push/web', { token: customer.token });
+assert.equal(registeredPush.length, 1);
+assert.ok(registeredPush.every(row => row.credenciais === undefined && row.endpointHash === undefined && row.endpoint === undefined));
+await json('/api/push/web', { method: 'PUT', token: otherCustomer.token, body: pushFixture, status: 403 });
+await json('/api/privacidade/preferencias', { method: 'PUT', token: otherCustomer.token, body: { personalizacao: false, notificacoes: true, versaoAviso: '2026-10-12' } });
+await json('/api/push/web', { method: 'PUT', token: otherCustomer.token, body: pushFixture, status: 409 });
+await json(`/api/push/web/${registeredPush[0].id}`, { method: 'DELETE', token: otherCustomer.token });
+assert.equal((await json('/api/push/web', { token: customer.token })).length, 1);
+await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' } });
+assert.equal((await json('/api/push/web', { token: customer.token }))[0].ativo, false);
+await json(`/api/push/web/${registeredPush[0].id}`, { method: 'DELETE', token: customer.token });
+assert.deepEqual(await json('/api/push/web', { token: customer.token }), []);
