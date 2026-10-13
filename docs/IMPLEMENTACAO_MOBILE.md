@@ -295,3 +295,6 @@ Teste Chromium de avisos passou em 390/768/1440: link interno permitido, URL ext
 
 ### Validade dos avisos
 Novos eventos expiram após sete dias; deduplicação não renova validade. Consulta autenticada filtra expiresAt futuro. Migração aditiva preserva registros existentes, com validade inicial já expirada para evitar notificações antigas reapresentadas. Prisma generate/build passaram; teste CI acrescentado para aviso vencido oculto, ainda não executado em banco. Worker deverá usar a mesma validade; retenção/limpeza física ainda pendentes.
+
+### Retenção limitada da fila de avisos
+API agenda uma passagem a cada seis horas, sem processo adicional, removendo no máximo 100 avisos expirados há mais de 30 dias. Seleção ordenada por validade/id e revalidação no DELETE; índice aditivo correspondente. Não remove pedidos, serviços ou consentimentos. Não sobrepõe passagens no processo e cancela timer no shutdown. Build e teste de cálculo de corte passaram; operação de exclusão com PostgreSQL ainda requer validação de integração. Capacidade máxima de limpeza atual é 400 registros/dia; medir volume antes de ajustar frequência/lote. Não houve limpeza manual na VPS.

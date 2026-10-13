@@ -51,6 +51,7 @@ model NotificacaoCliente {
   cliente Cliente @relation(fields: [clienteId], references: [id])
   @@unique([clienteId, chaveEvento])
   @@index([status, proximaTentativaEm])
+  @@index([expiresAt, id])
 }
 
 model ConfiguracaoIa {

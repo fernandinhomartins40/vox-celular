@@ -21,6 +21,7 @@ import { agendaRouter } from './routes/agenda.js';
 import { guiasRouter } from './routes/guias.js';
 import { iaConfigRouter } from './routes/iaConfig.js';
 import { notificacoesRouter } from './routes/notificacoes.js';
+import { pruneExpiredNotifications } from './lib/notificationRetention.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -62,10 +63,20 @@ app.use('/api/ia/config', iaConfigRouter);
 app.use('/api/notificacoes', notificacoesRouter);
 
 const server = app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+let retentionRunning = false;
+const retentionTimer = setInterval(async () => {
+  if (retentionRunning) return;
+  retentionRunning = true;
+  try { await pruneExpiredNotifications(); }
+  catch { console.error('Notification retention pass failed'); }
+  finally { retentionRunning = false; }
+}, 6 * 3600000);
+retentionTimer.unref();
 let shuttingDown = false;
 async function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
+  clearInterval(retentionTimer);
   const timeout = setTimeout(() => process.exit(1), 25000);
   timeout.unref();
   server.close(async () => {
