@@ -493,3 +493,7 @@ Workflow 38417964982 concluiu builds API/web e exportação mobile com sucesso, 
 
 ### Novidades públicas na web — 13/10/2026
 Rota /novidades acessível pelo rodapé mostra resumos vigentes e leitura por id com fonte/revisão/validade e volta à lista/loja. Consulta loja explícita; chave por id e cleanup evitam resposta antiga atualizar artigo novo. Texto renderizado como texto simples, sem HTML interpretado; estados de carga/vazio/erro e atualização manual. Build e lint passaram. Interface editorial, conteúdo real e teste interativo desta rota seguem pendentes. Workflows continuam executando/enfileirados; deploy novo ainda sem evidência de conclusão.
+
+
+### Leitura de novidades validada em Chromium — 13/10/2026
+Playwright com API simulada passou em 390/768/1440: lista abre artigo, conteúdo com aparência de script permanece literal sem executar, fonte tem proteção de nova aba, volta à lista vazia e consulta loja explícita. Sem overflow/erros de página. Script incluído no workflow. Não comprova integração UI-backend real, Safari ou dispositivo nativo; gestão editorial segue pendente.

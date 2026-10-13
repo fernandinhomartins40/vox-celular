@@ -284,6 +284,8 @@ jobs:
         run: node .github/scripts/test-product-compatibility-browser.mjs
       - name: Merchant product compatibility editor
         run: node .github/scripts/test-compatibility-editor-browser.mjs
+      - name: Public editorial news responsive reading
+        run: node .github/scripts/test-news-browser.mjs
       - name: Verify session renewal races
         run: node .github/scripts/test-session-races.mjs
       - name: Three-step product selection on mobile, tablet and desktop
