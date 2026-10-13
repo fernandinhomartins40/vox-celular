@@ -548,3 +548,7 @@ Validação de instante futuro foi movida para emissão nova dentro da transaç�
 
 ### Consulta e decisão de orçamento no painel cliente — 13/10/2026
 Cada atendimento web oferece consulta explícita de orçamentos, versões, valor em centavos formatado, descrição e validade. Última proposta pendente oferece aceitar/recusar com confirmação; API valida validade/estado/titular. Após decisão, consulta novamente e atualiza histórico do atendimento. Ref evita duplo clique e geração de sessão descarta resultado de outra conta. Build e lint passaram. Teste interativo, estado após desmontagem, indicação visual de validade vencida, formulário lojista e interface nativa continuam pendentes; backend foi validado separadamente com PostgreSQL real.
+
+
+### Estado de validade no orçamento web — 13/10/2026
+Consulta captura instante para indicar proposta PENDENTE vencida, orientar nova proposta e ocultar botões de decisão. Estado visual corresponde ao momento da consulta; API segue verificando instante real ao enviar. Cleanup impede atualizações após desmontagem e geração protege troca de conta. Build/lint passaram; teste interativo/relógio da tela e interface nativa seguem pendentes.
