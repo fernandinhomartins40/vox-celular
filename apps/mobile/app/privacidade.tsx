@@ -13,24 +13,30 @@ export default function Privacy() {
   const [message, setMessage] = useState('');
   const [reload, setReload] = useState(0);
   const listedRevision = useRef(-1);
+  const operation = useRef<symbol | null>(null);
   useFocusEffect(useCallback(() => {
     let active = true;
+    operation.current = null; listedRevision.current = -1;
+    setBusy(false); setSaved(null); setDraft(null);
     setLoading(true); setError(''); setMessage('');
     const revision = sessionRevision();
     requestForSession<Preferences>(revision, '/privacidade/preferencias')
       .then(data => { if (active) { listedRevision.current = revision; setSaved(data); setDraft(data); } })
       .catch(e => { if (active) { setSaved(null); setDraft(null); setError(e instanceof Error ? e.message : 'Não foi possível consultar suas preferências.'); } })
       .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    return () => { active = false; operation.current = null; listedRevision.current = -1; };
   }, [reload]));
   async function save() {
-    if (!draft || busy) return;
+    if (!draft || operation.current || listedRevision.current !== sessionRevision()) return;
+    const revision = listedRevision.current;
+    const token = Symbol(); operation.current = token;
+    const active = () => operation.current === token && listedRevision.current === revision && sessionRevision() === revision;
     setBusy(true); setError(''); setMessage('');
     try {
-      const result = await requestForSession<Preferences>(listedRevision.current, '/privacidade/preferencias', { personalizacao: draft.personalizacao, notificacoes: draft.notificacoes, versaoAviso: draft.versaoAviso }, 'PUT');
-      setSaved(result); setDraft(result); setMessage('Suas preferências foram salvas.');
-    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível salvar. Suas preferências anteriores continuam valendo.'); }
-    finally { setBusy(false); }
+      const result = await requestForSession<Preferences>(revision, '/privacidade/preferencias', { personalizacao: draft.personalizacao, notificacoes: draft.notificacoes, versaoAviso: draft.versaoAviso }, 'PUT');
+      if (active()) { setSaved(result); setDraft(result); setMessage('Suas preferências foram salvas.'); }
+    } catch (e) { if (active()) setError(e instanceof Error ? e.message : 'Não foi possível salvar. Suas preferências anteriores continuam valendo.'); }
+    finally { if (active()) { operation.current = null; setBusy(false); } }
   }
   const changed = saved && draft && (saved.personalizacao !== draft.personalizacao || saved.notificacoes !== draft.notificacoes);
   return <ScrollView contentContainerStyle={styles.screen}>

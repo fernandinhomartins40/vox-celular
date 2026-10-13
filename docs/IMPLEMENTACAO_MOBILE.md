@@ -393,3 +393,7 @@ Envio nativo registra a revisão da sessão no bloqueio de operação. Mudança 
 
 ### Favoritar e abrir lista no app — 13/10/2026
 FavoriteButton limpa mensagens e operação ao receber foco ou mudar produto. Envio usa revisão da sessão e identidade da operação; resposta após troca de conta, saída ou nova operação não modifica estado. Bloqueio por ref evita duplo toque antes da renderização. Após confirmação do servidor, Ver meus favoritos abre diretamente a lista, reduzindo navegação. Typecheck e testes existentes do serviço de sessão passaram; testes desses serviços não comprovam interação/renderização do componente, ainda pendente em dispositivo.
+
+
+### Preferências nativas sem resposta atrasada — 13/10/2026
+Tela de privacidade limpa preferências e bloqueio ao receber foco e invalida operação ao sair. Salvar captura revisão carregada e identidade exclusiva; retorno, erro e finally só alteram tela da mesma operação/sessão. Ref impede duplo toque antes da renderização; formulário de conta antiga não é enviado para novo titular. Typecheck e suíte existente do serviço de sessão passaram. Não representam teste interativo da tela React Native; esse permanece pendente. Nenhuma mudança de consentimento em produção foi executada.
