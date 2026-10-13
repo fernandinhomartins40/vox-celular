@@ -49,11 +49,14 @@ try {
   const newsBody = { titulo: 'Novidade fixture', resumo: 'Conteúdo editorial de integração', texto: 'Texto de fixture sem publicação real.', fonte: 'https://example.invalid/source', revisadoEm: new Date(Date.now() - 1000).toISOString(), validoAte: new Date(Date.now() + 86400000).toISOString(), publicado: false };
   await request('/novidades', customer.token, newsBody, 'POST', [403]);
   const news = (await request('/novidades', admin.token, newsBody, 'POST', [201])).data;
+  assert.equal(news.revisadoPorId, admin.user.id);
+  assert.equal((await request('/novidades/admin', admin.token)).data[0].revisadoPor.nome, admin.user.nome);
   assert.deepEqual((await request(`/novidades?lojaId=${loja.id}`)).data, []);
   await request(`/novidades/${news.id}?lojaId=${loja.id}`, null, null, 'GET', [404]);
   await request(`/novidades/${news.id}`, admin.token, { ...newsBody, publicado: true }, 'PUT');
   assert.equal((await request(`/novidades?lojaId=${loja.id}`)).data.length, 1);
   assert.equal((await request(`/novidades/${news.id}?lojaId=${loja.id}`)).data.texto, newsBody.texto);
+  assert.equal((await request(`/novidades/${news.id}?lojaId=${loja.id}`)).data.revisadoPorId, undefined);
   await request(`/novidades/${news.id}?lojaId=other-store`, null, null, 'GET', [404]);
   await prisma.novidade.update({ where: { id: news.id }, data: { validoAte: new Date(Date.now() - 1000) } });
   assert.deepEqual((await request(`/novidades?lojaId=${loja.id}`)).data, []);

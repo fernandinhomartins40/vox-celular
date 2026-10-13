@@ -512,3 +512,7 @@ Playwright com API simulada em 390/768/1440 passou: rascunho com datas ISO, pré
 
 ### Fixtures dos painéis atualizadas e suíte validada — 13/10/2026
 Workflow 38419361655 passou builds/bundles mas falhou no teste geral por endpoint simulado desconhecido /privacidade/encerramento. Fixtures agora incluem solicitação nula, lista push e compatibilidade admin vazias; rejeição de outras requisições desconhecidas foi preservada. Execução local Playwright terminou com código zero em 390/768/1440 para ambos os painéis, rotas/navegação/foco, pedidos, fluxo de produto, serviços/benefícios, formulários e falhas. API simulada; não comprova UI-backend real. CI mantém conjunto completo de sete larguras, cuja execução corrigida ainda aguarda workflow. Auditoria editorial de responsável permanece pendente.
+
+
+### Responsável pela revisão editorial — 13/10/2026
+Novidade registra referência ao lojista autenticado na criação e última edição, sem permitir enviar responsável no payload. FK restritiva preserva referência e registros anteriores ficam sem responsável inventado. Lista administrativa inclui nome para exibição; endpoints públicos mantêm seleção explícita sem identificação. PostgreSQL real aplicou 28 migrations e suíte HTTP passou para responsável correto, nome administrativo e ausência de id na leitura pública. Builds API/web e lint passaram. Histórico completo de versões editoriais não foi implementado; registro representa apenas última revisão. Conteúdo real e integração UI-backend completa continuam pendentes.

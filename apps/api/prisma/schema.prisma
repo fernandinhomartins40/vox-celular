@@ -153,6 +153,7 @@ model Usuario {
   cliente      Cliente?
   sessoes      Sessao[]
   analisesEncerramento SolicitacaoEncerramentoConta[]
+  novidadesRevisadas Novidade[]
   compatibilidadesAprovadas CompatibilidadeProduto[]
 
   @@unique([lojaId, email])
@@ -372,6 +373,8 @@ model Novidade {
   fonte String
   publicado Boolean @default(false)
   revisadoEm DateTime
+  revisadoPorId String?
+  revisadoPor Usuario? @relation(fields: [revisadoPorId], references: [id], onDelete: Restrict)
   validoAte DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
