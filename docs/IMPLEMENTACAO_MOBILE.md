@@ -501,3 +501,6 @@ Playwright com API simulada passou em 390/768/1440: lista abre artigo, conteúdo
 
 ### Editor de novidades no painel — 13/10/2026
 Nova rota administrativa/menu Novidades permite criar rascunho, editar texto/fonte/datas, revisar prévia literal e publicar/despublicar. Datas indicam fuso do dispositivo e são enviadas como instantes ISO; API valida revisão/validade. Lista distingue rascunho, publicada e vencida/oculta. Operação vinculada à geração da sessão, bloqueio por ref e campos desabilitados durante envio. Build e lint passaram; teste interativo do editor, auditoria do responsável e remoção/arquivo permanecem pendentes. Backend editorial já foi validado separadamente com PostgreSQL real; isso não comprova integração desta tela com produção.
+
+
+Correção do registro anterior: o build inicial passou, mas lint falhou por Date.now durante renderização; commit d9078d6 foi enviado antes da correção. Editor agora calcula vencimento usando instante capturado na consulta, sem função impura no render. Lint e build foram executados novamente e terminaram com código zero após ajuste. Teste interativo ainda pendente.
