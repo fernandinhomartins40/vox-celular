@@ -389,3 +389,7 @@ Confirmação e histórico nativos oferecem Falar com a loja sobre este atendime
 
 ### Estado assíncrono dos serviços vinculado à sessão — 13/10/2026
 Envio nativo registra a revisão da sessão no bloqueio de operação. Mudança de conta no foco reinicia bloqueio e indicadores; finally de envio anterior só libera sua própria revisão, evitando interferir no envio da nova conta. Erros, histórico e indicadores de contato também exigem revisão atual do formulário e da sessão. Typecheck e testes existentes de concorrência do serviço de sessão passaram; estes não validam a interação React Native da tela, que continua pendente em aparelho. Sem alteração de regras comerciais ou banco.
+
+
+### Favoritar e abrir lista no app — 13/10/2026
+FavoriteButton limpa mensagens e operação ao receber foco ou mudar produto. Envio usa revisão da sessão e identidade da operação; resposta após troca de conta, saída ou nova operação não modifica estado. Bloqueio por ref evita duplo toque antes da renderização. Após confirmação do servidor, Ver meus favoritos abre diretamente a lista, reduzindo navegação. Typecheck e testes existentes do serviço de sessão passaram; testes desses serviços não comprovam interação/renderização do componente, ainda pendente em dispositivo.
