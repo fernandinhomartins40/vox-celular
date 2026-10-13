@@ -572,3 +572,7 @@ Emissão nova inclui outbox na transação comercial com chave por orçamento, d
 
 ### Emissão de orçamento no painel lojista — 13/10/2026
 Detalhe do atendimento inclui consulta de versões/decisões e formulário de valor em reais, descrição e validade nos estados de análise/aguardando cliente. Valor admite até duas casas sem arredondar entrada inválida; API recebe centavos. Tentativa mantém UUID/payload após falha, limpar após confirmação ou alterar campo cria nova tentativa. Consulta permite conferir emissão incerta; orienta aguardar aceite. Operação bloqueia duplo clique e descarta retorno após saída/troca de sessão. Build e lint passaram. Teste interativo, persistência de tentativa após recarregar e interface nativa permanecem pendentes. Backend já validado separadamente com PostgreSQL real.
+
+
+### Emissão lojista validada em Chromium — 13/10/2026
+Playwright com API simulada passou em 390/768/1440: entrada 125,50 vira 12550 centavos; erro 503 preserva campos, repetir usa UUID/payload idênticos e resposta confirmada limpa formulário, sem overflow/erros. Teste incluído no workflow. Não comprova recuperação após reload ou integração UI-backend real, apenas comportamento do formulário e tentativa em memória.

@@ -290,6 +290,8 @@ jobs:
         run: node .github/scripts/test-news-editor-browser.mjs
       - name: Customer service quote decisions
         run: node .github/scripts/test-service-quotes-browser.mjs
+      - name: Merchant service quote issuance and retry
+        run: node .github/scripts/test-merchant-quotes-browser.mjs
       - name: Verify session renewal races
         run: node .github/scripts/test-session-races.mjs
       - name: Three-step product selection on mobile, tablet and desktop
