@@ -308,3 +308,6 @@ Exportação autenticada inclui coleção avisos com conteúdo, estado e validad
 
 ### Política de tentativas de push
 Módulo notificationRetry define até cinco tentativas, intervalos de 1/5/15/60 minutos e recusa agendamento no limite ou após validade. Falha de assinatura inválida retorna revogação; permissão retirada cancela. Datas/tentativas inválidas recusadas. Build e testes de fronteiras passaram; cobertura incluída no CI. Ainda não integrado ao worker/transportes, portanto não comprova entrega nem limpeza efetiva de tokens.
+
+### Validação preparatória de assinaturas web push
+Schema estrito valida endpoint HTTPS de hosts exatos Google/Mozilla/Apple, sem userinfo, porta alternativa ou fragmento; tamanho da URL e chaves base64url limitados. Testes de spoof de domínio, loopback, credenciais na URL, formato e campos extras passaram com build. Não é validação criptográfica da chave pública nem entrega real; suporte aos endpoints efetivamente retornados por cada navegador precisa de teste físico e poderá ampliar allowlist com evidência. Referências: https://mozilla-services.github.io/autopush-rs/ e https://bugs.webkit.org/show_bug.cgi?id=247128 .
