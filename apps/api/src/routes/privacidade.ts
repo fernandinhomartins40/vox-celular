@@ -26,6 +26,7 @@ privacidadeRouter.put('/preferencias', requireAuth, authLimits, async (req: Auth
       if (!cliente) throw new Error('MISSING');
       const { personalizacao, notificacoes } = parsed.data;
       if (!notificacoes) await tx.notificacaoCliente.updateMany({ where: { clienteId: cliente.id, lojaId: req.user!.lojaId, status: 'PENDENTE' }, data: { status: 'CANCELADA' } });
+      if (!notificacoes) await tx.assinaturaPush.updateMany({ where: { clienteId: cliente.id, lojaId: req.user!.lojaId, ativo: true }, data: { ativo: false } });
       if (cliente.personalizacao !== personalizacao || cliente.notificacoes !== notificacoes || cliente.versaoPrivacidade !== aviso) {
         await tx.consentimentoCliente.create({ data: { clienteId: cliente.id, personalizacao, notificacoes, versaoAviso: aviso } });
         return tx.cliente.update({ where: { id: cliente.id }, data: { personalizacao, notificacoes, versaoPrivacidade: aviso, preferenciasAtualizadasEm: new Date() }, select: preferenceFields });

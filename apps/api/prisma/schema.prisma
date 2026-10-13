@@ -183,8 +183,22 @@ model Cliente {
   preferenciasAtualizadasEm DateTime?
   consentimentos ConsentimentoCliente[]
   filaNotificacoes NotificacaoCliente[]
+  assinaturasPush AssinaturaPush[]
   solicitacoesServico SolicitacaoServico[]
   @@index([lojaId, createdAt])
+}
+
+model AssinaturaPush {
+  id String @id @default(cuid())
+  lojaId String
+  clienteId String
+  endpointHash String @unique
+  credenciais String
+  ativo Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+  @@index([clienteId, ativo])
 }
 
 model GuiaOperadora {

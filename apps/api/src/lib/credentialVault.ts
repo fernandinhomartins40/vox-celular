@@ -13,7 +13,7 @@ function vaultKey() {
     try { key = await readFile(file); }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-      if (await prisma.integracaoMarketplace.count() > 0 || await prisma.configuracaoIa.count() > 0) throw new Error('VAULT_RESTORE_REQUIRED');
+      if (await prisma.integracaoMarketplace.count() > 0 || await prisma.configuracaoIa.count() > 0 || await prisma.assinaturaPush.count() > 0) throw new Error('VAULT_RESTORE_REQUIRED');
       try { await writeFile(file, randomBytes(32), { flag: 'wx', mode: 0o600 }); }
       catch (writeError) { if ((writeError as NodeJS.ErrnoException).code !== 'EEXIST') throw writeError; }
       key = await readFile(file);
