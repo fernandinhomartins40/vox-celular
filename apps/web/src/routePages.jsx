@@ -4,6 +4,7 @@ export const LandingPage = lazy(() => import('./LandingPage'));
 export const InstalarApp = lazy(() => import('./pages/InstalarApp'));
 export const Assistente = lazy(() => import('./pages/Assistente'));
 export const Ajuda = lazy(() => import('./pages/Ajuda'));
+export const Novidades = lazy(() => import('./pages/Novidades'));
 export const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 export const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 export const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));

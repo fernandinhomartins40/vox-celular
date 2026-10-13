@@ -36,6 +36,7 @@ export default function Footer({ config }) {
             <li><Link to="/instalar" className="hover:text-white transition">Instalar Vox no celular</Link></li>
             <li><Link to="/assistente" className="hover:text-white transition">Ajuda para escolher</Link></li>
             <li><Link to="/ajuda" className="hover:text-white transition">Ajuda com sua operadora</Link></li>
+            <li><Link to="/novidades" className="hover:text-white transition">Novidades da Vox</Link></li>
             <li><a href="#produtos" className="hover:text-white transition">Produtos</a></li>
             <li><a href="#servicos" className="hover:text-white transition">Serviços</a></li>
             <li><a href="#contato" className="hover:text-white transition">Contato</a></li>

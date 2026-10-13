@@ -489,3 +489,7 @@ Início oferece Novidades da Vox. Tela lista resumos e abre leitura com fonte, r
 
 ### Correção do seletor de senha no CI real — 13/10/2026
 Workflow 38417964982 concluiu builds API/web e exportação mobile com sucesso, mas teste Chromium contra API/PostgreSQL real falhou por seletor Senha atual ambíguo entre formulários Alterar senha e Solicitar encerramento. Teste agora delimita formulário de alteração antes de selecionar campo. Sintaxe validada; execução integral da correção aguarda novo workflow. Deploy do run anterior foi pulado; não está comprovado. Não altera comportamento de autenticação.
+
+
+### Novidades públicas na web — 13/10/2026
+Rota /novidades acessível pelo rodapé mostra resumos vigentes e leitura por id com fonte/revisão/validade e volta à lista/loja. Consulta loja explícita; chave por id e cleanup evitam resposta antiga atualizar artigo novo. Texto renderizado como texto simples, sem HTML interpretado; estados de carga/vazio/erro e atualização manual. Build e lint passaram. Interface editorial, conteúdo real e teste interativo desta rota seguem pendentes. Workflows continuam executando/enfileirados; deploy novo ainda sem evidência de conclusão.
