@@ -564,3 +564,7 @@ Suíte HTTP PostgreSQL real ampliada passou: segunda emissão cria versão 2 e p
 
 ### Orçamentos na exportação privada — 13/10/2026
 Exportação em streaming inclui coleção orcamentosServico com versões, valor, descrição, validade/status/decisão, limitada por lotes de 100 e instante da exportação. Consulta restringe solicitação ao titular/loja; omite emissor e chave de tentativa. PostgreSQL real, 32 migrations, build e suíte HTTP passaram para três versões próprias, estado ACEITO, ausência de campos internos e exportação alheia vazia. Teste não cobre volume superior a 100 orçamentos nem interface nativa de exportação; esses pontos permanecem pendentes.
+
+
+### Aviso consentido de orçamento emitido — 13/10/2026
+Emissão nova inclui outbox na transação comercial com chave por orçamento, destino serviços e mensagem genérica sem valor/descrição. Repetição retorna antes do enqueue, evitando avisos duplicados; consentimento usa bloqueio compartilhado existente. PostgreSQL real e suíte HTTP passaram para um aviso após repetir, conteúdo sem dados da proposta e nenhuma emissão de aviso após revogação. Build e 32 migrations passaram. Não comprova recebimento em aparelho nem aviso de decisão, que permanece pendente.

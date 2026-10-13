@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 import { AuthRequest, requireAuth, requireLojista } from '../middleware/auth.js';
+import { enqueueClientNotification } from '../lib/notificationOutbox.js';
 export const orcamentosServicoRouter = Router();
 orcamentosServicoRouter.get('/', requireAuth, async (req: AuthRequest, res) => {
   const id = z.string().min(1).max(100).safeParse(req.query.solicitacaoId);
@@ -34,6 +35,7 @@ orcamentosServicoRouter.post('/', requireLojista, async (req: AuthRequest, res) 
       await tx.orcamentoServico.updateMany({ where: { solicitacaoId: request.id, status: 'PENDENTE' }, data: { status: 'SUBSTITUIDO' } });
       const row = await tx.orcamentoServico.create({ data: { ...data, validoAte: new Date(data.validoAte), versao: (last?.versao || 0) + 1, emitidoPorId: req.user!.userId } });
       await tx.solicitacaoServico.update({ where: { id: request.id }, data: { status: 'AGUARDANDO_CLIENTE', historico: { create: { status: 'AGUARDANDO_CLIENTE', mensagem: `Orçamento versão ${row.versao} disponível para sua decisão.` } } } });
+      await enqueueClientNotification(tx, { lojaId: req.user!.lojaId, clienteId: request.clienteId, chaveEvento: `quote:${row.id}:issued`, titulo: 'Orçamento disponível', mensagem: 'A loja enviou uma proposta para seu atendimento. Confira os detalhes na sua conta Vox.', destino: '/servicos' });
       return { id: row.id, versao: row.versao, status: row.status };
     }); res.status(201).json(row);
   } catch (e) { res.status(e instanceof Error && e.message === 'MISSING' ? 404 : 409).json({ error: 'Solicitação indisponível para orçamento ou limite de revisões atingido.' }); }

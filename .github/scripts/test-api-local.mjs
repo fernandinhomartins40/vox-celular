@@ -172,8 +172,16 @@ try {
   const revisedStatus = `/servicos/solicitacoes/${revisedTicket.id}/status`;
   await request(revisedStatus, admin.token, { status: 'EM_ANALISE', mensagem: 'Nova análise fixture' }, 'PATCH');
   const originalProposal = { ...proposal, solicitacaoId: revisedTicket.id, chaveIdempotencia: randomUUID() };
+  await request('/privacidade/preferencias', customer.token, { personalizacao: false, notificacoes: true, versaoAviso: '2026-10-12' }, 'PUT');
   const firstQuote = (await request('/orcamentos-servico', admin.token, originalProposal, 'POST', [201])).data;
+  await request('/orcamentos-servico', admin.token, originalProposal, 'POST', [201]);
+  assert.equal(await prisma.notificacaoCliente.count({ where: { clienteId: me.cliente.id, chaveEvento: `quote:${firstQuote.id}:issued` } }), 1);
+  const quoteNotice = await prisma.notificacaoCliente.findFirstOrThrow({ where: { chaveEvento: `quote:${firstQuote.id}:issued` } });
+  assert.equal(quoteNotice.destino, '/servicos');
+  assert.ok(!quoteNotice.mensagem.includes(String(originalProposal.valorCentavos)) && !quoteNotice.mensagem.includes(originalProposal.descricao));
+  await request('/privacidade/preferencias', customer.token, { personalizacao: false, notificacoes: false, versaoAviso: '2026-10-12' }, 'PUT');
   const secondQuote = (await request('/orcamentos-servico', admin.token, { ...originalProposal, chaveIdempotencia: randomUUID(), valorCentavos: 14000 }, 'POST', [201])).data;
+  assert.equal(await prisma.notificacaoCliente.count({ where: { chaveEvento: `quote:${secondQuote.id}:issued` } }), 0);
   assert.equal(secondQuote.versao, 2);
   assert.equal((await prisma.orcamentoServico.findUniqueOrThrow({ where: { id: firstQuote.id } })).status, 'SUBSTITUIDO');
   await request(`/orcamentos-servico/${firstQuote.id}/decisao`, customer.token, { aceitar: true }, 'POST', [409]);
