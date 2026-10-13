@@ -13,6 +13,7 @@ function getToken() {
 let accessToken = null;
 let renewing;
 let sessionGeneration = 0;
+export function getSessionGeneration() { return sessionGeneration; }
 export function setAccessToken(token) {
   sessionGeneration += 1;
   accessToken = token || null;

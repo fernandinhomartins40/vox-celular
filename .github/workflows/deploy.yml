@@ -262,6 +262,8 @@ jobs:
         run: node .github/scripts/test-pwa-browser.mjs
       - name: Push worker privacy and safe notification destinations
         run: node .github/scripts/test-push-worker.mjs
+      - name: Browser push consent and explicit permission flow
+        run: node .github/scripts/test-browser-push.mjs
       - name: Favorites, comparison and current cart prices
         run: node .github/scripts/test-favorites-browser.mjs
       - name: Customer privacy choices and data download
