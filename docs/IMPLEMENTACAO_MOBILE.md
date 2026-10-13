@@ -421,3 +421,7 @@ Minha conta do cliente inclui seção de solicitação/status com senha atual, c
 
 ### Formulário web de encerramento validado em Chromium — 13/10/2026
 Playwright executou UI de produção em 390/768/1440 px com API simulada: botão exige senha e confirmação, erro de senha aparece, consulta/retry limpa senha e confirmação, protocolo exibido após resposta e recuperado na recarga, sem overflow ou erros de página. Script incluído no job browser existente. API/PostgreSQL reais foram validados separadamente na entrega anterior; este teste não comprova integração browser-backend real, Safari, encerramento efetivo ou dispositivo nativo.
+
+
+### Visibilidade de solicitações para o lojista — 13/10/2026
+API de clientes inclui somente id/status/data da solicitação vinculada ao cliente da loja autenticada, com no-store. Painel Clientes oferece filtro persistido em URL, contagem, indicador e protocolo no detalhe existente, evitando criar outra página. Nenhum botão declara conclusão ou apaga registros. Builds API/web, lint e 23 migrations/suíte HTTP PostgreSQL real passaram, incluindo metadados corretos para lojista e 403 para cliente. Interação/renderização do filtro no navegador e encerramento efetivo ainda pendentes.

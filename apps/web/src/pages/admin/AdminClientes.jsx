@@ -24,6 +24,7 @@ export default function AdminClientes() {
   const [params, setParams] = useSearchParams();
   const busca = params.get('busca') ?? '';
   const setBusca = value => setPanelParams(setParams, { busca: value });
+  const closureOnly = params.get('encerramento') === 'solicitado';
   const selecionado = clientes.find(c => c.id === params.get('clienteDetalhe')) ?? null;
   const setSelecionado = value => setPanelParams(setParams, { clienteDetalhe: value?.id }, false);
   const [loading, setLoading] = useState(true);
@@ -37,8 +38,8 @@ export default function AdminClientes() {
   }, []);
 
   const filtrados = clientes.filter(c =>
-    busca === '' ||
-    normalizeSearch(`${c.nome ?? ''} ${c.email ?? ''} ${c.telefone ?? ''}`).includes(normalizeSearch(busca))
+    (!closureOnly || c.encerramentoConta?.status === 'SOLICITADA') && (busca === '' ||
+    normalizeSearch(`${c.nome ?? ''} ${c.email ?? ''} ${c.telefone ?? ''}`).includes(normalizeSearch(busca)))
   );
 
   const pagination = usePanelPagination(filtrados, 12);
@@ -77,6 +78,7 @@ export default function AdminClientes() {
       </div>
 
       {/* Lista */}
+      <label className="flex items-center gap-3 mb-4"><input type="checkbox" checked={closureOnly} onChange={event => setPanelParams(setParams, { encerramento: event.target.checked ? 'solicitado' : null })} /><span>Solicitações de encerramento ({clientes.filter(client => client.encerramentoConta?.status === 'SOLICITADA').length})</span></label>
       {busca && <button className="panel-secondary-button mb-4" onClick={() => setBusca('')}>Limpar busca</button>}
       <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -99,6 +101,7 @@ export default function AdminClientes() {
                       <div>
                         <div className="font-medium text-zinc-800">{c.nome}</div>
                         <div className="text-[11px] text-zinc-400">{c.email}</div>
+                        {c.encerramentoConta?.status === 'SOLICITADA' && <span className="text-xs font-semibold text-amber-800">Encerramento solicitado</span>}
                       </div>
                     </div>
                   </td>
@@ -158,6 +161,7 @@ export default function AdminClientes() {
             </div>
             <div className="overflow-y-auto p-6 space-y-5">
               <div className="panel-filter-bar"><Link className="panel-secondary-button" to={`/admin/pedidos?cliente=${encodeURIComponent(selecionado.id)}`}>Ver pedidos deste cliente</Link>{brazilPhone(selecionado.telefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(selecionado.telefone)}?text=${encodeURIComponent(`Olá ${selecionado.nome}! Aqui é da Vox Celular.`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Falar com cliente</a>}</div>
+              {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p><p>O encerramento ainda não foi concluído. Preserve os registros comerciais enquanto a solicitação é analisada.</p></div>}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Total gasto', valor: formatBRL(selecionado.totalGasto ?? 0) },

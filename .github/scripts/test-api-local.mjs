@@ -54,6 +54,9 @@ try {
   assert.equal(closures[0].data.solicitacao.id, closures[1].data.solicitacao.id);
   assert.equal(await prisma.solicitacaoEncerramentoConta.count({ where: { clienteId: me.cliente.id } }), 1);
   assert.equal((await request('/privacidade/encerramento', other.token)).data.solicitacao, null);
+  await request('/clientes', customer.token, null, 'GET', [403]);
+  const merchantClients = (await request('/clientes', admin.token)).data;
+  assert.equal(merchantClients.find(client => client.id === me.cliente.id).encerramentoConta.id, closures[0].data.solicitacao.id);
   await request('/auth/me', customer.token); // Request alone must not claim completed deletion.
   const product = (await request('/produtos', admin.token, { nome: 'Local accessory', sub: 'Integration', categoria: 'Acessórios', preco: 10.25, descricao: 'Disposable HTTP fixture', estoque: 1 }, 'POST', [201])).data;
   assert.equal((await request(`/produtos/${product.id}?lojaId=${loja.id}`)).data.id, product.id);

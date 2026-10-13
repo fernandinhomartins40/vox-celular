@@ -22,6 +22,7 @@ type ClienteAdmin = {
   totalGasto: unknown;
   createdAt: Date;
   pedidos: PedidoClienteResumo[];
+  encerramentoConta: { id: string; status: string; createdAt: Date } | null;
 };
 
 clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
@@ -36,6 +37,7 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     },
     include: {
       usuario: { select: { nome: true, email: true } },
+      encerramentoConta: { select: { id: true, status: true, createdAt: true } },
       pedidos: { where: { lojaId: req.user!.lojaId }, select: { id: true, codigo: true, total: true, status: true, createdAt: true }, orderBy: { createdAt: 'desc' } }
     },
     orderBy: { createdAt: 'desc' }
@@ -51,6 +53,7 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     nivel: c.nivel,
     totalGasto: c.totalGasto,
     createdAt: c.createdAt,
+    encerramentoConta: c.encerramentoConta,
     pedidos: c.pedidos.length,
     historicoPedidos: c.pedidos.map((p: PedidoClienteResumo) => ({
       id: p.id,
@@ -61,5 +64,5 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     })),
   }));
 
-  res.json(flat);
+  res.set('Cache-Control', 'no-store').json(flat);
 });
