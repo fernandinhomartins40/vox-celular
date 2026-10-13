@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { notificationRetry } from './notificationRetry.js';
+const now = new Date('2026-10-12T12:00:00Z');
+const expiry = new Date(now.getTime() + 86400000);
+assert.equal(notificationRetry(1, 'temporary', expiry, now).next?.getTime(), now.getTime() + 60000);
+assert.equal(notificationRetry(4, 'temporary', expiry, now).next?.getTime(), now.getTime() + 3600000);
+assert.equal(notificationRetry(5, 'temporary', expiry, now).action, 'stop');
+assert.equal(notificationRetry(1, 'temporary', new Date(now.getTime() + 60000), now).action, 'stop');
+assert.equal(notificationRetry(1, 'invalid-subscription', expiry, now).action, 'revoke-subscription');
+assert.equal(notificationRetry(1, 'permission-denied', expiry, now).action, 'cancel');
+for (const attempt of [0, -1, 6, 1.5]) assert.throws(() => notificationRetry(attempt, 'temporary', expiry, now));
+assert.throws(() => notificationRetry(1, 'temporary', new Date('invalid'), now));
+console.log('Notification bounded retries, expiry and terminal subscription failures passed.');

@@ -305,3 +305,6 @@ Guard de integração reforçado: testes de orçamento IA e retenção exigem CI
 
 ### Avisos na exportação do titular
 Exportação autenticada inclui coleção avisos com conteúdo, estado e validade dos registros retidos, inclusive expirados/cancelados, sem depender do consentimento atual de entrega. Filtra cliente/loja, usa cursor e lotes de 100 e não exporta chave de deduplicação ou IDs internos do tenant. Build e sintaxe passaram. Testes CI acrescentados para registros expirados, campos internos ausentes e isolamento do outro cliente; execução PostgreSQL permanece pendente.
+
+### Política de tentativas de push
+Módulo notificationRetry define até cinco tentativas, intervalos de 1/5/15/60 minutos e recusa agendamento no limite ou após validade. Falha de assinatura inválida retorna revogação; permissão retirada cancela. Datas/tentativas inválidas recusadas. Build e testes de fronteiras passaram; cobertura incluída no CI. Ainda não integrado ao worker/transportes, portanto não comprova entrega nem limpeza efetiva de tokens.
