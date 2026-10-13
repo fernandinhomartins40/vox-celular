@@ -473,3 +473,7 @@ Playwright com API simulada em 390/768/1440 passou: edição abre seção, aprov
 
 ### Consulta de compatibilidade junto ao assistente — 13/10/2026
 Resultados web consultam relações explícitas da loja/produto usando componente público, apresentando observação/data sem enviar relações a IA nem alterar ranking. App oferece Ver detalhes e compatibilidade diretamente em cada resultado. Typecheck mobile, build/lint web e teste Chromium do assistente em três larguras passaram com API simulada, incluindo acessório conferido e invariantes anteriores de orçamento/preço/especificações. Não declara ranking de acessórios, compra conjunta ou teste do link nativo em aparelho concluídos; esses fluxos permanecem pendentes.
+
+
+### Revisar conferência sem refazer seleção — 13/10/2026
+Editor oferece Revisar conferência para relação cujo produto relacionado continua elegível. Ação preenche seleção/observação e foca o texto; nenhuma aprovação é enviada até confirmação explícita. Teste Chromium existente ampliado passou em três larguras com API simulada: preenche dados anteriores, não envia automaticamente e reaprovando atualiza lista. Build e lint passaram. Novo goal criado após remoção do anterior, mantendo escopo integral e dependências. Backend, dispositivo e demais pendências continuam conforme auditoria; não há deploy comprovado deste incremento.

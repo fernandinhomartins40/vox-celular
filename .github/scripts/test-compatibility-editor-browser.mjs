@@ -41,6 +41,14 @@ try {
     await page.getByRole('button', { name: 'Editar', exact: true }).first().click();
     await page.getByText('Compatibilidade com outros produtos', { exact: true }).click();
     await page.getByText('Oculta na loja: confira novamente ou remova', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Revisar conferência', exact: true }).click();
+    assert.equal(await page.getByLabel('Produto relacionado').inputValue(), 'phone');
+    assert.equal(await page.getByLabel('O que foi conferido').inputValue(), 'Conferência anterior');
+    assert.equal(approvals, 1, 'Review must not automatically approve');
+    await page.getByLabel('O que foi conferido').fill('Encaixe conferido fixture');
+    await page.getByRole('button', { name: 'Aprovar compatibilidade', exact: true }).click();
+    await page.getByText('Conferência atual', { exact: true }).waitFor();
+    assert.equal(approvals, 2);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []); await page.close();
   }
