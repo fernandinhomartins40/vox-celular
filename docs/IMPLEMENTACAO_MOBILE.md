@@ -508,3 +508,7 @@ Correção do registro anterior: o build inicial passou, mas lint falhou por Dat
 
 ### Editor editorial validado em Chromium — 13/10/2026
 Playwright com API simulada em 390/768/1440 passou: rascunho com datas ISO, prévia literal sem script, campos preservados ao editar, publicação e retorno a rascunho. Sem overflow/erros de página. Teste incluído no job browser existente. API/PostgreSQL editorial foi validada separadamente; não representa integração UI-backend real, conteúdo editorial real ou auditoria de responsável concluídos.
+
+
+### Fixtures dos painéis atualizadas e suíte validada — 13/10/2026
+Workflow 38419361655 passou builds/bundles mas falhou no teste geral por endpoint simulado desconhecido /privacidade/encerramento. Fixtures agora incluem solicitação nula, lista push e compatibilidade admin vazias; rejeição de outras requisições desconhecidas foi preservada. Execução local Playwright terminou com código zero em 390/768/1440 para ambos os painéis, rotas/navegação/foco, pedidos, fluxo de produto, serviços/benefícios, formulários e falhas. API simulada; não comprova UI-backend real. CI mantém conjunto completo de sete larguras, cuja execução corrigida ainda aguarda workflow. Auditoria editorial de responsável permanece pendente.
