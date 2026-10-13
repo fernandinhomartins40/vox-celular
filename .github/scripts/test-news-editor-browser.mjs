@@ -6,12 +6,17 @@ const browser = await chromium.launch({ headless: true });
 try {
   for (const width of [390, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
-    let rows = []; const writes = []; const errors = [];
+    let rows = []; const writes = []; const archiveWrites = []; const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => localStorage.setItem('vox_user', JSON.stringify({ nome: 'Lojista', role: 'LOJISTA', lojaId: 'fixture', token: 'fixture-token' })));
     await page.route('**/api/**', route => {
       const req = route.request(); const pathname = new URL(req.url()).pathname;
       if (pathname.endsWith('/novidades/admin')) return route.fulfill({ json: rows });
+      if (pathname.endsWith('/novidades/news-one/arquivo')) {
+        const body = req.postDataJSON(); assert.equal(body.versaoEsperada, rows[0].versao);
+        archiveWrites.push(body); rows = [{ ...rows[0], arquivado: body.arquivado, publicado: false, versao: rows[0].versao + 1 }];
+        return route.fulfill({ json: { ok: true } });
+      }
       if (pathname.endsWith('/novidades') && req.method() === 'POST') {
         const body = req.postDataJSON(); writes.push(body); rows = [{ ...body, id: 'news-one', versao: 0 }];
         return route.fulfill({ status: 201, json: rows[0] });
@@ -58,8 +63,21 @@ try {
     assert.equal(writes.length, 3, 'Stale write must not mutate stored content');
     await page.getByRole('button', { name: 'Descartar formulário e carregar versão atual' }).click();
     await page.getByRole('heading', { name: 'Conteúdo mais recente', exact: true }).waitFor();
+    page.once('dialog', dialog => dialog.dismiss());
+    await page.getByRole('button', { name: 'Arquivar novidade' }).click();
+    assert.equal(archiveWrites.length, 0, 'Cancelled confirmation must not archive');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: 'Arquivar novidade' }).click();
+    await page.getByText('Arquivada', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Editar novidade', exact: true }).count(), 0);
+    assert.equal(rows[0].texto, '<script>window.__editorUnsafe=true</script> Conteúdo literal.');
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: 'Restaurar rascunho' }).click();
+    await page.getByText('Restaurada como rascunho.', { exact: true }).waitFor();
+    assert.equal(rows[0].publicado, false); assert.equal(rows[0].arquivado, false);
+    assert.equal(archiveWrites.length, 2);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []); await page.close();
   }
-  console.log('Editorial editor draft, literal preview, retained fields, publish/unpublish and responsive UI passed with mock API.');
+  console.log('Editorial editor draft, literal preview, retained fields, publish/unpublish, conflict recovery, archive/restore and responsive UI passed with mock API.');
 } finally { await browser.close(); }

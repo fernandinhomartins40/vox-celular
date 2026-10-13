@@ -524,3 +524,7 @@ Novidade tem versão incremental. PUT exige versão carregada e atualiza somente
 
 ### Arquivamento editorial reversível — 13/10/2026
 Novidade pode ser arquivada/restaurada com versão esperada e autorização da loja. Ambas as ações deixam publicado=false; arquivo permanece preservado e PUT não edita registro arquivado. Consulta pública exclui arquivados. Painel pede confirmação, mostra Arquivada, oculta edição e oferece restaurar rascunho; operação vinculada à sessão. PostgreSQL real aplicou 30 migrations; suite HTTP passou para 403 cliente, ocultação, preservação do texto, bloqueio de edição e restauração não publicada. Builds API/web e lint passaram. Teste interativo dos botões ainda pendente. Limite de 100 registros continua incluindo arquivados para evitar crescimento ilimitado; arquivo não é exclusão nem histórico completo.
+
+
+### Arquivo editorial validado em Chromium — 13/10/2026
+Teste do editor ampliado passou com API simulada em 390/768/1440: cancelar confirmação não envia arquivo, arquivar preserva texto e remove edição, restaurar volta a rascunho sem publicação. Versão esperada é conferida também nas ações de arquivo. Testes anteriores de rascunho/publicação/conflito permanecem passando. Backend validado separadamente com PostgreSQL real; isso não comprova interação UI-backend real ou produção.
