@@ -22,7 +22,7 @@ type ClienteAdmin = {
   totalGasto: unknown;
   createdAt: Date;
   pedidos: PedidoClienteResumo[];
-  encerramentoConta: { id: string; status: string; createdAt: Date } | null;
+  encerramentoConta: { id: string; status: string; createdAt: Date; analiseIniciadaEm: Date | null; analisadoPor: { nome: string } | null } | null;
 };
 
 clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
@@ -37,7 +37,7 @@ clientesRouter.get('/', requireLojista, async (req: AuthRequest, res) => {
     },
     include: {
       usuario: { select: { nome: true, email: true } },
-      encerramentoConta: { select: { id: true, status: true, createdAt: true } },
+      encerramentoConta: { select: { id: true, status: true, createdAt: true, analiseIniciadaEm: true, analisadoPor: { select: { nome: true } } } },
       pedidos: { where: { lojaId: req.user!.lojaId }, select: { id: true, codigo: true, total: true, status: true, createdAt: true }, orderBy: { createdAt: 'desc' } }
     },
     orderBy: { createdAt: 'desc' }

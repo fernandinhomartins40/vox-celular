@@ -14,14 +14,14 @@ privacidadeRouter.post('/encerramento/:id/analisar', requireLojista, async (req:
   try {
     const result = await prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id.data}))`;
-      const row = await tx.solicitacaoEncerramentoConta.findFirst({ where: { id: id.data, cliente: { lojaId: req.user!.lojaId } } });
+      const row = await tx.solicitacaoEncerramentoConta.findFirst({ where: { id: id.data, cliente: { lojaId: req.user!.lojaId } }, include: { analisadoPor: { select: { nome: true } } } });
       if (!row) return null;
       if (row.status === 'EM_ANALISE') return row;
       if (row.status !== 'SOLICITADA') throw new Error('INVALID_TRANSITION');
-      return tx.solicitacaoEncerramentoConta.update({ where: { id: row.id }, data: { status: 'EM_ANALISE', analiseIniciadaEm: new Date(), analisadoPorId: req.user!.userId }, select: { id: true, status: true, createdAt: true } });
+      return tx.solicitacaoEncerramentoConta.update({ where: { id: row.id }, data: { status: 'EM_ANALISE', analiseIniciadaEm: new Date(), analisadoPorId: req.user!.userId }, select: { id: true, status: true, createdAt: true, analiseIniciadaEm: true, analisadoPor: { select: { nome: true } } } });
     });
     if (!result) { res.status(404).json({ error: 'Solicitação não encontrada nesta loja.' }); return; }
-    res.set('Cache-Control', 'no-store').json({ solicitacao: { id: result.id, status: result.status, createdAt: result.createdAt } });
+    res.set('Cache-Control', 'no-store').json({ solicitacao: { id: result.id, status: result.status, createdAt: result.createdAt, analiseIniciadaEm: result.analiseIniciadaEm, analisadoPor: result.analisadoPor } });
   } catch { res.status(409).json({ error: 'Esta solicitação não pode iniciar análise nesta etapa.' }); }
 });
 privacidadeRouter.get('/encerramento', requireAuth, async (req: AuthRequest, res) => {

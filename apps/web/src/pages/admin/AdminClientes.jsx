@@ -95,7 +95,7 @@ export default function AdminClientes() {
       </div>
 
       {/* Lista */}
-      <label className="flex items-center gap-3 mb-4"><input type="checkbox" checked={closureOnly} onChange={event => setPanelParams(setParams, { encerramento: event.target.checked ? 'solicitado' : null })} /><span>Solicitações de encerramento ({clientes.filter(pendingClosure).length})</span></label>
+      <label className="flex items-center gap-3 mb-4"><input type="checkbox" checked={closureOnly} onChange={event => { const checked = event.target.checked; setPanelParams(setParams, { encerramento: checked ? 'solicitado' : null }); }} /><span>Solicitações de encerramento ({clientes.filter(pendingClosure).length})</span></label>
       {busca && <button className="panel-secondary-button mb-4" onClick={() => setBusca('')}>Limpar busca</button>}
       <div className="bg-white border border-[var(--line)] rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
@@ -179,7 +179,7 @@ export default function AdminClientes() {
             <div className="overflow-y-auto p-6 space-y-5">
               <div className="panel-filter-bar"><Link className="panel-secondary-button" to={`/admin/pedidos?cliente=${encodeURIComponent(selecionado.id)}`}>Ver pedidos deste cliente</Link>{brazilPhone(selecionado.telefone) && <a className="panel-secondary-button" href={`https://wa.me/${brazilPhone(selecionado.telefone)}?text=${encodeURIComponent(`Olá ${selecionado.nome}! Aqui é da Vox Celular.`)}`} target="_blank" rel="noopener noreferrer"><Icon.whatsapp className="w-4 h-4" /> Falar com cliente</a>}</div>
               {analysisError && <p role="alert" className="panel-account-error">{analysisError}</p>}{selecionado.encerramentoConta?.status === 'SOLICITADA' && <button type="button" disabled={analysisBusy} onClick={() => startAnalysis(selecionado)} className="panel-primary-button my-3">{analysisBusy ? 'Registrando…' : 'Iniciar análise do encerramento'}</button>}
-              {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status === 'EM_ANALISE' ? 'Em análise' : selecionado.encerramentoConta.status}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p><p>O encerramento ainda não foi concluído. Preserve os registros comerciais enquanto a solicitação é analisada.</p></div>}
+              {selecionado.encerramentoConta && <div role="status" className="panel-inline-notice"><p>Solicitação de encerramento: {selecionado.encerramentoConta.status === 'SOLICITADA' ? 'Registrada' : selecionado.encerramentoConta.status === 'EM_ANALISE' ? 'Em análise' : selecionado.encerramentoConta.status}</p><p className="break-all">Protocolo: {selecionado.encerramentoConta.id}</p>{selecionado.encerramentoConta.analiseIniciadaEm && <p>Análise iniciada em {formatPanelDate(selecionado.encerramentoConta.analiseIniciadaEm)} por {selecionado.encerramentoConta.analisadoPor?.nome || 'responsável não informado'}.</p>}<p>O encerramento ainda não foi concluído. Preserve os registros comerciais enquanto a solicitação é analisada.</p></div>}
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Total gasto', valor: formatBRL(selecionado.totalGasto ?? 0) },

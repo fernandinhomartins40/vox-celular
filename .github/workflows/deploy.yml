@@ -278,6 +278,8 @@ jobs:
         run: node .github/scripts/test-privacy-browser.mjs
       - name: Customer account closure request responsive form
         run: node .github/scripts/test-account-closure-browser.mjs
+      - name: Merchant account closure analysis responsive flow
+        run: node .github/scripts/test-closure-analysis-browser.mjs
       - name: Verify session renewal races
         run: node .github/scripts/test-session-races.mjs
       - name: Three-step product selection on mobile, tablet and desktop

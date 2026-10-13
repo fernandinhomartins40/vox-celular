@@ -437,3 +437,7 @@ Painel Clientes oferece ação Iniciar análise do encerramento no detalhe exist
 
 ### Auditoria do início de análise — 13/10/2026
 Solicitação registra id do lojista autenticado e instante de início na mesma transação que muda status. FK restritiva preserva referência; campos opcionais não fabricam histórico para registros antigos. Repetição/concorrrência mantêm responsável/data originais. Auditoria não é exposta nos endpoints do cliente. PostgreSQL real aplicou 24 migrations; build e suíte HTTP passaram, incluindo responsável correto, data válida e data inalterada após repetição. Exibição administrativa da auditoria, encerramento efetivo e validação interativa permanecem pendentes.
+
+
+### Auditoria administrativa e teste do lojista — 13/10/2026
+Lista e resposta de início de análise expõem nome/data somente ao lojista, para exibição imediata no detalhe; endpoints cliente continuam sem identificação do responsável. Playwright Chromium com API simulada passou em 390/768/1440: filtro remove cadastro sem solicitação, inicia análise uma vez, mostra nome/data, remove ação e mantém pendência após fechar diálogo, sem overflow/erros. Teste aguarda alteração assíncrona da URL antes de conferir filtro. Builds API/web e lint passaram. Script adicionado ao workflow. Integração HTTP da projeção nova, aparelho nativo e encerramento efetivo permanecem pendentes.
