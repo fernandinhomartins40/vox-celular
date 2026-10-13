@@ -7,6 +7,7 @@ try {
   for (const width of [390, 768, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     let decisions = 0;
+    let submissions = 0;
     const quote = { id: 'quote', versao: 1, valorCentavos: 12550, descricao: 'Componente e mão de obra conferidos', validoAte: '2100-01-01T12:00:00Z', status: 'PENDENTE' };
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => localStorage.setItem('vox_user', JSON.stringify({ nome: 'Cliente', role: 'CLIENTE', lojaId: 'fixture', token: 'fixture-token' })));
@@ -14,11 +15,18 @@ try {
       const req = route.request(); const path = new URL(req.url()).pathname;
       if (path.endsWith('/orcamentos-servico/quote/decisao')) { assert.deepEqual(req.postDataJSON(), { aceitar: true }); decisions++; quote.status = 'ACEITO'; return route.fulfill({ json: { ok: true } }); }
       if (path.endsWith('/orcamentos-servico')) return route.fulfill({ json: [quote] });
+      if (path.endsWith('/servicos/solicitacoes') && req.method() === 'POST') {
+        const body = req.postDataJSON();
+        assert.equal(body.servicoId, 'diagnosis'); assert.equal(body.aparelho, 'Meu celular'); assert.equal(body.problema, 'A tela não liga'); assert.ok(body.chaveIdempotencia);
+        submissions++;
+        return route.fulfill({ json: { id: 'new-ticket', protocolo: 'VOX-SVC-2', status: 'RECEBIDA', aparelho: body.aparelho, problema: body.problema, servico: { titulo: 'Diagnóstico' } } });
+      }
       if (path.endsWith('/servicos/solicitacoes')) return route.fulfill({ json: [{ id: 'ticket', protocolo: 'VOX-SVC-1', status: 'AGUARDANDO_CLIENTE', aparelho: 'Aparelho fixture', problema: 'Problema fixture', servico: { titulo: 'Diagnóstico' }, historico: [] }] });
-      if (path.endsWith('/servicos')) return route.fulfill({ json: [] });
+      if (path.endsWith('/servicos')) return route.fulfill({ json: [{ id: 'diagnosis', titulo: 'Diagnóstico', descricao: 'Análise do aparelho', preco: null, agendamento: false }] });
       return route.fulfill({ json: { id: 'fixture' } });
     });
     await page.goto(`${process.env.PANEL_BASE || 'http://127.0.0.1:3196'}/area-cliente/servicos`);
+    assert.equal(await page.getByRole('heading', { name: 'Solicitar um serviço', exact: true }).count(), 0, 'History must not be mixed with the new request form');
     await page.getByRole('button', { name: 'Consultar orçamentos', exact: true }).click();
     await page.getByText(quote.descricao, { exact: true }).waitFor();
     page.once('dialog', dialog => dialog.dismiss());
@@ -29,8 +37,19 @@ try {
     await page.getByText('Aceito', { exact: true }).waitFor();
     assert.equal(decisions, 1);
     assert.equal(await page.getByRole('button', { name: 'Aceitar orçamento' }).count(), 0);
+    await page.getByRole('button', { name: 'Solicitar serviço', exact: true }).click();
+    assert.equal(await page.getByRole('region', { name: 'Acompanhamento de serviços' }).count(), 0);
+    await page.getByLabel('Serviço', { exact: true }).selectOption('diagnosis');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByLabel('Aparelho', { exact: true }).fill('Meu celular');
+    await page.getByLabel('O que está acontecendo?', { exact: true }).fill('A tela não liga');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Enviar solicitação', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: 'VOX-SVC-2' }).waitFor();
+    assert.equal(submissions, 1);
+    assert.equal(await page.getByRole('button', { name: 'Meus atendimentos', exact: true }).getAttribute('aria-pressed'), 'true');
     quote.status = 'PENDENTE'; quote.validoAte = '2000-01-01T12:00:00Z';
-    await page.getByRole('button', { name: 'Consultar orçamentos', exact: true }).click();
+    await page.locator('article').filter({ hasText: 'VOX-SVC-1' }).getByRole('button', { name: 'Consultar orçamentos', exact: true }).click();
     await page.getByText('Orçamento vencido. Peça uma nova proposta à loja.', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Aceitar orçamento' }).count(), 0);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
