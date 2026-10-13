@@ -87,6 +87,11 @@ const landingTwo = await json('/api/config/image', { method: 'POST', token: admi
 assert.equal(landingOne.url, landingTwo.url, 'Repeated landing images must reuse stored file');
 await json('/api/config/image', { method: 'POST', token: admin.token, status: 400, body: { ...landingPhoto, profile: 'unbounded' } });
 assert.equal((await json(`/api/produtos?lojaId=${loja.id}`))[0].id, product.id);
+const productDetails = await json(`/api/produtos/${product.id}?lojaId=${loja.id}`);
+assert.equal(productDetails.id, product.id);
+assert.equal(productDetails.preco, product.preco);
+await json(`/api/produtos/${product.id}`, { status: 400 });
+await json(`/api/produtos/${product.id}?lojaId=different-store`, { status: 404 });
 
 // Product improvements use the same real, isolated database as deployment verification.
 const config = await json('/api/config', { method: 'PUT', token: admin.token, body: {
@@ -392,6 +397,7 @@ assert.equal((await json('/api/assistente/recomendar', { method: 'POST', body: {
 await json('/api/assistente/recomendar', { method: 'POST', body: { ...assistantNeeds, lojaId: 'missing-store' }, status: 404 });
 await json('/api/assistente/recomendar', { method: 'POST', body: { ...assistantNeeds, prompt: 'invent a device' }, status: 400 });
 await json(`/api/produtos/${assistantDevice.id}`, { method: 'PATCH', token: admin.token, body: { ativo: false } });
+await json(`/api/produtos/${assistantDevice.id}?lojaId=${loja.id}`, { status: 404 });
 assert.ok(!(await json('/api/assistente/recomendar', { method: 'POST', body: assistantNeeds })).resultados.some(row => row.produto.id === assistantDevice.id));
 await json(`/api/produtos/${assistantDevice.id}`, { method: 'PATCH', token: admin.token, body: { ativo: true, estoque: 0 } });
 assert.ok(!(await json('/api/assistente/recomendar', { method: 'POST', body: assistantNeeds })).resultados.some(row => row.produto.id === assistantDevice.id));

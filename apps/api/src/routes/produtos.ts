@@ -94,6 +94,17 @@ produtosRouter.get('/admin', requireLojista, async (req: AuthRequest, res) => {
   res.json(produtos.map(serializeProduto));
 });
 
+produtosRouter.get('/:id', async (req, res) => {
+  const lojaId = z.string().min(1).max(200).safeParse(req.query.lojaId);
+  const id = z.string().min(1).max(200).safeParse(req.params.id);
+  if (!lojaId.success || !id.success) { res.status(400).json({ error: 'Informe o produto e a loja.' }); return; }
+  try {
+    const product = await prisma.produto.findFirst({ where: { id: id.data, lojaId: lojaId.data, ativo: true } });
+    if (!product) { res.status(404).json({ error: 'Produto não disponível nesta loja.' }); return; }
+    res.set('Cache-Control', 'no-store').json(serializeProduto(product));
+  } catch { res.status(503).json({ error: 'Não foi possível consultar o produto.' }); }
+});
+
 produtosRouter.post('/', requireLojista, async (req: AuthRequest, res) => {
   const parse = createSchema.safeParse(req.body);
   if (!parse.success) { res.status(400).json({ error: parse.error.errors }); return; }
