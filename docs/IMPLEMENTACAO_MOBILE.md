@@ -544,3 +544,7 @@ POST de orçamento exige UUID de tentativa; índice único por solicitação/cha
 
 ### Recuperação de orçamento após validade — 13/10/2026
 Validação de instante futuro foi movida para emissão nova dentro da transação, após consulta de chave existente. Recuperação de proposta existente com conteúdo idêntico funciona mesmo vencida; não cria nova versão nem permite aceite vencido. Nova chave vencida continua recusada. PostgreSQL real, 32 migrations, build e suíte HTTP passaram para recuperação da fixture vencida, recusa de nova emissão vencida e aceite vencido. Fixture altera validade diretamente no banco descartável para simular passagem do tempo; não é teste de relógio real. Interfaces continuam pendentes.
+
+
+### Consulta e decisão de orçamento no painel cliente — 13/10/2026
+Cada atendimento web oferece consulta explícita de orçamentos, versões, valor em centavos formatado, descrição e validade. Última proposta pendente oferece aceitar/recusar com confirmação; API valida validade/estado/titular. Após decisão, consulta novamente e atualiza histórico do atendimento. Ref evita duplo clique e geração de sessão descarta resultado de outra conta. Build e lint passaram. Teste interativo, estado após desmontagem, indicação visual de validade vencida, formulário lojista e interface nativa continuam pendentes; backend foi validado separadamente com PostgreSQL real.
