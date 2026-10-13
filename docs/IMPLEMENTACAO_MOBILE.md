@@ -465,3 +465,7 @@ Aprovação guarda cópia dos atributos técnicos dos dois produtos. Consulta co
 
 ### Gestão de compatibilidade na edição do produto — 13/10/2026
 Consulta admin autenticada apresenta relações atuais/desatualizadas sem expor cópias de atributos ou identificador do aprovador. Edição de produto existente tem seção recolhível: seleciona produto ativo de tipo correspondente, descreve conferência, aprova ou remove e recarrega relações após resposta. Usa atributos salvos e explica necessidade de salvar tipo antes de relacionar; cadastro de relação é independente do formulário de preço/imagem ainda não salvo. Operação vinculada à sessão/escopo e bloqueio por ref. Builds API/web e lint passaram; 26 migrations e suíte HTTP PostgreSQL real passaram, incluindo classificação atual/desatualizada e 403 cliente. Teste interativo completo do formulário permanece pendente. Não declara integração assistente concluída.
+
+
+### Editor de compatibilidade validado em Chromium — 13/10/2026
+Playwright com API simulada em 390/768/1440 passou: edição abre seção, aprovação exige produto/observação e envia par explícito, resposta atualiza lista/limpa campos, remoção elimina relação e reabertura mostra relação desatualizada como oculta. Sem overflow ou erros de página. Script incluído no job browser existente. Backend foi validado separadamente com PostgreSQL real; integração UI-backend real, Safari/aparelho e integração assistente ainda pendentes.
