@@ -370,6 +370,33 @@ try {
   await assert.rejects(prisma.resgateRecompensa.create({ data: { clienteId: closingClient.id, recompensaId: reward.id, codigo: `AFTER-${randomUUID()}` } }));
   await assert.rejects(prisma.pedido.create({ data: { lojaId: loja.id, clienteId: closingClient.id, codigo: `AFTER-${randomUUID()}`, pagamento: 'Aguardando confirmação', total: 1 } }));
   await assert.rejects(prisma.solicitacaoServico.create({ data: { lojaId: loja.id, clienteId: closingClient.id, servicoId: service.id, chaveIdempotencia: randomUUID(), protocolo: `AFTER-${randomUUID()}`, aparelho: 'Fixture', problema: 'Não deve registrar' } }));
+  const racing = await register('cliente-race');
+  const racingClient = await prisma.cliente.findUniqueOrThrow({ where: { usuarioId: racing.user.id } });
+  const racingRequest = (await request('/privacidade/encerramento', racing.token, { senhaAtual: 'ci-http-client-password-123', confirmacao: 'SOLICITAR_ENCERRAMENTO' })).data.solicitacao;
+  await request(`/privacidade/encerramento/${racingRequest.id}/analisar`, closureAdmin.token, {});
+  let releaseInsert;
+  const holdInsert = new Promise(resolve => { releaseInsert = resolve; });
+  let insertStarted;
+  const started = new Promise(resolve => { insertStarted = resolve; });
+  const inserting = prisma.$transaction(async tx => {
+    await tx.pedido.create({ data: { lojaId: loja.id, clienteId: racingClient.id, codigo: `RACE-${randomUUID()}`, pagamento: 'Aguardando confirmação', total: 1 } });
+    insertStarted();
+    await holdInsert;
+  }, { timeout: 10000 });
+  await started;
+  const racingClose = request(`/privacidade/encerramento/${racingRequest.id}/concluir`, closureAdmin.token, { confirmacao: 'CONCLUIR_ENCERRAMENTO' }, 'POST', [409]);
+  let waitedForUserLock = false;
+  try {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const [{ count }] = await prisma.$queryRaw`SELECT count(*)::int AS count FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query LIKE '%Usuario%' AND pid <> pg_backend_pid()`;
+      if (count > 0) { waitedForUserLock = true; break; }
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  } finally { releaseInsert(); }
+  assert.equal(waitedForUserLock, true, 'Closure must actually wait for the concurrent commercial insert');
+  await inserting;
+  assert.equal((await racingClose).data.pendencias.pedidos, 1, 'Closure must see an order committed while it waited for the user row lock');
+  assert.equal((await prisma.usuario.findUniqueOrThrow({ where: { id: racing.user.id } })).encerradaEm, null);
   console.log('Real HTTP/PostgreSQL: account token confirmation, session revocation and existing product flows passed.');
 } finally {
   if (api && api.exitCode === null) {
