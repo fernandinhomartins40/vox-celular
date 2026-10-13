@@ -536,3 +536,8 @@ assert.ok(personalNotices.every(row => row.clienteId === undefined && row.lojaId
 assert.deepEqual(await json('/api/notificacoes', { token: otherCustomer.token }), [], 'Other client cannot see notifications');
 sql(`UPDATE "NotificacaoCliente" SET "expiresAt"=NOW()-INTERVAL '1 minute' WHERE "clienteId"='${me.cliente.id}'`);
 assert.deepEqual(await json('/api/notificacoes', { token: customer.token }), [], 'Expired notices must not be shown');
+
+const noticesExport = await json('/api/privacidade/exportar', { token: customer.token });
+assert.ok(noticesExport.avisos.length > 0, 'Export includes retained notices even after expiry');
+assert.ok(noticesExport.avisos.every(row => row.clienteId === undefined && row.lojaId === undefined && row.chaveEvento === undefined));
+assert.deepEqual((await json('/api/privacidade/exportar', { token: otherCustomer.token })).avisos, [], 'Export does not include another client notices');
