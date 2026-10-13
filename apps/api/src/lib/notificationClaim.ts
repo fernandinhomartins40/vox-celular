@@ -14,6 +14,9 @@ export async function claimNotification(now = new Date()) {
       ORDER BY n."proximaTentativaEm", n.id
       LIMIT 1 FOR UPDATE OF n SKIP LOCKED`;
     if (!rows.length) return null;
-    return tx.notificacaoCliente.update({ where: { id: rows[0].id }, data: { status: 'PROCESSANDO', tentativas: { increment: 1 } } });
+    const event = await tx.notificacaoCliente.update({ where: { id: rows[0].id }, data: { status: 'PROCESSANDO', tentativas: { increment: 1 } } });
+    const subscriptions = await tx.assinaturaPush.findMany({ where: { clienteId: event.clienteId, lojaId: event.lojaId, ativo: true }, select: { id: true }, take: 10 });
+    await tx.entregaPush.createMany({ data: subscriptions.map(subscription => ({ notificacaoId: event.id, assinaturaId: subscription.id })), skipDuplicates: true });
+    return event;
   });
 }

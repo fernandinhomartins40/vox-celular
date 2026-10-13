@@ -49,6 +49,7 @@ model NotificacaoCliente {
   expiresAt DateTime @default(now())
   loja Loja @relation(fields: [lojaId], references: [id])
   cliente Cliente @relation(fields: [clienteId], references: [id])
+  entregas EntregaPush[]
   @@unique([clienteId, chaveEvento])
   @@index([status, proximaTentativaEm])
   @@index([expiresAt, id])
@@ -198,7 +199,23 @@ model AssinaturaPush {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   cliente Cliente @relation(fields: [clienteId], references: [id])
+  entregas EntregaPush[]
   @@index([clienteId, ativo])
+}
+
+model EntregaPush {
+  id String @id @default(cuid())
+  notificacaoId String
+  assinaturaId String
+  status String @default("PENDENTE")
+  tentativas Int @default(0)
+  proximaTentativaEm DateTime @default(now())
+  confirmadaEm DateTime?
+  createdAt DateTime @default(now())
+  notificacao NotificacaoCliente @relation(fields: [notificacaoId], references: [id], onDelete: Cascade)
+  assinatura AssinaturaPush @relation(fields: [assinaturaId], references: [id], onDelete: Cascade)
+  @@unique([notificacaoId, assinaturaId])
+  @@index([status, proximaTentativaEm])
 }
 
 model GuiaOperadora {
