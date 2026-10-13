@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { notificationDeliveryOutcome } from './notificationDeliveryOutcome.js';
+const now = new Date('2026-10-12T12:00:00Z');
+const expires = new Date(now.getTime() + 7200000);
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'accepted' }, expires, now), { status: 'ACEITA', confirmadaEm: now });
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'ambiguous' }, expires, now), { status: 'INCERTA' });
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'invalid-subscription' }, expires, now), { status: 'INVALIDA' });
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'temporary' }, expires, now), { status: 'PENDENTE', proximaTentativaEm: new Date(now.getTime() + 60000) });
+assert.deepEqual(notificationDeliveryOutcome(5, { status: 'temporary' }, expires, now), { status: 'FALHA' });
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'temporary' }, new Date(now.getTime() + 60000), now), { status: 'FALHA' });
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'expired' }, expires, now), { status: 'EXPIRADA' });
+assert.throws(() => notificationDeliveryOutcome(0, { status: 'accepted' }, expires, now), /INVALID_DELIVERY_OUTCOME/);
+console.log('Delivery outcomes distinguish acceptance, uncertainty and bounded retries.');

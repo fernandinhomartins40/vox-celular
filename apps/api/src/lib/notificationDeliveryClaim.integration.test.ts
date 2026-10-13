@@ -4,6 +4,7 @@ import { prisma } from './prisma.js';
 import { assertDisposableDatabase } from './disposableDatabase.js';
 import { claimNotificationDelivery } from './notificationDeliveryClaim.js';
 import { authorizeNotificationDelivery } from './notificationDeliveryAuthorization.js';
+import { settleNotificationDelivery } from './notificationDeliverySettlement.js';
 
 assertDisposableDatabase(process.env.PUSH_DELIVERY_TEST);
 const id = `ci-delivery-${randomUUID()}`;
@@ -38,7 +39,29 @@ try {
   await prisma.cliente.update({ where: { id }, data: { notificacoes: false } });
   assert.notEqual((await claimNotificationDelivery(now))?.id, id, 'Revoked consent must not be claimed');
   assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).tentativas, 1);
-  console.log('Delivery claim concurrency and consent/subscription checks passed.');
+  await prisma.cliente.update({ where: { id }, data: { notificacoes: true } });
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO' } });
+  assert.equal(await settleNotificationDelivery(id, 2, { status: 'accepted' }, now), false, 'Wrong attempt must not settle');
+  assert.equal(await settleNotificationDelivery(id, 1, { status: 'temporary' }, now), true);
+  const retry = await prisma.entregaPush.findUniqueOrThrow({ where: { id } });
+  assert.equal(retry.status, 'PENDENTE');
+  assert.equal(retry.proximaTentativaEm.getTime(), now.getTime() + 60000);
+  assert.equal(await settleNotificationDelivery(id, 1, { status: 'accepted' }, now), false, 'Late result must not overwrite a scheduled retry');
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO', tentativas: 2 } });
+  assert.equal(await settleNotificationDelivery(id, 2, { status: 'accepted' }, now), true);
+  assert.equal(await settleNotificationDelivery(id, 2, { status: 'temporary' }, now), false, 'Duplicate settlement must preserve acceptance');
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'ACEITA');
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO', tentativas: 3, confirmadaEm: null } });
+  assert.equal(await settleNotificationDelivery(id, 3, { status: 'invalid-subscription' }, now), true);
+  assert.equal((await prisma.assinaturaPush.findUniqueOrThrow({ where: { id } })).ativo, false);
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'INVALIDA');
+  await prisma.assinaturaPush.update({ where: { id }, data: { ativo: true } });
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO', tentativas: 4 } });
+  await prisma.cliente.update({ where: { id }, data: { notificacoes: false } });
+  assert.equal(await settleNotificationDelivery(id, 4, { status: 'accepted' }, now), true);
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'CANCELADA');
+  assert.equal(await settleNotificationDelivery(id, 4, { status: 'temporary' }, now), false, 'Canceled delivery must never be revived');
+  console.log('Delivery claims, authorization and idempotent settlements passed.');
 } finally {
   await prisma.notificacaoCliente.deleteMany({ where: { lojaId: id } });
   await prisma.assinaturaPush.deleteMany({ where: { lojaId: id } });
