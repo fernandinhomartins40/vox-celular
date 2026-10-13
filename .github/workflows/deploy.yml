@@ -395,7 +395,9 @@ jobs:
       - name: Assistant compatible accessory purchases
         run: node .github/scripts/test-assistant-accessories-browser.mjs
       - name: Account confirmation browser privacy and flows
-        run: node .github/scripts/test-account-confirmation-browser.mjs
+        run: |
+          node .github/scripts/test-account-confirmation-browser.mjs
+          node .github/scripts/test-account-requests-browser.mjs
       - name: Merchant service quote issuance and retry
         run: node .github/scripts/test-merchant-quotes-browser.mjs
       - name: Verify session renewal races
