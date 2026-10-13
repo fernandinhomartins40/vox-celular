@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createECDH, randomBytes } from 'node:crypto';
 import webpush from 'web-push';
-import { sendWebPush } from './webPushTransport.js';
+import { sendWebPush, pushRetryAfter } from './webPushTransport.js';
 
 const curve = createECDH('prime256v1');
 const subscription = { endpoint: 'https://fcm.googleapis.com/fictional-test-endpoint', keys: { p256dh: curve.generateKeys().toString('base64url'), auth: randomBytes(16).toString('base64url') } };
@@ -36,3 +36,10 @@ await assert.rejects(sendWebPush({ ...subscription, endpoint: 'https://127.0.0.1
 await assert.rejects(sendWebPush(subscription, { ...notice, destino: 'https://evil.example' }, config, accepted, now), /INVALID_PUSH_TRANSPORT_INPUT/);
 await assert.rejects(sendWebPush(subscription, notice, { ...config, subject: 'https://localhost' }, accepted, now), /INVALID_PUSH_TRANSPORT_INPUT/);
 console.log('Encrypted push request, TTL, redirect policy, failures and input restrictions passed.');
+assert.equal(pushRetryAfter('120', now)?.getTime(), now.getTime() + 120000);
+assert.equal(pushRetryAfter('9'.repeat(80), now)?.getTime(), 8640000000000000, 'Very long valid delays must not fall back to an early retry');
+assert.equal(pushRetryAfter('Mon, 12 Oct 2026 12:05:00 GMT', now)?.getTime(), now.getTime() + 300000);
+for (const value of [null, 'invalid', '-3', '0', 'Mon, 12 Oct 2026 11:00:00 GMT', 'x'.repeat(81)]) assert.equal(pushRetryAfter(value, now), undefined);
+const rateLimited = await sendWebPush(subscription, notice, config, async () => new Response(null, { status: 429, headers: { 'Retry-After': '120' } }), now);
+assert.equal(rateLimited.status, 'temporary');
+assert.ok(rateLimited.status === 'temporary' && rateLimited.retryAfter!.getTime() >= now.getTime() + 120000);

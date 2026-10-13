@@ -11,3 +11,8 @@ assert.deepEqual(notificationDeliveryOutcome(1, { status: 'temporary' }, new Dat
 assert.deepEqual(notificationDeliveryOutcome(1, { status: 'expired' }, expires, now), { status: 'EXPIRADA' });
 assert.throws(() => notificationDeliveryOutcome(0, { status: 'accepted' }, expires, now), /INVALID_DELIVERY_OUTCOME/);
 console.log('Delivery outcomes distinguish acceptance, uncertainty and bounded retries.');
+const later = new Date(now.getTime() + 300000);
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'temporary', retryAfter: later }, expires, now), { status: 'PENDENTE', proximaTentativaEm: later });
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'temporary', retryAfter: expires }, expires, now), { status: 'FALHA' });
+assert.deepEqual(notificationDeliveryOutcome(1, { status: 'temporary', retryAfter: now }, expires, now), { status: 'PENDENTE', proximaTentativaEm: new Date(now.getTime() + 60000) });
+assert.throws(() => notificationDeliveryOutcome(1, { status: 'temporary', retryAfter: new Date('invalid') }, expires, now), /INVALID_DELIVERY_OUTCOME/);

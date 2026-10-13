@@ -11,8 +11,11 @@ export function notificationDeliveryOutcome(attempt: number, result: PushTranspo
     case 'expired': return { status: 'EXPIRADA' };
     case 'rejected': return { status: 'FALHA' };
     case 'temporary': {
+      if (result.retryAfter && !Number.isFinite(result.retryAfter.getTime())) throw new Error('INVALID_DELIVERY_OUTCOME');
       const retry = notificationRetry(attempt, 'temporary', expiresAt, now);
-      return retry.action === 'retry' ? { status: 'PENDENTE', proximaTentativaEm: retry.next! } : { status: 'FALHA' };
+      if (retry.action !== 'retry') return { status: 'FALHA' };
+      const next = new Date(Math.max(retry.next!.getTime(), result.retryAfter?.getTime() ?? 0));
+      return next < expiresAt ? { status: 'PENDENTE', proximaTentativaEm: next } : { status: 'FALHA' };
     }
     default: throw new Error('INVALID_DELIVERY_OUTCOME');
   }
