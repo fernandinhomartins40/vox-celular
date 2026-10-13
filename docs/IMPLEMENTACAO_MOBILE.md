@@ -453,3 +453,7 @@ Detalhe consulta relações públicas da mesma loja após carregar produto e apr
 
 ### Compatibilidade no detalhe web — 13/10/2026
 Modal público consulta relações da loja/produto e mostra nome, observação e data conferida. Botão Ver este produto consulta produto ativo atual e abre no mesmo modal, sem voltar à busca. Falha é distinta de compatibilidade ausente; ausência orienta confirmar antes de comprar. Consulta é de leitura e não deduz compatibilidade. Respostas após fechamento são descartadas. Build e lint passaram. Validação interativa/responsiva deste componente e gestão de relações pelo lojista permanecem pendentes; API de consulta foi validada separadamente com PostgreSQL real.
+
+
+### Compatibilidade web validada em navegador — 13/10/2026
+Playwright Chromium em 390/768/1440 com API simulada passou: detalhe exibe observação aprovada, botão consulta produto relacionado e troca modal, item sem cadastro mostra desconhecimento e erro 503 aparece como falha sem alegar ausência. URL consultada usa loja explícita; sem overflow/erros de página. Script incluído no job browser existente. Não comprova UI com backend real nem interação nativa/Safari; gestão e revisão de compatibilidade seguem pendentes.
