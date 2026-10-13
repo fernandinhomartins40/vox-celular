@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
-import { request } from '../src/api';
+import { requestForSession, sessionRevision } from '../src/api';
 type Order = { id: string; codigo: string; status: string; total: number | string; pagamento: string; canceladoEm?: string | null; itens: { nome: string; qty: number }[]; timeline?: { id: string; status: string; data: string | null; ok: boolean }[] };
 const labels: Record<string, string> = { NOVO: 'Recebido', EM_PREPARO: 'Em preparo', PRONTO: 'Pronto', ENTREGUE: 'Entregue', CANCELADO: 'Cancelado' };
 export default function Orders() {
@@ -12,8 +12,8 @@ export default function Orders() {
   const [expanded, setExpanded] = useState<string | null>(null);
   useFocusEffect(useCallback(() => {
     let active = true;
-    setRefreshing(true);
-    request<Order[]>('/pedidos/meus', undefined, true).then(data => { if (active) { setRows(data); setError(''); } }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setRefreshing(false); });
+    setRows(null); setExpanded(null); setError(''); setRefreshing(true);
+    requestForSession<Order[]>(sessionRevision(), '/pedidos/meus').then(data => { if (active) setRows(data); }).catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setRefreshing(false); });
     return () => { active = false; };
   }, [reload]));
   return <View style={{ flex: 1, padding: 20 }}><Text accessibilityRole="header" style={{ fontSize: 25, fontWeight: '700', color: '#10243e', marginBottom: 16 }}>Meus pedidos</Text>

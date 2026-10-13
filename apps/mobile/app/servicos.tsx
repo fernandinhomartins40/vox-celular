@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useFocusEffect } from 'expo-router';
 import { randomUUID } from 'expo-crypto';
-import { request } from '../src/api';
+import { request, requestForSession, sessionRevision } from '../src/api';
 
 type Service = { id: string; titulo: string; descricao: string; preco: number | null; agendamento: boolean };
 type Slot = { id: string; inicio: string; fim: string; vagas: number };
@@ -31,6 +31,17 @@ export default function Services() {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [historyError, setHistoryError] = useState('');
   const [historyBusy, setHistoryBusy] = useState(false);
+  const formRevision = useRef(sessionRevision());
+  useFocusEffect(useCallback(() => {
+    const revision = sessionRevision();
+    setTickets(null); setHistoryError(''); setHistoryBusy(false);
+    if (formRevision.current !== revision) {
+      formRevision.current = revision;
+      setReceipt(null);
+      attempt.current = null;
+      setService(null); setStep(1); setDevice(''); setProblem(''); setSlotId(''); setError('');
+    }
+  }, []));
   useEffect(() => {
     let active = true;
     setError(''); setServices(null);
@@ -60,21 +71,23 @@ export default function Services() {
   }
   async function send() {
     if (!service || sending.current) return;
+    const revision = formRevision.current;
     sending.current = true;
     setBusy(true); setError('');
     try {
       attempt.current ||= randomUUID();
-      const result = await request<Ticket>('/servicos/solicitacoes', { servicoId: service.id, aparelho: device.trim(), problema: problem.trim(), chaveIdempotencia: attempt.current, ...(slotId ? { horarioId: slotId } : {}) }, true);
-      setReceipt(result); setTickets(null);
-    } catch (e) { setError(e instanceof Error ? e.message : 'Não foi possível confirmar. Tente novamente sem alterar os dados.'); }
+      const result = await requestForSession<Ticket>(revision, '/servicos/solicitacoes', { servicoId: service.id, aparelho: device.trim(), problema: problem.trim(), chaveIdempotencia: attempt.current, ...(slotId ? { horarioId: slotId } : {}) });
+      if (formRevision.current === revision && sessionRevision() === revision) { setReceipt(result); setTickets(null); }
+    } catch (e) { if (formRevision.current === revision) setError(e instanceof Error ? e.message : 'Não foi possível confirmar. Tente novamente sem alterar os dados.'); }
     finally { sending.current = false; setBusy(false); }
   }
   async function loadHistory() {
     if (historyBusy) return;
+    const revision = formRevision.current;
     setHistoryBusy(true); setHistoryError('');
-    try { setTickets(await request<Ticket[]>('/servicos/solicitacoes', undefined, true)); }
-    catch (e) { setHistoryError(e instanceof Error ? e.message : 'Não foi possível consultar seus atendimentos.'); }
-    finally { setHistoryBusy(false); }
+    try { const rows = await requestForSession<Ticket[]>(revision, '/servicos/solicitacoes'); if (formRevision.current === revision) setTickets(rows); }
+    catch (e) { if (formRevision.current === revision) setHistoryError(e instanceof Error ? e.message : 'Não foi possível consultar seus atendimentos.'); }
+    finally { if (formRevision.current === revision) setHistoryBusy(false); }
   }
   function startAgain() { setReceipt(null); setService(null); setStep(1); setDevice(''); setProblem(''); setSlotId(''); edit(); }
   const selectedSlot = slots.find(row => row.id === slotId);
