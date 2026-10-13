@@ -6,18 +6,29 @@ import CartButton from '../src/CartButton';
 import FavoriteButton from '../src/FavoriteButton';
 
 type Product = { id: string; lojaId: string; nome: string; sub: string; categoria: string; preco: number; estoque: number; imgUrl: string; descricao: string; specs: string[]; atributosTecnicos?: { verificado?: boolean; ramGB?: number; armazenamentoGB?: number; bateriaMah?: number } };
+type Compatibility = { id: string; observacao: string; aprovadoEm: string; acessorio: { id: string; nome: string }; aparelho: { id: string; nome: string } };
 export default function ProductDetails() {
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
   const productId = typeof id === 'string' ? id : '';
   const [product, setProduct] = useState<Product | null>(null);
   const [error, setError] = useState('');
   const [reload, setReload] = useState(0);
+  const [compatibilities, setCompatibilities] = useState<Compatibility[] | null>(null);
+  const [compatibilityError, setCompatibilityError] = useState('');
   useFocusEffect(useCallback(() => {
     let active = true;
     setProduct(null); setError('');
+    setCompatibilities(null); setCompatibilityError('');
     if (!productId || productId.length > 200) { setError('Escolha um produto no catálogo.'); return; }
     request<{ id: string }>('/loja').then(store => request<Product>(`/produtos/${encodeURIComponent(productId)}?lojaId=${encodeURIComponent(store.id)}`))
-      .then(row => { if (active) setProduct(row); }).catch(e => { if (active) setError(e.message); });
+      .then(async row => {
+        if (!active) return;
+        setProduct(row);
+        try {
+          const pairs = await request<Compatibility[]>(`/compatibilidades?lojaId=${encodeURIComponent(row.lojaId)}&produtoId=${encodeURIComponent(row.id)}`);
+          if (active) setCompatibilities(pairs);
+        } catch (e) { if (active) setCompatibilityError(e instanceof Error ? e.message : 'Não foi possível consultar compatibilidade.'); }
+      }).catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
   }, [productId, reload]));
   return <ScrollView contentContainerStyle={styles.screen}>
@@ -28,6 +39,12 @@ export default function ProductDetails() {
         <CartButton storeId={product.lojaId} productId={product.id} stock={product.estoque} /><FavoriteButton productId={product.id} />
       </View>
       <View style={styles.card}><Text accessibilityRole="header" style={styles.heading}>Sobre o produto</Text><Text style={styles.text}>{product.descricao || 'Descrição não informada.'}</Text>{product.specs?.slice(0, 12).map((spec, index) => <Text key={index} style={styles.text}>• {spec}</Text>)}</View>
+      <View style={styles.card}><Text accessibilityRole="header" style={styles.heading}>Compatibilidade conferida pela loja</Text>
+        {compatibilityError ? <><Text accessibilityRole="alert" style={styles.error}>{compatibilityError}</Text><Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={styles.control}><Text style={styles.link}>Consultar novamente</Text></Pressable></> : compatibilities === null ? <ActivityIndicator color="#0036cc" accessibilityLabel="Consultando compatibilidade" /> : !compatibilities.length ? <Text style={styles.text}>A loja ainda não informou compatibilidade para este produto. Confirme antes de comprar um acessório.</Text> : compatibilities.map(pair => {
+          const related = pair.acessorio.id === product.id ? pair.aparelho : pair.acessorio;
+          return <View key={pair.id} style={{ marginTop: 12 }}><Link href={{ pathname: '/produto', params: { id: related.id } }} accessibilityLabel={`Ver produto compatível: ${related.nome}`} style={styles.link}>{related.nome}</Link><Text style={styles.text}>{pair.observacao}</Text><Text style={styles.text}>Conferido em {new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(new Date(pair.aprovadoEm))}</Text></View>;
+        })}
+      </View>
       <View style={styles.card}><Text accessibilityRole="header" style={styles.heading}>Características conferidas</Text>{([['Memória RAM', 'ramGB', 'GB'], ['Armazenamento', 'armazenamentoGB', 'GB'], ['Bateria', 'bateriaMah', 'mAh']] as const).map(([label, field, unit]) => <Text key={field} style={styles.text}>{label}: {product.atributosTecnicos?.verificado && product.atributosTecnicos[field] ? `${product.atributosTecnicos[field]} ${unit}` : 'Não informado'}</Text>)}<Link href="/assistente" style={styles.link}>Preciso de ajuda para escolher</Link></View>
     </>}
   </ScrollView>;
