@@ -23,6 +23,7 @@ import { iaConfigRouter } from './routes/iaConfig.js';
 import { notificacoesRouter } from './routes/notificacoes.js';
 import { pushRouter } from './routes/push.js';
 import { pruneExpiredNotifications } from './lib/notificationRetention.js';
+import { startConfiguredNotificationWorker } from './lib/notificationWorker.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,6 +66,7 @@ app.use('/api/notificacoes', notificacoesRouter);
 app.use('/api/push', pushRouter);
 
 const server = app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+const notificationWorker = startConfiguredNotificationWorker();
 let retentionRunning = false;
 const retentionTimer = setInterval(async () => {
   if (retentionRunning) return;
@@ -78,10 +80,12 @@ let shuttingDown = false;
 async function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
+  const workerStopping = notificationWorker.stop();
   clearInterval(retentionTimer);
   const timeout = setTimeout(() => process.exit(1), 25000);
   timeout.unref();
   server.close(async () => {
+    await workerStopping;
     await prisma.$disconnect();
     clearTimeout(timeout);
     process.exit(0);

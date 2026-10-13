@@ -49,6 +49,8 @@ services:
       PUBLIC_STORE_KEY: ${PUBLIC_STORE_KEY:-vox-celular}
       UPLOADS_DIR: /app/uploads
       MARKETPLACE_KEY_FILE: /app/secrets/marketplace.key
+      WEB_PUSH_ENABLED: ${WEB_PUSH_ENABLED:-true}
+      WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-${CORS_ORIGIN:-https://www.voxcelular.com.br}}
       NODE_ENV: production
     volumes: [uploads:/app/uploads, secrets:/app/secrets]
     networks: [vox-net]
