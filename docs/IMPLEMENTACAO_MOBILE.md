@@ -629,3 +629,7 @@ Tratamento de entrada preserva id validado em voxcelular://produto e voxcelular:
 
 ### Pipeline de APK Android de teste preparado — 13/10/2026
 Workflow único ganha input build_android_test e job separado após verify-mobile: Java/SDK no GitHub, prebuild Expo, assembleRelease com duas arquiteturas/até dois workers, APK/checksum como artefatos por sete dias. Usa assinatura de teste do template, não credenciais de distribuição; não publica na Play Store e não condiciona deploy web/API. Compilação pesada é opcional em workflow_dispatch para evitar custo a cada push. YAML parseado e dependência independente conferida; nenhum Gradle/build instalável foi executado neste incremento, portanto APK não comprovado. Projetos gerados e formatos privados de assinatura ignorados. Pipeline iOS e assinatura de produção continuam pendentes.
+
+
+### Checagem de configuração nativa e limite local — 13/10/2026
+Prebuild Android tentou criar projeto no workspace e em cópia isolada .git/native-prebuild-check; ambos terminaram EIO/Acesso negado antes de gerar projeto. Não foi feito delete de diretórios nem declarada geração/build concluída. Teste de configuração verifica package/bundle coincidentes, scheme, domínios exatos, seis combinações HTTPS/host/path e autoVerify; passou localmente e foi incluído no CI. Essa checagem não substitui prebuild/Gradle nem valida assinatura ou aparelho. Prosseguir com compilação no runner quando disponível e investigação do ambiente local se necessária.
