@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { captureLogoutPush, waitForLogout } from '../../apps/web/src/lib/logoutPush.js';
+const subscription = { endpoint: 'https://fcm.googleapis.com/fixture', unsubscribe: () => { throw new Error('Capture must not unsubscribe'); } };
+const browser = { navigator: { serviceWorker: { getRegistration: async () => ({ pushManager: { getSubscription: async () => subscription } }) } } };
+assert.equal(await captureLogoutPush(1, () => 1, browser), subscription);
+assert.equal(await captureLogoutPush(1, () => 2, browser), null);
+assert.equal(await captureLogoutPush(1, () => 1, {}), null);
+const stalled = { navigator: { serviceWorker: { getRegistration: () => new Promise(() => {}) } } };
+assert.equal(await captureLogoutPush(1, () => 1, stalled, 10), null, 'Push lookup must not indefinitely block logout');
+let revision = 1;
+const changed = { navigator: { serviceWorker: { getRegistration: async () => { revision++; return {}; } } } };
+assert.equal(await captureLogoutPush(1, () => revision, changed), null);
+console.log('Logout push capture session boundaries, unsupported browser and bounded wait passed.');
+assert.equal(await waitForLogout(Promise.resolve('done')), 'done');
+await assert.rejects(waitForLogout(new Promise(() => {}), 10), /Servidor indisponível/);

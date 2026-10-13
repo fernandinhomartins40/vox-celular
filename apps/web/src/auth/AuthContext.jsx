@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { api, setAccessToken } from '../lib/api.js';
+import { api, setAccessToken, getSessionGeneration } from '../lib/api.js';
+import { captureLogoutPush, waitForLogout } from '../lib/logoutPush.js';
 import { AuthContext } from './context.js';
 
 export function AuthProvider({ children }) {
@@ -47,8 +48,13 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
-    try { await api.post('/auth/logout', {}); }
+    const generation = getSessionGeneration();
+    const push = user?.role === 'CLIENTE' ? await captureLogoutPush(generation, getSessionGeneration) : null;
+    if (getSessionGeneration() !== generation) return;
+    try { await waitForLogout(api.post('/auth/logout', push ? { pushEndpoint: push.endpoint } : {})); }
     catch { /* Local logout remains possible without network; session expires server-side. */ }
+    if (getSessionGeneration() !== generation) return;
+    if (push) Promise.resolve().then(() => push.unsubscribe()).catch(() => {});
     setAccessToken(null);
     localStorage.removeItem('vox_user');
     sessionStorage.removeItem('vox_cart');

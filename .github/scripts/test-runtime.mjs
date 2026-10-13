@@ -585,3 +585,11 @@ await json('/api/push/web/remover-atual', { method: 'POST', token: customer.toke
 assert.equal(sql(`SELECT COUNT(*) FROM "EntregaPush" WHERE "assinaturaId"='${registeredPush[0].id}'`), '0');
 await json(`/api/push/web/${registeredPush[0].id}`, { method: 'DELETE', token: customer.token });
 assert.deepEqual(await json('/api/push/web', { token: customer.token }), []);
+await json('/api/privacidade/preferencias', { method: 'PUT', token: customer.token, body: { personalizacao: false, notificacoes: true, versaoAviso: '2026-10-12' } });
+await json('/api/push/web', { method: 'PUT', token: customer.token, body: pushFixture });
+await json('/api/push/web', { method: 'PUT', token: customer.token, body: { ...pushFixture, endpoint: 'https://fcm.googleapis.com/second-ci-endpoint' } });
+await json('/api/auth/logout', { method: 'POST', token: otherCustomer.token, body: { pushEndpoint: pushFixture.endpoint } });
+assert.equal((await json('/api/push/web', { token: customer.token })).length, 2, 'Another client logout must not remove our push subscription');
+await json('/api/auth/logout', { method: 'POST', token: customer.token, body: { pushEndpoint: pushFixture.endpoint } });
+await json('/api/push/web', { token: customer.token, status: 401 });
+assert.equal(sql(`SELECT COUNT(*) FROM "AssinaturaPush" WHERE "clienteId"='${me.cliente.id}'`), '1', 'Logout must preserve other devices');

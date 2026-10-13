@@ -266,6 +266,8 @@ jobs:
         run: node .github/scripts/test-push-worker.mjs
       - name: Browser push consent and explicit permission flow
         run: node .github/scripts/test-browser-push.mjs
+      - name: Logout push capture and session boundaries
+        run: node .github/scripts/test-logout-push.mjs
       - name: Push account panel at mobile tablet and desktop sizes
         run: node .github/scripts/test-push-panel-browser.mjs
       - name: Favorites, comparison and current cart prices

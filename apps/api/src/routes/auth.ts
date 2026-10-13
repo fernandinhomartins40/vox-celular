@@ -6,6 +6,7 @@ import { createSession, hashRefresh, readRefresh, refreshCookie, refreshValue, s
 import { requireAuth, AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
 import { newPasswordSchema } from '../lib/passwordPolicy.js';
+import { createHash } from 'node:crypto';
 
 export const authRouter = Router();
 authRouter.use(['/login', '/register', '/refresh', '/senha'], authLimits);
@@ -113,9 +114,18 @@ authRouter.post('/refresh', async (req, res) => {
   } catch { res.status(401).json({ error: 'Sua sessão expirou. Entre novamente.' }); }
 });
 authRouter.post('/logout', requireAuth, async (req: AuthRequest, res) => {
+  const parsed = z.object({ pushEndpoint: z.string().url().max(2048).optional() }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Confira os dados de encerramento.' }); return; }
   try {
-    if (req.user!.sessionId) await prisma.sessao.deleteMany({ where: { id: req.user!.sessionId, usuarioId: req.user!.userId } });
-    else await prisma.usuario.update({ where: { id: req.user!.userId }, data: { tokenVersion: { increment: 1 } } });
+    await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
+      if (parsed.data.pushEndpoint && req.user!.role === 'CLIENTE') {
+        const endpointHash = createHash('sha256').update(parsed.data.pushEndpoint).digest('hex');
+        await tx.assinaturaPush.deleteMany({ where: { endpointHash, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+      }
+      if (req.user!.sessionId) await tx.sessao.deleteMany({ where: { id: req.user!.sessionId, usuarioId: req.user!.userId } });
+      else await tx.usuario.update({ where: { id: req.user!.userId }, data: { tokenVersion: { increment: 1 } } });
+    });
     refreshCookie(res, ''); res.json({ ok: true });
   } catch { res.status(503).json({ error: 'Não foi possível encerrar a sessão no servidor.' }); }
 });
