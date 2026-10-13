@@ -633,3 +633,7 @@ Workflow único ganha input build_android_test e job separado após verify-mobil
 
 ### Checagem de configuração nativa e limite local — 13/10/2026
 Prebuild Android tentou criar projeto no workspace e em cópia isolada .git/native-prebuild-check; ambos terminaram EIO/Acesso negado antes de gerar projeto. Não foi feito delete de diretórios nem declarada geração/build concluída. Teste de configuração verifica package/bundle coincidentes, scheme, domínios exatos, seis combinações HTTPS/host/path e autoVerify; passou localmente e foi incluído no CI. Essa checagem não substitui prebuild/Gradle nem valida assinatura ou aparelho. Prosseguir com compilação no runner quando disponível e investigação do ambiente local se necessária.
+
+
+### Build iOS para simulador preparado — 13/10/2026
+Workflow único recebe input build_ios_simulator e job macOS independente do deploy e paralelo ao build Android opcional após verify-mobile. Gera projeto/pods Expo e executa xcodebuild Release iphonesimulator sem assinatura; script descobre workspace/scheme, limita dois jobs, exige Info.plist e main.jsbundle e compacta app em artefato de sete dias. Verifica sintaxe Python e parse/dependências do YAML; passaram. Nenhum Xcode foi executado localmente (Windows), portanto compilação/artefato ainda não comprovados. Artefato de simulador não instala em iPhone físico; archive assinado/TestFlight/distribuição seguem pendentes. Referência de processo: https://docs.expo.dev/build-reference/ios-builds/.

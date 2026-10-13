@@ -33,3 +33,6 @@ O app declara os domínios www.voxcelular.com.br e voxcelular.com.br. A API gera
 
 ## APK de teste no GitHub
 No workflow Build and Deploy Production, execução manual com build_android_test habilitado prepara APK standalone com assinatura de teste. Artefato vox-android-test-COMMIT fica disponível por sete dias se a compilação passar. Não é assinatura de distribuição, não publica na loja e ainda exige instalação/validação em aparelho. A execução manual também percorre o workflow normal de deploy autorizado. Builds ocorrem no GitHub, nunca na VPS. Referência: https://docs.expo.dev/guides/local-app-production/.
+
+## iOS para simulador no GitHub
+Execução manual do mesmo workflow com build_ios_simulator gera app Release para simulador no runner macOS, sem certificado de distribuição. Artefato zip dura sete dias se compilação passar. Não é IPA para iPhone físico nem publicação/TestFlight. Pode executar junto ao job Android; ambos independem do deploy web/API. Ainda requer execução Xcode e teste no simulador antes de declarar validação.

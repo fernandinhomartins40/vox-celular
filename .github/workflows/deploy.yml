@@ -9,6 +9,10 @@ on:
         description: 'Build standalone Android APK with test signing (not for store publication)'
         type: boolean
         default: false
+      build_ios_simulator:
+        description: 'Build iOS simulator app without distribution signing'
+        type: boolean
+        default: false
       create_test_admin:
         description: 'Create non-destructive test operator access'
         type: boolean
@@ -218,6 +222,40 @@ jobs:
           path: |
             apps/mobile/android/app/build/outputs/apk/release/app-release.apk
             apps/mobile/android/app/build/outputs/apk/release/app-release.apk.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  build-ios-simulator:
+    name: Build iOS simulator application
+    if: github.event_name == 'workflow_dispatch' && inputs.build_ios_simulator
+    needs: verify-mobile
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_PUBLIC_API_URL: https://www.voxcelular.com.br/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Record Xcode and SDK versions
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+      - name: Install native workspace
+        run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
+      - name: Generate iOS project and install pods
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform ios
+      - name: Compile simulator application with embedded bundle
+        run: python3 .github/scripts/build-ios-simulator.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vox-ios-simulator-${{ github.sha }}
+          path: apps/mobile/ios/build/vox-ios-simulator.zip
           if-no-files-found: error
           retention-days: 7
 

@@ -19,3 +19,4 @@ secrets/
 *.jks
 *.p12
 *.mobileprovision
+__pycache__/
