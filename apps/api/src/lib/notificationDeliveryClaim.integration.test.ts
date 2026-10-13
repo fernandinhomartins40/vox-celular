@@ -7,6 +7,7 @@ import { authorizeNotificationDelivery } from './notificationDeliveryAuthorizati
 import { settleNotificationDelivery } from './notificationDeliverySettlement.js';
 import { finalizeNotifications } from './notificationFinalization.js';
 import { expireNotifications } from './notificationExpiration.js';
+import { reconcileInterruptedDeliveries } from './notificationRecovery.js';
 
 assertDisposableDatabase(process.env.PUSH_DELIVERY_TEST);
 const id = `ci-delivery-${randomUUID()}`;
@@ -24,6 +25,15 @@ try {
   const claims = await Promise.all([claimNotificationDelivery(now), claimNotificationDelivery(now)]);
   assert.equal(claims.filter(row => row?.id === id).length, 1, 'Concurrent claims must not claim a delivery twice');
   assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).tentativas, 1);
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).processandoDesde?.getTime(), now.getTime());
+  assert.equal(await reconcileInterruptedDeliveries(new Date(now.getTime() + 9 * 60_000)), 0, 'Live attempts must not be reconciled');
+  assert.equal(await reconcileInterruptedDeliveries(new Date(now.getTime() + 10 * 60_000)), 1, 'Interrupted attempts become uncertain');
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'INCERTA');
+  assert.equal(await settleNotificationDelivery(id, 1, { status: 'accepted' }, now), false, 'Late settlement must not overwrite an uncertain attempt');
+  await finalizeNotifications();
+  assert.equal((await prisma.notificacaoCliente.findUniqueOrThrow({ where: { id } })).status, 'INCERTA');
+  await prisma.notificacaoCliente.update({ where: { id }, data: { status: 'PROCESSANDO' } });
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO' } });
   assert.equal((await authorizeNotificationDelivery(id, now))?.id, id);
   await prisma.cliente.update({ where: { id }, data: { notificacoes: false } });
   assert.equal(await authorizeNotificationDelivery(id, now), null, 'Consent revoked after claim must block authorization');

@@ -4,6 +4,19 @@ Data da auditoria e pesquisa: 11/10/2026. **Status: aprovado pelo usuário em 12
 
 ## 1. Auditoria da base existente
 
+### Revisão de execução — 13/10/2026
+
+Orientação do usuário: implementar sem complexidade desnecessária. O escopo funcional permanece, mas a entrega passa a ser organizada por jornadas utilizáveis, reutilizando a API, banco, componentes e workflow existentes. Não criar novas camadas, serviços ou abstrações sem uma necessidade concreta.
+
+1. **Comprar:** catálogo → carrinho → pedido. Fechar preço, disponibilidade, acessórios e acompanhamento no mesmo fluxo.
+2. **Pedir ajuda:** serviço → solicitação → acompanhamento. Orçamento e agenda ficam junto do protocolo, sem novas áreas de navegação.
+3. **Gerenciar a conta:** dados, avisos e privacidade agrupados em Conta, com ações e textos diretos.
+4. **Usar como aplicativo:** concluir PWA e app nativo sobre os mesmos fluxos; preparar instalação, links e push. Contas/certificados externos ficam como dependências de ativação identificadas.
+
+Para cada entrega: implementar o fluxo completo, executar as verificações relevantes uma vez, corrigir falhas e registrar a evidência. Ampliar testes somente quando houver risco ou falha concreta. Não adiar funcionalidades visíveis para perseguir todos os casos extremos; preservar as verificações necessárias de autorização, estoque, dados e pagamentos.
+
+Aceite em duas colunas: **implementação validada localmente** e **ativação/validação externa**. Uma dependência externa não impede concluir código independente, nem permite declarar o plano inteiro concluído. O bloqueio de faturamento do Actions deve ser registrado como impedimento de deploy, sem substituir o desenvolvimento por verificações repetidas do mesmo bloqueio.
+
 Foram inspecionados Prisma, rotas da API, autenticação, ponto de entrada e rotas do React, landing page, painéis do cliente, catálogo, configuração do Vite, Compose e workflow. Consulta de produção somente de leitura: readiness OK; memória instantânea de aproximadamente 31 MiB no banco, 30 MiB na API e 3 MiB no web. Isso é uma fotografia em baixa carga, não benchmark nem garantia de capacidade futura.
 
 | Área | Reutilizar | Corrigir ou ampliar |

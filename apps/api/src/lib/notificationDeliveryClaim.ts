@@ -29,6 +29,6 @@ export async function claimNotificationDelivery(now = new Date()) {
         AND n."expiresAt" > ${now.toISOString()}::timestamp AND c.notificacoes = true AND s.ativo = true
       FOR UPDATE OF d SKIP LOCKED`;
     if (!eligible.length) return null;
-    return tx.entregaPush.update({ where: { id: candidate.id }, data: { status: 'PROCESSANDO', tentativas: { increment: 1 } } });
+    return tx.entregaPush.update({ where: { id: candidate.id }, data: { status: 'PROCESSANDO', processandoDesde: now, tentativas: { increment: 1 } } });
   });
 }

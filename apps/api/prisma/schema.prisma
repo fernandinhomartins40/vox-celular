@@ -254,12 +254,14 @@ model EntregaPush {
   status String @default("PENDENTE")
   tentativas Int @default(0)
   proximaTentativaEm DateTime @default(now())
+  processandoDesde DateTime?
   confirmadaEm DateTime?
   createdAt DateTime @default(now())
   notificacao NotificacaoCliente @relation(fields: [notificacaoId], references: [id], onDelete: Cascade)
   assinatura AssinaturaPush @relation(fields: [assinaturaId], references: [id], onDelete: Cascade)
   @@unique([notificacaoId, assinaturaId])
   @@index([status, proximaTentativaEm])
+  @@index([status, processandoDesde])
 }
 
 model GuiaOperadora {
