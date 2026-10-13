@@ -649,3 +649,7 @@ Migration incremental adiciona TokenConta (apenas digest, finalidade, versão, d
 
 ### Confirmação de recuperação e e-mail na API — 13/10/2026
 POST auth/recuperacao/confirmar exige loja, token e nova senha válida; consome token e atualiza hash/versão, removendo sessões na mesma transação. POST auth/email/confirmar registra verificação após token específico válido. Rotas usam limites de autenticação, payload estrito e no-store, sem devolver token ou login automático. Build e PostgreSQL real (33 migrations) passaram por HTTP para loja errada, senha inválida, confirmação concorrente com único sucesso, repetição de verificação rejeitada, access/refresh antigos inválidos e login apenas com nova senha. Testes usam emissão interna de fixture; emissão pública/envio de e-mail/telas e retenção ainda pendentes, portanto recuperação do usuário não concluída.
+
+
+### Limpeza limitada de tokens de conta — 13/10/2026
+Passagem do agendamento existente remove até 100 tokens com expiração anterior a um dia, usando índice e nova condição no delete. Mantém janela diária de emissão e não cria processo/container; falha de notificações não impede tentar limpeza de tokens. Build e suíte PostgreSQL real (33 migrations) passaram para 101 expirados em dois lotes, preservação da fronteira exata e dos tokens recentes. Frequência de seis horas e lote inicial precisam ser medidos sob carga antes de ajustar; não comprova backlog controlado em qualquer volume. Emissão/envio público e telas de recuperação permanecem pendentes.

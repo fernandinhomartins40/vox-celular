@@ -7,6 +7,7 @@ import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { assertDisposableDatabase } from '../../apps/api/dist/lib/disposableDatabase.js';
 import { createAccountToken, consumeAccountToken } from '../../apps/api/dist/lib/accountTokenStore.js';
+import { pruneExpiredAccountTokens } from '../../apps/api/dist/lib/accountTokenRetention.js';
 
 assertDisposableDatabase('local-disposable');
 const { prisma } = await import('../../apps/api/dist/lib/prisma.js');
@@ -293,6 +294,14 @@ try {
   await request('/auth/refresh', null, { plataforma: 'native', refreshToken: other.refreshToken }, 'POST', [401]);
   await request('/auth/login', null, { lojaId: loja.id, email: other.user.email, senha: 'ci-http-client-password-123', plataforma: 'native' }, 'POST', [401]);
   await request('/auth/login', null, { lojaId: loja.id, email: other.user.email, senha: newPassword, plataforma: 'native' });
+  const retentionNow = new Date(), retentionCutoff = new Date(retentionNow.getTime() - 86400000);
+  await prisma.tokenConta.createMany({ data: Array.from({ length: 101 }, (_, index) => ({ id: `retention-token-${index}`, usuarioId: other.user.id, finalidade: 'RECUPERAR_SENHA', digest: `retention-fixture-${index}`, tokenVersion: 0, expiresAt: new Date(retentionCutoff.getTime() - 1), createdAt: new Date(retentionNow.getTime() - 2 * 86400000) })) });
+  await prisma.tokenConta.create({ data: { id: 'retention-boundary', usuarioId: other.user.id, finalidade: 'RECUPERAR_SENHA', digest: 'retention-boundary-fixture', tokenVersion: 0, expiresAt: retentionCutoff } });
+  assert.equal(await pruneExpiredAccountTokens(retentionNow), 100);
+  assert.equal(await prisma.tokenConta.count({ where: { id: { startsWith: 'retention-token-' } } }), 1);
+  assert.equal(await pruneExpiredAccountTokens(retentionNow), 1);
+  assert.ok(await prisma.tokenConta.findUnique({ where: { id: 'retention-boundary' } }));
+  assert.ok(await prisma.tokenConta.findUnique({ where: { id: persistedToken.id } }));
   console.log('Real HTTP/PostgreSQL: account token confirmation, session revocation and existing product flows passed.');
 } finally {
   if (api && api.exitCode === null) {

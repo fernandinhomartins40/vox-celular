@@ -27,6 +27,7 @@ import { compatibilidadesRouter } from './routes/compatibilidades.js';
 import { novidadesRouter } from './routes/novidades.js';
 import { orcamentosServicoRouter } from './routes/orcamentosServico.js';
 import { pruneExpiredNotifications } from './lib/notificationRetention.js';
+import { pruneExpiredAccountTokens } from './lib/accountTokenRetention.js';
 import { startConfiguredNotificationWorker } from './lib/notificationWorker.js';
 
 const app = express();
@@ -84,6 +85,8 @@ const retentionTimer = setInterval(async () => {
   retentionRunning = true;
   try { await pruneExpiredNotifications(); }
   catch { console.error('Notification retention pass failed'); }
+  try { await pruneExpiredAccountTokens(); }
+  catch { console.error('Account token retention pass failed'); }
   finally { retentionRunning = false; }
 }, 6 * 3600000);
 retentionTimer.unref();
