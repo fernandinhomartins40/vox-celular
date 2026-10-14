@@ -39,3 +39,11 @@ Requisitos e fontes oficiais pesquisados estão em [PUBLICACAO_APPS_CLIENTE.md](
 Implementação enviada à main no commit `6ceea37`. [Workflow do push](https://github.com/fernandinhomartins40/vox-celular/actions/runs/38500625417) e [workflow manual com builds Android/iOS solicitados](https://github.com/fernandinhomartins40/vox-celular/actions/runs/38500667713) terminaram em falha: GitHub informou que os jobs não iniciaram por pagamentos recentes com falha ou limite de gastos. Jobs de build nativo e deploy foram ignorados; nenhum APK/app de simulador foi gerado e este código não foi implantado por essas execuções. Resolver faturamento/limite e reexecutar os workflows; depois concluir testes físicos e distribuição assinada com as contas das lojas.
 
 Execução local encerrada com as tarefas de código/documentação/testes acima atendidas e dependências externas explícitas. Objetivo final de aplicativos instaláveis publicados permanece pendente; não confundir preparação de código/bundles com publicação ou deploy.
+
+## Atualizações de 14/10/2026
+
+- Cadastro/login/refresh web corrigidos para aceitar os dois domínios HTTPS oficiais, com e sem `www`, compartilhando a política com CORS e mantendo outras origens bloqueadas. Testes unitários e HTTP/PostgreSQL locais aprovados.
+- PWA inicia em `/app`, com catálogo/carrinho e atalhos de cliente. No modo instalado, acessos à raiz e à prévia da landing redirecionam para o app, preservando parâmetros e âncoras. Navegação comum do site continua disponível no navegador; testes Chromium em três tamanhos aprovados.
+- Expo atualizado para 57.0.29 e os quatro pacotes apontados pelo verificador. Lockfile atualizado; `expo install --check`, tipos, bundles Android/iOS e validação mobile no Actions aprovados.
+- Após o usuário tornar o repositório público, os jobs voltaram a iniciar. A execução revelou um teste antigo que não abria a aba de solicitação de serviço; corrigido e validado nos sete tamanhos dos painéis. Encontrado também overflow na tela offline com texto longo; corrigidas largura/quebra de texto e versão do cache, com teste offline Chromium aprovado.
+- O deploy continua exclusivamente por Actions. O status final de cada execução pode ser consultado na aba Actions do repositório; builds de distribuição assinados, dispositivos e publicação nas lojas continuam com as dependências externas já descritas.
