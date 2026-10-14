@@ -28,6 +28,7 @@ try {
     await page.goto(`${process.env.PANEL_BASE || 'http://127.0.0.1:3196'}/admin/clientes`);
     await page.getByRole('checkbox', { name: /Solicitações de encerramento/ }).click();
     await page.waitForFunction(() => new URL(location.href).searchParams.get('encerramento') === 'solicitado');
+    await page.getByRole('button', { name: 'Ver detalhes de Outro cliente' }).waitFor({ state: 'detached' });
     assert.equal(await page.getByRole('button', { name: 'Ver detalhes de Outro cliente' }).count(), 0);
     await page.getByRole('button', { name: 'Ver detalhes de Maria Silva' }).click();
     await page.getByRole('button', { name: 'Iniciar análise do encerramento' }).click();
