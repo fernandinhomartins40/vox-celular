@@ -182,6 +182,11 @@ jobs:
       - name: Check Expo dependency compatibility
         working-directory: apps/mobile
         run: npx expo install --check
+      - name: Validate native animation dependencies before compiling
+        working-directory: apps/mobile
+        run: |
+          npx expo-modules-autolinking react-native-config --platform android --json > "$RUNNER_TEMP/vox-native-android.json"
+          node -e 'const c=JSON.parse(require("node:fs").readFileSync(process.env.RUNNER_TEMP+"/vox-native-android.json","utf8"));for(const name of ["react-native-reanimated","react-native-worklets"]){if(!c.dependencies[name]?.platforms?.android)throw new Error("Missing Android native dependency: "+name);console.log("Native dependency linked: "+name);}'
       - name: Export Android and iOS bundles without signing
         working-directory: apps/mobile
         run: npx expo export --platform all --max-workers 2
