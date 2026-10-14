@@ -400,8 +400,8 @@ jobs:
         run: node .github/scripts/test-service-schedule-browser.mjs
       - name: Assistant compatible accessory purchases
         run: node .github/scripts/test-assistant-accessories-browser.mjs
-        - name: Cart purchase journey
-          run: node .github/scripts/test-cart-browser.mjs
+      - name: Cart purchase journey
+        run: node .github/scripts/test-cart-browser.mjs
       - name: Account confirmation browser privacy and flows
         run: |
           node .github/scripts/test-account-confirmation-browser.mjs

@@ -6,7 +6,7 @@ assert.equal(expo.ios.bundleIdentifier, expo.android.package);
 assert.equal(expo.scheme, 'voxcelular');
 assert.deepEqual([...expo.ios.associatedDomains].sort(), ['applinks:voxcelular.com.br', 'applinks:www.voxcelular.com.br']);
 const hosts = new Set(['voxcelular.com.br', 'www.voxcelular.com.br']);
-const paths = new Set(['/assistente', '/novidades', '/area-cliente']);
+const paths = new Set(['/produto', '/assistente', '/novidades', '/area-cliente']);
 const found = new Set();
 for (const filter of expo.android.intentFilters) {
   assert.equal(filter.action, 'VIEW'); assert.equal(filter.autoVerify, true);
