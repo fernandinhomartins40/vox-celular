@@ -52,6 +52,11 @@
                                                                         },
                                                                         {
                                                                             "scheme":  "https",
+                                                                            "host":  "www.voxcelular.com.br",
+                                                                            "pathPrefix":  "/produto"
+                                                                        },
+                                                                        {
+                                                                            "scheme":  "https",
                                                                             "host":  "voxcelular.com.br",
                                                                             "pathPrefix":  "/assistente"
                                                                         },
@@ -64,6 +69,11 @@
                                                                             "scheme":  "https",
                                                                             "host":  "voxcelular.com.br",
                                                                             "pathPrefix":  "/area-cliente"
+                                                                        },
+                                                                        {
+                                                                            "scheme":  "https",
+                                                                            "host":  "voxcelular.com.br",
+                                                                            "pathPrefix":  "/produto"
                                                                         }
                                                                     ],
                                                            "action":  "VIEW",

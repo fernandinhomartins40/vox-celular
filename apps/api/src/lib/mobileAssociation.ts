@@ -1,4 +1,4 @@
-export const mobileLinkPaths = ['/assistente', '/novidades', '/area-cliente', '/area-cliente/pedidos', '/area-cliente/servicos', '/area-cliente/beneficios', '/area-cliente/avisos', '/area-cliente/favoritos'];
+export const mobileLinkPaths = ['/produto', '/assistente', '/novidades', '/area-cliente', '/area-cliente/pedidos', '/area-cliente/servicos', '/area-cliente/beneficios', '/area-cliente/avisos', '/area-cliente/favoritos'];
 const packageName = 'br.com.voxcelular.cliente';
 export function androidAssociation(raw: string | undefined) {
   if (!raw) return [];
