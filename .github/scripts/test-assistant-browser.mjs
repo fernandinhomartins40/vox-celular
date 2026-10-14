@@ -89,6 +89,17 @@ try {
     await page.getByRole('button', { name: 'Ajustar escolhas', exact: true }).click();
     await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     assert.equal(await page.getByRole('checkbox').isChecked(), false, 'New choices require new explicit authorization');
+    for (const uso of ['fotos', 'estudos', 'redes-sociais']) {
+      await page.getByLabel('Uso principal').selectOption(uso);
+      await page.getByLabel('O que mais importa?').selectOption('bateria');
+      await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
+      await page.getByRole('heading', { name: 'Suas opções' }).waitFor();
+      assert.equal(submitted.uso, uso);
+      assert.equal(submitted.prioridade, 'bateria');
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+      await page.getByRole('button', { name: 'Ajustar escolhas', exact: true }).click();
+      await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    }
     await page.close();
   }
   console.log('PASS: public three-step assistant, retained criteria, unknown specifications, fresh cart prices, budget changes and empty tablet results at three viewports. Browser fixtures only.');

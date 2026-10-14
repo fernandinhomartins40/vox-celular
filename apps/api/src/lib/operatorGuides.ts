@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-export const operators = ['TIM', 'VIVO', 'CLARO'] as const;
-const domains = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br' };
+export const operators = ['TIM', 'VIVO', 'CLARO', 'ALGAR'] as const;
+const domains = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br', ALGAR: 'algar.com.br' };
 export function officialOperatorUrl(value: string, operator: typeof operators[number]) {
   try {
     const url = new URL(value);

@@ -4,8 +4,8 @@ import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, Vi
 import { loadGuides } from '../../src/offlineGuides';
 import type { Guide, Operator } from '../../src/guideSnapshot';
 
-const channels: Record<Operator, string> = { TIM: 'https://www.tim.com.br/ajuda', VIVO: 'https://vivo.com.br/para-voce/ajuda', CLARO: 'https://www.claro.com.br/atendimento' };
-const domains: Record<Operator, string> = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br' };
+const channels: Record<Operator, string> = { TIM: 'https://www.tim.com.br/ajuda', VIVO: 'https://vivo.com.br/para-voce/ajuda', CLARO: 'https://www.claro.com.br/atendimento', ALGAR: 'https://algar.com.br' };
+const domains: Record<Operator, string> = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br', ALGAR: 'algar.com.br' };
 const topics: Record<string, string> = { planos: 'Planos e contratação', 'saldo-consumo': 'Saldo e consumo', 'chip-esim': 'Chip e eSIM', 'internet-apn': 'Internet e APN', sinal: 'Sinal', 'chamadas-sms': 'Chamadas e mensagens', portabilidade: 'Portabilidade', 'perda-roubo': 'Perda ou roubo', aplicativos: 'Aplicativos oficiais' };
 export default function Help() {
   const [guides, setGuides] = useState<Guide[] | null>(null);

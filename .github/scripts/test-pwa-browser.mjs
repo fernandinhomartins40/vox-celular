@@ -36,9 +36,11 @@ try {
   await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller));
   await page.evaluate(async () => { await fetch('/api/ready'); });
   assert.deepEqual(await page.evaluate(async () => {
-    const cache = await caches.open('vox-offline-v1');
+    const names = (await caches.keys()).filter(name => name.startsWith('vox-offline-'));
+    if (names.length !== 1) throw new Error('Expected one active public offline cache');
+    const cache = await caches.open(names[0]);
     return (await cache.keys()).map(request => new URL(request.url).pathname).sort();
-  }), ['/brand/icon-192.png', '/offline.html']);
+  }), ['/brand/icon-192.png', '/offline-catalog.js', '/offline-guides.js', '/offline.html']);
   networkDown = true;
   await page.goto(testBase + '/area-cliente/pedidos');
   try { await page.getByRole('heading', { name: 'Vamos reconectar?' }).waitFor(); }

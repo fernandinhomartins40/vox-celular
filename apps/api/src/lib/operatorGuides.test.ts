@@ -6,4 +6,7 @@ for (const url of ['http://tim.com.br', 'https://tim.com.br.evil.example', 'http
 for (const patch of [{ fonte: 'https://example.com' }, { passos: [] }, { operadora: 'OUTRA' }, { validoAte: new Date(Date.now() - 500).toISOString() }, { revisadoEm: new Date(Date.now() + 86400000).toISOString() }]) assert.equal(operatorGuideSchema.safeParse({ ...guide, ...patch }).success, false);
 assert.equal(officialOperatorUrl('https://vivo.com.br/para-voce/ajuda', 'VIVO'), true);
 assert.equal(officialOperatorUrl('https://www.claro.com.br/atendimento', 'CLARO'), true);
+assert.equal(officialOperatorUrl('https://loja.algar.com.br/para-voce/celular/pos-pago/', 'ALGAR'), true);
+assert.equal(officialOperatorUrl('https://algar.com.br.evil.example', 'ALGAR'), false);
+assert.equal(operatorGuideSchema.safeParse({ ...guide, operadora: 'ALGAR', fonte: 'https://algar.com.br', canalOficial: 'https://algar.com.br' }).success, true);
 console.log('PASS: operator guide limits, official HTTPS domain boundaries, reviewed dates, expired publication and unsupported operators.');

@@ -7,7 +7,8 @@ module.exports = ({ config }) => {
   const firebasePath = path.join(__dirname, '.native-config/google-services.json');
   return {
     ...config,
+    icon: './assets/icon.png',
     ...(projectId ? { extra: { ...config.extra, eas: { ...config.extra?.eas, projectId } } } : {}),
-    android: { ...config.android, ...(existsSync(firebasePath) ? { googleServicesFile: firebasePath } : {}) },
+    android: { ...config.android, adaptiveIcon: { foregroundImage: './assets/icon.png', backgroundColor: '#ffffff' }, ...(existsSync(firebasePath) ? { googleServicesFile: firebasePath } : {}) },
   };
 };

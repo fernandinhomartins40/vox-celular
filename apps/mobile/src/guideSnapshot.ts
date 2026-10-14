@@ -1,7 +1,7 @@
-export type Operator = 'TIM' | 'VIVO' | 'CLARO';
+export type Operator = 'TIM' | 'VIVO' | 'CLARO' | 'ALGAR';
 export type Guide = { id: string; operadora: Operator; topico: string; titulo: string; resumo: string; passos: string[]; fonte: string; canalOficial: string; revisadoEm: string; validoAte: string };
 export const guideMaxChars = 300000;
-const domains = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br' };
+const domains = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br', ALGAR: 'algar.com.br' };
 const topics = ['planos', 'saldo-consumo', 'chip-esim', 'internet-apn', 'sinal', 'chamadas-sms', 'portabilidade', 'perda-roubo', 'aplicativos'];
 function official(value: unknown, operator: Operator) {
   if (typeof value !== 'string' || value.length > 1500) return false;

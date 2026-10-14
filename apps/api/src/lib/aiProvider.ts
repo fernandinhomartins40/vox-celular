@@ -19,10 +19,11 @@ export async function callRecommendationProvider(configuration: AiProviderConfig
   // Deterministic constraints remain authoritative before and after the model call.
   const candidates = rankProducts(products, needs);
   if (!candidates.length) throw new Error('AI_NO_CANDIDATES');
+  const priceOrder = [...candidates].sort((a, b) => a.produto.preco - b.produto.preco || a.produto.id.localeCompare(b.produto.id));
   const catalog = candidates.map(({ produto }) => {
     const parsed = productAttributesSchema.safeParse(produto.atributosTecnicos);
     const attributes = parsed.success && parsed.data.verificado ? parsed.data : {};
-    return { id: produto.id, ramGB: attributes.ramGB ?? null, armazenamentoGB: attributes.armazenamentoGB ?? null, bateriaMah: attributes.bateriaMah ?? null };
+    return { id: produto.id, ordemPreco: priceOrder.findIndex(row => row.produto.id === produto.id) + 1, ramGB: attributes.ramGB ?? null, armazenamentoGB: attributes.armazenamentoGB ?? null, bateriaMah: attributes.bateriaMah ?? null };
   });
   const endpoint = config.provider === 'deepseek' ? 'https://api.deepseek.com/chat/completions' : `https://${config.workspace}.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1/chat/completions`;
   const started = performance.now();
@@ -32,7 +33,7 @@ export async function callRecommendationProvider(configuration: AiProviderConfig
       headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: config.model, stream: false, max_tokens: 512, temperature: 0,
         messages: [{ role: 'system', content: 'Order up to three provided product IDs for the stated use. Return JSON only: {"ids":["id"]}. Use only listed IDs. Missing specifications are unknown. Do not return names, prices, explanations or additional fields.' },
-          { role: 'user', content: JSON.stringify({ uso: needs.uso, tipo: needs.tipo, catalogo: catalog }) }] }),
+          { role: 'user', content: JSON.stringify({ uso: needs.uso, tipo: needs.tipo, prioridade: needs.prioridade ?? 'equilibrado', catalogo: catalog }) }] }),
     });
     if (!response.ok || !response.body) { await response.body?.cancel(); throw new Error('AI_HTTP'); }
     const reader = response.body.getReader();

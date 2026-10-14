@@ -17,6 +17,16 @@ const valid: typeof fetch = async (url, options) => {
   return new Response(JSON.stringify(envelope({ ids: ['phone'] })));
 };
 assert.deepEqual((await callRecommendationProvider(config, needs, [product], valid)).ids, ['phone']);
+await callRecommendationProvider(config, { ...needs, uso: 'fotos', prioridade: 'bateria' }, [product], async (_url, options) => {
+  const payload = JSON.parse(String(options?.body));
+  const input = JSON.parse(payload.messages[1].content);
+  assert.equal(input.uso, 'fotos');
+  assert.equal(input.prioridade, 'bateria');
+  assert.equal(input.catalogo[0].bateriaMah, null);
+  assert.equal(input.catalogo[0].ordemPreco, 1);
+  assert.equal(JSON.stringify(input).includes(product.nome), false);
+  return new Response(JSON.stringify(envelope({ ids: ['phone'] })));
+});
 await assert.rejects(callRecommendationProvider(config, { ...needs, email: 'private@example.invalid' }, [product], valid));
 assert.equal(calls, 1, 'Personal extra fields must be rejected before dispatch');
 for (const invalid of [{ ids: ['invented'] }, { ids: ['phone', 'phone'] }, { ids: ['phone'], preco: 1 }, { ids: [] }]) {

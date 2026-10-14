@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { PHONE_DIGITS } from '../data';
 
 const topics = { planos: 'Planos e contratação', 'saldo-consumo': 'Saldo e consumo', 'chip-esim': 'Chip e eSIM', 'internet-apn': 'Internet e APN', sinal: 'Sinal', 'chamadas-sms': 'Chamadas e mensagens', portabilidade: 'Portabilidade', 'perda-roubo': 'Perda ou roubo', aplicativos: 'Aplicativos oficiais' };
-const channels = { TIM: 'https://www.tim.com.br/ajuda', VIVO: 'https://vivo.com.br/para-voce/ajuda', CLARO: 'https://www.claro.com.br/atendimento' };
+const channels = { TIM: 'https://www.tim.com.br/ajuda', VIVO: 'https://vivo.com.br/para-voce/ajuda', CLARO: 'https://www.claro.com.br/atendimento', ALGAR: 'https://algar.com.br' };
 export default function Ajuda() {
   const [guides, setGuides] = useState(null);
   const [error, setError] = useState('');

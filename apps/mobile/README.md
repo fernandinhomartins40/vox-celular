@@ -4,6 +4,10 @@ Workspace React Native/Expo Router, com telas nativas e a mesma API Express da w
 Navegação principal: Início, Loja, Assistente, Ajuda e Conta. Carrinho no cabeçalho; serviços em Ajuda e dados pessoais em Conta.
 Implementação inicial; não publicado nem validado em dispositivo real.
 
+Perfis EAS para APK interno, simulador iOS e AAB/IPA de distribuição estão em
+`eas.json`. Preparação, comandos e requisitos oficiais das lojas em
+[PUBLICACAO_APPS_CLIENTE.md](../../docs/PUBLICACAO_APPS_CLIENTE.md).
+
 Na raiz do repositório: `npm ci`. Para desenvolvimento: `npm run start --workspace @vox/mobile`.
 `npm run typecheck --workspace @vox/mobile` verifica tipos; `npm run export --workspace @vox/mobile`
 gera bundles, sem assinar ou publicar aplicativos.

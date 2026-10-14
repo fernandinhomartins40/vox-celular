@@ -167,6 +167,19 @@ try {
   await prisma.produto.update({ where: { id: product.id }, data: { atributosTecnicos: { tipo: 'acessorio' } } });
   const phone = await prisma.produto.create({ data: { lojaId: loja.id, nome: 'Fixture phone', sub: 'Local', categoria: 'Celulares', preco: 100, imgUrl: '', descricao: 'Fixture', specs: [], atributosTecnicos: { tipo: 'celular' } } });
   const compatibility = { acessorioId: product.id, aparelhoId: phone.id, observacao: 'Encaixe conferido pelo lojista fixture' };
+  await prisma.produto.update({ where: { id: phone.id }, data: { estoque: 2 } });
+  for (const uso of ['fotos', 'estudos', 'redes-sociais']) {
+    const needs = { lojaId: loja.id, tipo: 'celular', orcamento: 100, uso, prioridade: 'bateria' };
+    const selection = (await request('/assistente/recomendar', null, needs)).data;
+    assert.equal(selection.resultados.length, 1);
+    assert.equal(selection.resultados[0].produto.id, phone.id);
+    assert.equal(selection.resultados[0].produto.preco, 100);
+    assert.equal(selection.modo, 'regras');
+    const fallback = (await request('/assistente/recomendar-ia', null, { necessidades: needs, autorizaProcessamentoExterno: true })).data;
+    assert.equal(fallback.modo, 'regras');
+    assert.equal(fallback.resultados[0].produto.id, phone.id);
+  }
+  assert.deepEqual((await request('/assistente/recomendar', null, { lojaId: loja.id, tipo: 'celular', orcamento: 99, uso: 'fotos' })).data.resultados, []);
   await request('/compatibilidades', customer.token, compatibility, 'PUT', [403]);
   await request('/compatibilidades', admin.token, { ...compatibility, aparelhoId: product.id }, 'PUT', [409]);
   const savedPair = (await request('/compatibilidades', admin.token, compatibility, 'PUT')).data;

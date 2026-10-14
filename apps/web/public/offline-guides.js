@@ -2,7 +2,7 @@ const key = 'vox.public.guides.v1';
 const maxChars = 300000;
 const maxAge = 48 * 3600000;
 const topics = ['planos', 'saldo-consumo', 'chip-esim', 'internet-apn', 'sinal', 'chamadas-sms', 'portabilidade', 'perda-roubo', 'aplicativos'];
-const domains = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br' };
+const domains = { TIM: 'tim.com.br', VIVO: 'vivo.com.br', CLARO: 'claro.com.br', ALGAR: 'algar.com.br' };
 function official(value, operator) {
   if (typeof value !== 'string' || value.length > 1500) return false;
   try {
@@ -44,7 +44,7 @@ if (root) {
     const heading = document.createElement('h2'); heading.textContent = 'Guias salvos';
     const note = document.createElement('p'); note.textContent = `Cópia de ${new Date(saved.savedAt).toLocaleString('pt-BR')}. Confira fontes oficiais quando a conexão voltar.`;
     const select = document.createElement('select'); select.setAttribute('aria-label', 'Filtrar guias por operadora');
-    for (const value of ['', 'TIM', 'VIVO', 'CLARO']) { const option = document.createElement('option'); option.value = value; option.textContent = value || 'Todas as operadoras'; select.append(option); }
+    for (const value of ['', 'TIM', 'VIVO', 'CLARO', 'ALGAR']) { const option = document.createElement('option'); option.value = value; option.textContent = value || 'Todas as operadoras'; select.append(option); }
     const list = document.createElement('div'); list.className = 'catalog-list';
     function render() {
       list.replaceChildren();
