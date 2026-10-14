@@ -175,6 +175,8 @@ jobs:
         run: node .github/scripts/test-mobile-links.mjs
       - name: Validate app identifiers and HTTPS link configuration
         run: node .github/scripts/test-mobile-config.mjs
+      - name: Validate optional native build configuration
+        run: node .github/scripts/test-mobile-firebase.mjs
       - name: Validate persistent reward redemption
         run: node .github/scripts/test-mobile-rewards.mjs
       - name: Check Expo dependency compatibility
@@ -212,6 +214,10 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Install native workspace
         run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
+      - name: Prepare optional Android Firebase client configuration
+        env:
+          VOX_ANDROID_GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.VOX_ANDROID_GOOGLE_SERVICES_JSON_BASE64 }}
+        run: node .github/scripts/prepare-mobile-firebase.mjs
       - name: Generate Android project from Expo configuration
         working-directory: apps/mobile
         run: npx expo prebuild --platform android --no-install
@@ -231,6 +237,10 @@ jobs:
             apps/mobile/android/app/build/outputs/apk/release/app-release.apk.sha256
           if-no-files-found: error
           retention-days: 7
+
+      - name: Remove temporary Firebase configuration
+        if: always()
+        run: rm -f apps/mobile/.native-config/google-services.json
 
   build-ios-simulator:
     name: Build iOS simulator application

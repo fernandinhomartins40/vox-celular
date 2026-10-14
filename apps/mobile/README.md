@@ -31,6 +31,16 @@ app config. Não é uma chave secreta. Sem projeto configurado, a ação informa
 notificações ainda não estão disponíveis nesta versão; não inventa um identificador.
 FCM/APNs e ligação do envio/recibos à fila ainda precisam de configuração/implementação.
 
+O build Android aceita o secret GitHub `VOX_ANDROID_GOOGLE_SERVICES_JSON_BASE64`
+com o `google-services.json` do aplicativo Android codificado em base64. O workflow
+valida o package `br.com.voxcelular.cliente`, prepara o arquivo ignorado em
+`.native-config/` e o remove ao terminar. Não usar nesse secret o JSON de conta de
+serviço com chave privada; essa credencial pertence à configuração de envio no
+projeto Expo. Sem o arquivo cliente, o APK de teste pode ser gerado para os demais
+fluxos, mas o cadastro FCM não está configurado. Arquivo e chave não devem ser
+enviados pelo chat. O transporte/recibos já usam o worker da API quando habilitado;
+a entrega real ainda requer validação.
+
 Identificadores Android/iOS propostos: `br.com.voxcelular.cliente`.
 Confirmar disponibilidade nas contas das lojas antes de distribuição. Certificados,
 provisionamento, assinatura Android, contas Apple/Google e testes físicos ainda necessários.

@@ -4,3 +4,6 @@ android/
 ios/
 .env
 .env.local
+.native-config/
+google-services.json
+GoogleService-Info.plist

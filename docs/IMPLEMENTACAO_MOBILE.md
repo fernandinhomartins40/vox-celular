@@ -758,3 +758,8 @@ Layout nativo trata toque recebido com app aberto e última resposta na iniciali
 Typecheck e testes com módulos/router simulados passaram para destinos, navegação ainda indisponível, repetição, inicialização, corrida com toque recente e cleanup. Teste incluído no workflow. Testes físicos continuam pendentes e os simulados não comprovam comportamento do sistema operacional, entrega real ou autenticação de ponta a ponta no aparelho.
 
 Bundles Expo Android (3,1 MB) e iOS (2,8 MB) também exportados com sucesso. Não são arquivos instaláveis ou prova de recebimento push.
+
+### Entrada Firebase para build Android — 13/10/2026
+Configuração dinâmica Expo mantém app.json e acrescenta project ID público validado e caminho Firebase somente quando presente. Job Android no workflow existente lê secret VOX_ANDROID_GOOGLE_SERVICES_JSON_BASE64, valida tamanho/formato/package Vox e rejeita arquivo de conta de serviço/chave privada. Prepara arquivo temporário ignorado em `.native-config/`, usado pelo prebuild, e remove ao terminar. A ausência não bloqueia APK de teste sem push; não cria identidade ou credencial fictícia.
+
+Teste de configuração passou para fixture do pacote, base64/JSON inválido, limite de tamanho, pacote alheio, rejeição de credencial privada, project ID e preservação da configuração existente. Expo config resolveu nome/package/plugin reais, e YAML do workflow passou. Não houve credential real, upload ao Expo, APK compilado, execução do job ou mudança em produção. FCM de envio, APNs, assinaturas e testes instaláveis ainda dependem das contas/credenciais apropriadas. Referência: https://docs.expo.dev/push-notifications/fcm-credentials/.
