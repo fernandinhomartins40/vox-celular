@@ -212,6 +212,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install native workspace
         run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
       - name: Prepare optional Android Firebase client configuration

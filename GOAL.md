@@ -47,3 +47,10 @@ Execução local encerrada com as tarefas de código/documentação/testes acima
 - Expo atualizado para 57.0.29 e os quatro pacotes apontados pelo verificador. Lockfile atualizado; `expo install --check`, tipos, bundles Android/iOS e validação mobile no Actions aprovados.
 - Após o usuário tornar o repositório público, os jobs voltaram a iniciar. A execução revelou um teste antigo que não abria a aba de solicitação de serviço; corrigido e validado nos sete tamanhos dos painéis. Encontrado também overflow na tela offline com texto longo; corrigidas largura/quebra de texto e versão do cache, com teste offline Chromium aprovado.
 - O deploy continua exclusivamente por Actions. O status final de cada execução pode ser consultado na aba Actions do repositório; builds de distribuição assinados, dispositivos e publicação nas lojas continuam com as dependências externas já descritas.
+
+### Experiência de aplicativo solicitada pelo usuário
+
+- Entrada do PWA em `/app/login`; após autenticação, início em `/app`. Links para a loja usam `/app/loja` e a landing não é renderizada no modo instalado.
+- Interface própria de início e catálogo, independente da apresentação da landing, com cinco abas inferiores fixas, busca/categorias, cartões compactos e assistente em destaque. Reutilizados API, filtros de catálogo, detalhes de produto, carrinho e pedidos existentes.
+- Consulta de leitura confirmou ausência de configuração de IA na produção. Integração DeepSeek/Qwen existe; ativação real depende da chave/tarifas configuradas pelo lojista. Sem isso, a seleção por regras continua explicitamente identificada.
+- Compilação e Chromium validaram login, início, assistente, navegação inferior, catálogo próprio, preço atual no carrinho e proteção da landing em três tamanhos. A configuração do SDK para APK foi corrigida para não solicitar o pacote removido `tools`.

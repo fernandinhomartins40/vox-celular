@@ -1,7 +1,5 @@
 import { StoreContentContext, resolveStoreContent, storeStyle } from './components/storeContent';
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import BrandLogo from './components/BrandLogo';
 import { api, assetUrl } from './lib/api';
 import { useReveal } from './hooks/useReveal';
 
@@ -20,7 +18,7 @@ import ProductModal from './components/ProductModal';
 import { Benefits, BuyingSteps, MobileNav } from './components/StoreExtras';
 import './redesign.css';
 
-export default function LandingPage({ appMode = false }) {
+export default function LandingPage() {
   const [filter, setFilter] = useState('Todos');
   const [cart, setCart] = useState(() => {
     try { const saved = JSON.parse(sessionStorage.getItem('vox_cart')); return Array.isArray(saved) ? saved : []; }
@@ -82,26 +80,23 @@ export default function LandingPage({ appMode = false }) {
   const content = resolveStoreContent(storeConfig);
   return (
     <StoreContentContext.Provider value={content}><div className="vox-store" style={storeStyle(content)}>
-      {appMode ? <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-3" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3"><Link to="/app" aria-label="Início do aplicativo"><BrandLogo /></Link><button onClick={() => setCartOpen(true)} className="min-h-11 rounded-xl bg-blue-700 px-4 text-white">Carrinho ({cartCount})</button></div>
-        <nav aria-label="Navegação do aplicativo" className="mx-auto mt-3 flex max-w-7xl flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-blue-700">{[['/app', 'Loja'], ['/novidades', 'Novidades'], ['/assistente', 'Assistente'], ['/ajuda', 'Ajuda'], ['/area-cliente/servicos', 'Serviços'], ['/area-cliente', 'Minha conta']].map(([to, label]) => <Link className="flex min-h-11 items-center" key={to} to={to}>{label}</Link>)}</nav>
-      </header> : <Header cartCount={cartCount} onOpenCart={() => setCartOpen(true)} search={search} onSearch={setSearch} />}
+      <Header cartCount={cartCount} onOpenCart={() => setCartOpen(true)} search={search} onSearch={setSearch} />
       <main>
-        {!appMode && <><Hero config={storeConfig} />
+        <Hero config={storeConfig} />
         <Benefits />
         <BuyingSteps mobile />
-        <CategoryGrid onPick={handlePickCategory} /></>}
+        <CategoryGrid onPick={handlePickCategory} />
         <ProductGrid products={products} filter={filter} setFilter={setFilter} onAdd={addToCart} onOpen={setModalProduct}
           search={search} setSearch={setSearch} loading={catalogLoading} error={catalogError} onRetry={() => { setCatalogError(''); setCatalogLoading(true); setReload(n => n + 1); }} />
-        {!appMode && <><EditorialBand />
+        <EditorialBand />
         <BuyingSteps />
         <ServicesSection />
         <Testimonials />
-        <ContactSection config={storeConfig} /></>}
+        <ContactSection config={storeConfig} />
       </main>
-      {!appMode && <><Footer config={storeConfig} />
+      <Footer config={storeConfig} />
       <div className="desktop-wa"><FloatingWA /></div>
-      <MobileNav /></>}
+      <MobileNav />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cart} setItems={setCart} />
       <ProductModal product={modalProduct} onClose={() => setModalProduct(null)} onAdd={addToCart} onSelect={setModalProduct} />
     </div></StoreContentContext.Provider>

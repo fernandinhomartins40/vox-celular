@@ -6,12 +6,16 @@ import { panelReturnTo } from '../../lib/panel';
 import { useAuth } from '../../auth/useAuth.js';
 import { Icon } from '../../icons';
 import { PHONE_DIGITS } from '../../data';
+import { useInstalledApp } from '../../hooks/useInstalledApp';
 
 export default function ClienteLogin() {
   const { login, register, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const destination = location.state?.returnTo === '/?carrinho=1' ? '/?carrinho=1' : panelReturnTo(location.state?.returnTo, '/area-cliente');
+  const appMode = useInstalledApp() || location.pathname.startsWith('/app');
+  const returnTo = location.state?.returnTo;
+  const destination = returnTo === '/?carrinho=1' ? (appMode ? '/app/loja?carrinho=1' : returnTo)
+    : appMode && !returnTo?.startsWith('/area-cliente') ? panelReturnTo(returnTo, '/app') : panelReturnTo(returnTo, '/area-cliente');
   const [form, setForm] = useState({ nome: '', email: '', senha: '', telefone: '' });
   const [creating, setCreating] = useState(false);
   const [recovering, setRecovering] = useState(false);
