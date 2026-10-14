@@ -105,6 +105,7 @@ try {
       }
       if (role === 'CLIENTE') {
         await page.goto(base + prefix + '/servicos');
+        await page.getByRole('button', { name: 'Solicitar serviço', exact: true }).click();
         await page.getByRole('combobox', { name: /^Serviço/ }).selectOption('service');
         await page.getByRole('button', { name: 'Continuar', exact: true }).click();
         const schedule = page.getByRole('combobox', { name: /^Horário de atendimento/ });
