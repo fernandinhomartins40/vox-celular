@@ -239,6 +239,7 @@ model AssinaturaPush {
   clienteId String
   endpointHash String @unique
   credenciais String
+  canal String @default("WEB")
   ativo Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

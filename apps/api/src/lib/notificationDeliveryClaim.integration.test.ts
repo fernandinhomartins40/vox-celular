@@ -22,6 +22,9 @@ try {
   await prisma.assinaturaPush.create({ data: { id, lojaId: id, clienteId: id, endpointHash: id, credenciais: 'fixture-not-real-credentials' } });
   await prisma.notificacaoCliente.create({ data: { id, lojaId: id, clienteId: id, chaveEvento: id, titulo: 'Fixture', mensagem: 'Fixture', destino: '/pedidos', status: 'PROCESSANDO', expiresAt: new Date('2100-01-01T00:00:00Z') } });
   await prisma.entregaPush.create({ data: { id, notificacaoId: id, assinaturaId: id, proximaTentativaEm: new Date('2000-01-01T00:00:00Z') } });
+  await prisma.assinaturaPush.update({ where: { id }, data: { canal: 'EXPO_ANDROID' } });
+  assert.notEqual((await claimNotificationDelivery(now))?.id, id, 'Web worker must not claim native devices');
+  await prisma.assinaturaPush.update({ where: { id }, data: { canal: 'WEB' } });
   const claims = await Promise.all([claimNotificationDelivery(now), claimNotificationDelivery(now)]);
   assert.equal(claims.filter(row => row?.id === id).length, 1, 'Concurrent claims must not claim a delivery twice');
   assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).tentativas, 1);
@@ -35,6 +38,9 @@ try {
   await prisma.notificacaoCliente.update({ where: { id }, data: { status: 'PROCESSANDO' } });
   await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO' } });
   assert.equal((await authorizeNotificationDelivery(id, now))?.id, id);
+  await prisma.assinaturaPush.update({ where: { id }, data: { canal: 'EXPO_IOS' } });
+  assert.equal(await authorizeNotificationDelivery(id, now), null, 'Web transport authorization must exclude native devices');
+  await prisma.assinaturaPush.update({ where: { id }, data: { canal: 'WEB' } });
   await prisma.cliente.update({ where: { id }, data: { notificacoes: false } });
   assert.equal(await authorizeNotificationDelivery(id, now), null, 'Consent revoked after claim must block authorization');
   await prisma.cliente.update({ where: { id }, data: { notificacoes: true } });

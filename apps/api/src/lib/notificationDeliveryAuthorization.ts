@@ -30,7 +30,7 @@ export async function authorizeNotificationDelivery(id: string, now = new Date()
     JOIN "Cliente" c ON c.id = n."clienteId" AND c."lojaId" = n."lojaId"
     WHERE d.id = ${id} AND d.status = 'PROCESSANDO'
       AND d.tentativas BETWEEN 1 AND 5 AND n.status = 'PROCESSANDO'
-      AND n."expiresAt" > ${now.toISOString()}::timestamp AND c.notificacoes = true AND s.ativo = true
+      AND n."expiresAt" > ${now.toISOString()}::timestamp AND c.notificacoes = true AND s.ativo = true AND s.canal = 'WEB'
     LIMIT 1`;
   return rows[0] ?? null;
 }

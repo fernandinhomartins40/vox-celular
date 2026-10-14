@@ -8,8 +8,50 @@ import { requireAuth, type AuthRequest } from '../middleware/auth.js';
 import { authLimits } from '../lib/authLimits.js';
 import { loadVapidKeys } from '../lib/vapidKeys.js';
 import { pushSettings } from '../lib/notificationWorker.js';
+import { expoPushTokenSchema } from '../lib/nativePushTransport.js';
 export const pushRouter = Router();
 pushRouter.use(requireAuth, authLimits);
+pushRouter.get('/native', async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  try {
+    const rows = await prisma.assinaturaPush.findMany({ where: { canal: { in: ['EXPO_ANDROID', 'EXPO_IOS'] }, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } }, select: { id: true, canal: true, ativo: true, createdAt: true, updatedAt: true }, orderBy: { createdAt: 'desc' }, take: 10 });
+    res.set('Cache-Control', 'no-store').json(rows);
+  } catch { res.status(503).json({ error: 'Não foi possível consultar os aparelhos.' }); }
+});
+pushRouter.put('/native', async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  const parsed = z.object({ token: expoPushTokenSchema, plataforma: z.enum(['android', 'ios']) }).strict().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: 'Confira o dispositivo e a plataforma.' }); return; }
+  try {
+    const result = await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
+      const client = await tx.cliente.findFirst({ where: { usuarioId: req.user!.userId, lojaId: req.user!.lojaId, notificacoes: true }, select: { id: true } });
+      if (!client) throw new Error('CONSENT_REQUIRED');
+      const endpointHash = createHash('sha256').update(`expo:${parsed.data.token}`).digest('hex');
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${endpointHash}))`;
+      const previous = await tx.assinaturaPush.findUnique({ where: { endpointHash } });
+      if (previous && (previous.clienteId !== client.id || previous.lojaId !== req.user!.lojaId)) throw new Error('OWNERSHIP');
+      if (!previous && await tx.assinaturaPush.count({ where: { clienteId: client.id } }) >= 10) throw new Error('LIMIT');
+      const canal = parsed.data.plataforma === 'android' ? 'EXPO_ANDROID' : 'EXPO_IOS';
+      const credenciais = await encryptCredentials({ token: parsed.data.token }, `${req.user!.lojaId}:push:${client.id}`);
+      return tx.assinaturaPush.upsert({ where: { endpointHash }, create: { lojaId: req.user!.lojaId, clienteId: client.id, canal, endpointHash, credenciais }, update: { canal, credenciais, ativo: true }, select: { id: true, canal: true, ativo: true } });
+    });
+    res.set('Cache-Control', 'no-store').json(result);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : '';
+    res.status(reason === 'CONSENT_REQUIRED' ? 403 : ['OWNERSHIP', 'LIMIT'].includes(reason) ? 409 : 503).json({ error: reason === 'CONSENT_REQUIRED' ? 'Autorize notificações nas suas preferências primeiro.' : reason === 'OWNERSHIP' ? 'Este aparelho está vinculado a outra conta. Remova o acesso anterior antes de continuar.' : reason === 'LIMIT' ? 'Remova um acesso antigo antes de adicionar outro aparelho.' : 'Não foi possível cadastrar o aparelho.' });
+  }
+});
+pushRouter.delete('/native/:id', async (req: AuthRequest, res) => {
+  if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
+  try {
+    await prisma.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
+      await tx.assinaturaPush.deleteMany({ where: { id: String(req.params.id), canal: { in: ['EXPO_ANDROID', 'EXPO_IOS'] }, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+    });
+    res.set('Cache-Control', 'no-store').json({ ok: true });
+  } catch { res.status(503).json({ error: 'Não foi possível remover o aparelho.' }); }
+});
 pushRouter.get('/config', async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
   try {
@@ -20,7 +62,7 @@ pushRouter.get('/config', async (req: AuthRequest, res) => {
 pushRouter.get('/web', async (req: AuthRequest, res) => {
   if (req.user!.role !== 'CLIENTE') { res.status(403).json({ error: 'Acesso exclusivo do cliente.' }); return; }
   try {
-    const rows = await prisma.assinaturaPush.findMany({ where: { lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } }, select: { id: true, ativo: true, createdAt: true, updatedAt: true }, orderBy: { createdAt: 'desc' }, take: 10 });
+    const rows = await prisma.assinaturaPush.findMany({ where: { canal: 'WEB', lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } }, select: { id: true, ativo: true, createdAt: true, updatedAt: true }, orderBy: { createdAt: 'desc' }, take: 10 });
     res.set('Cache-Control', 'no-store').json(rows);
   } catch { res.status(503).json({ error: 'Não foi possível consultar as assinaturas.' }); }
 });
@@ -55,7 +97,7 @@ pushRouter.post('/web/remover-atual', async (req: AuthRequest, res) => {
     const endpointHash = createHash('sha256').update(parsed.data.endpoint).digest('hex');
     await prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
-      await tx.assinaturaPush.deleteMany({ where: { endpointHash, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+      await tx.assinaturaPush.deleteMany({ where: { endpointHash, canal: 'WEB', lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
     });
     res.set('Cache-Control', 'no-store').json({ ok: true });
   } catch { res.status(503).json({ error: 'Não foi possível remover a assinatura.' }); }
@@ -65,7 +107,7 @@ pushRouter.delete('/web/:id', async (req: AuthRequest, res) => {
   try {
     await prisma.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${req.user!.userId}))`;
-      await tx.assinaturaPush.deleteMany({ where: { id: String(req.params.id), lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+      await tx.assinaturaPush.deleteMany({ where: { id: String(req.params.id), canal: 'WEB', lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
     });
     res.set('Cache-Control', 'no-store').json({ ok: true });
   } catch { res.status(503).json({ error: 'Não foi possível remover a assinatura.' }); }
