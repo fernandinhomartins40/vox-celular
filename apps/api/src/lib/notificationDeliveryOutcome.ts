@@ -1,9 +1,14 @@
 import { notificationRetry } from './notificationRetry.js';
 import type { PushTransportResult } from './webPushTransport.js';
+export type DeliveryResult = PushTransportResult | { status: 'queued'; ticketId: string };
 
-export function notificationDeliveryOutcome(attempt: number, result: PushTransportResult, expiresAt: Date, now = new Date()) {
+export function notificationDeliveryOutcome(attempt: number, result: DeliveryResult, expiresAt: Date, now = new Date()) {
   if (!Number.isInteger(attempt) || attempt < 1 || attempt > 5 || !Number.isFinite(expiresAt.getTime()) || !Number.isFinite(now.getTime())) throw new Error('INVALID_DELIVERY_OUTCOME');
   switch (result.status) {
+    case 'queued': {
+      if (!/^[a-f0-9-]{36}$/i.test(result.ticketId)) throw new Error('INVALID_DELIVERY_OUTCOME');
+      return { status: 'AGUARDANDO_RECIBO', expoTicketId: result.ticketId, proximaTentativaEm: new Date(now.getTime() + 15 * 60_000) };
+    }
     case 'cancelled': return { status: 'CANCELADA' };
     case 'accepted': return { status: 'ACEITA', confirmadaEm: now };
     case 'invalid-subscription': return { status: 'INVALIDA' };

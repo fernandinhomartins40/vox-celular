@@ -3,7 +3,7 @@ import { prisma } from './prisma.js';
 // Select a delivery under the same customer lock used for consent and subscriptions.
 // Network calls must happen after this transaction and recheck authorization.
 // PROCESSANDO is never reclaimed automatically: the remote result may be ambiguous.
-export async function claimNotificationDelivery(now = new Date()) {
+export async function claimNotificationDelivery(now = new Date(), nativeEnabled = false) {
   if (!Number.isFinite(now.getTime())) throw new Error('INVALID_NOTIFICATION_DATE');
   return prisma.$transaction(async tx => {
     const candidates = await tx.$queryRaw<{ id: string; usuarioId: string }[]>`
@@ -13,7 +13,7 @@ export async function claimNotificationDelivery(now = new Date()) {
       JOIN "Cliente" c ON c.id = n."clienteId" AND c."lojaId" = n."lojaId"
       WHERE d.status = 'PENDENTE' AND d."proximaTentativaEm" <= ${now.toISOString()}::timestamp
         AND d.tentativas < 5 AND n.status = 'PROCESSANDO'
-        AND n."expiresAt" > ${now.toISOString()}::timestamp AND c.notificacoes = true AND s.ativo = true AND s.canal = 'WEB'
+        AND n."expiresAt" > ${now.toISOString()}::timestamp AND c.notificacoes = true AND s.ativo = true AND (s.canal = 'WEB' OR (${nativeEnabled} AND s.canal IN ('EXPO_ANDROID', 'EXPO_IOS')))
       ORDER BY d."proximaTentativaEm", d.id LIMIT 1`;
     if (!candidates.length) return null;
     const candidate = candidates[0];
@@ -26,7 +26,7 @@ export async function claimNotificationDelivery(now = new Date()) {
       WHERE d.id = ${candidate.id} AND c."usuarioId" = ${candidate.usuarioId}
         AND d.status = 'PENDENTE' AND d."proximaTentativaEm" <= ${now.toISOString()}::timestamp
         AND d.tentativas < 5 AND n.status = 'PROCESSANDO'
-        AND n."expiresAt" > ${now.toISOString()}::timestamp AND c.notificacoes = true AND s.ativo = true AND s.canal = 'WEB'
+        AND n."expiresAt" > ${now.toISOString()}::timestamp AND c.notificacoes = true AND s.ativo = true AND (s.canal = 'WEB' OR (${nativeEnabled} AND s.canal IN ('EXPO_ANDROID', 'EXPO_IOS')))
       FOR UPDATE OF d SKIP LOCKED`;
     if (!eligible.length) return null;
     return tx.entregaPush.update({ where: { id: candidate.id }, data: { status: 'PROCESSANDO', processandoDesde: now, tentativas: { increment: 1 } } });

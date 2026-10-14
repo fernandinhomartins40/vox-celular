@@ -52,6 +52,8 @@ services:
       UPLOADS_DIR: /app/uploads
       MARKETPLACE_KEY_FILE: /app/secrets/marketplace.key
       WEB_PUSH_ENABLED: ${WEB_PUSH_ENABLED:-true}
+      EXPO_PUSH_ENABLED: ${EXPO_PUSH_ENABLED:-false}
+      EXPO_PUSH_ACCESS_TOKEN: ${EXPO_PUSH_ACCESS_TOKEN:-}
       WEB_PUSH_SUBJECT: ${WEB_PUSH_SUBJECT:-${CORS_ORIGIN:-https://www.voxcelular.com.br}}
       NODE_ENV: production
     volumes: [uploads:/app/uploads, secrets:/app/secrets]

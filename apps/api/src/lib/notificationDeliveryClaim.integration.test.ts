@@ -8,6 +8,7 @@ import { settleNotificationDelivery } from './notificationDeliverySettlement.js'
 import { finalizeNotifications } from './notificationFinalization.js';
 import { expireNotifications } from './notificationExpiration.js';
 import { reconcileInterruptedDeliveries } from './notificationRecovery.js';
+import { claimNativeReceipt, settleNativeReceipt } from './nativePushReceipts.js';
 
 assertDisposableDatabase(process.env.PUSH_DELIVERY_TEST);
 const id = `ci-delivery-${randomUUID()}`;
@@ -40,6 +41,7 @@ try {
   assert.equal((await authorizeNotificationDelivery(id, now))?.id, id);
   await prisma.assinaturaPush.update({ where: { id }, data: { canal: 'EXPO_IOS' } });
   assert.equal(await authorizeNotificationDelivery(id, now), null, 'Web transport authorization must exclude native devices');
+  assert.equal((await authorizeNotificationDelivery(id, now, true))?.id, id, 'Configured native delivery must authorize its channel');
   await prisma.assinaturaPush.update({ where: { id }, data: { canal: 'WEB' } });
   await prisma.cliente.update({ where: { id }, data: { notificacoes: false } });
   assert.equal(await authorizeNotificationDelivery(id, now), null, 'Consent revoked after claim must block authorization');
@@ -116,6 +118,32 @@ try {
   assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id: `${id}-other` } })).status, 'EXPIRADA');
   assert.equal((await prisma.notificacaoCliente.findUniqueOrThrow({ where: { id } })).status, 'INCERTA');
   console.log('Delivery claims, authorization and idempotent settlements passed.');
+  await prisma.cliente.update({ where: { id }, data: { notificacoes: true } });
+  await prisma.assinaturaPush.update({ where: { id }, data: { ativo: true, canal: 'EXPO_ANDROID' } });
+  await prisma.notificacaoCliente.update({ where: { id }, data: { status: 'PROCESSANDO', expiresAt: new Date('2100-01-01T00:00:00Z') } });
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'PROCESSANDO', tentativas: 1, consultasRecibo: 0 } });
+  assert.equal(await settleNotificationDelivery(id, 1, { status: 'queued', ticketId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }, now), true);
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'AGUARDANDO_RECIBO');
+  assert.equal(await claimNativeReceipt(now), null, 'Receipt must wait fifteen minutes');
+  const due = new Date(now.getTime() + 15 * 60_000);
+  const receiptClaims = await Promise.all([claimNativeReceipt(due), claimNativeReceipt(due)]);
+  assert.equal(receiptClaims.filter(row => row?.id === id).length, 1, 'Concurrent receipt passes must not claim twice');
+  assert.equal(await settleNativeReceipt(id, 2, { status: 'provider-accepted' }, due), false);
+  assert.equal(await settleNativeReceipt(id, 1, { status: 'provider-accepted' }, due), true);
+  assert.equal(await settleNativeReceipt(id, 1, { status: 'pending' }, due), false, 'Late pending response must not overwrite acceptance');
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'ACEITA');
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'AGUARDANDO_RECIBO', consultasRecibo: 2 } });
+  await prisma.cliente.update({ where: { id }, data: { notificacoes: false } });
+  assert.equal(await settleNativeReceipt(id, 2, { status: 'provider-accepted' }, due), true);
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'CANCELADA');
+  await prisma.cliente.update({ where: { id }, data: { notificacoes: true } });
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'AGUARDANDO_RECIBO', consultasRecibo: 3 } });
+  assert.equal(await settleNativeReceipt(id, 3, { status: 'invalid-subscription' }, due), true);
+  assert.equal((await prisma.assinaturaPush.findUniqueOrThrow({ where: { id } })).ativo, false);
+  await prisma.entregaPush.update({ where: { id }, data: { status: 'AGUARDANDO_RECIBO', consultasRecibo: 5, proximaTentativaEm: now } });
+  await claimNativeReceipt(due);
+  assert.equal((await prisma.entregaPush.findUniqueOrThrow({ where: { id } })).status, 'INCERTA', 'Abandoned final receipt lookup must become uncertain without resend');
+  console.log('Native receipt timing, concurrent claims, consent revocation, invalid device and abandoned lookup passed.');
 } finally {
   await prisma.notificacaoCliente.deleteMany({ where: { lojaId: id } });
   await prisma.assinaturaPush.deleteMany({ where: { lojaId: id } });

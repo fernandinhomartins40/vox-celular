@@ -3,7 +3,7 @@ import { processNotification } from './notificationProcessor.js';
 import type { AuthorizedDelivery } from './notificationDeliveryAuthorization.js';
 type Dependencies = NonNullable<Parameters<typeof processNotification>[1]>;
 const now = new Date('2026-10-12T12:00:00Z');
-const authorized: AuthorizedDelivery = { id: 'delivery', notificacaoId: 'notice', lojaId: 'store', clienteId: 'client', assinaturaId: 'subscription', credenciais: 'sealed-fixture', titulo: 'Private', mensagem: 'Private', destino: '/pedidos', expiresAt: new Date(now.getTime() + 60000) };
+const authorized: AuthorizedDelivery = { canal: 'WEB', id: 'delivery', notificacaoId: 'notice', lojaId: 'store', clienteId: 'client', assinaturaId: 'subscription', credenciais: 'sealed-fixture', titulo: 'Private', mensagem: 'Private', destino: '/pedidos', expiresAt: new Date(now.getTime() + 60000) };
 function fixture() {
   const calls: string[] = [];
   const deps: Dependencies = {
@@ -18,6 +18,9 @@ function fixture() {
     finalize: async () => { calls.push('finalize'); return 0; },
     expire: async () => { calls.push('expire'); return 0; },
     recover: async () => { calls.push('recover'); return 0; },
+    nativeToken: () => null,
+    nativeSend: async () => { throw new Error('Native not configured'); },
+    receipt: async () => false,
   };
   return { deps, calls };
 }
@@ -48,3 +51,14 @@ const failedExpiration = fixture(); failedExpiration.deps.expire = async () => {
 await assert.rejects(processNotification('https://vox.example', failedExpiration.deps));
 assert.ok(!failedExpiration.calls.includes('claim'));
 console.log('Notification processing ordering, consent recheck, rotated keys and failure boundaries passed.');
+const native = fixture();
+native.deps.nativeToken = () => 'fixture-native-access';
+native.deps.authorize = async () => ({ ...authorized, canal: 'EXPO_ANDROID' });
+native.deps.decrypt = async () => ({ token: 'ExpoPushToken[fixture_device_token]' });
+native.deps.nativeSend = async (_token, notice) => { assert.ok(!('titulo' in notice)); native.calls.push('native-send'); return { status: 'queued', ticketId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }; };
+assert.equal((await processNotification('https://vox.example', native.deps)).status, 'queued');
+assert.ok(native.calls.includes('native-send') && native.calls.includes('settle:queued'));
+assert.ok(!native.calls.includes('send'));
+const receipt = fixture(); receipt.deps.nativeToken = () => 'fixture-native-access'; receipt.deps.receipt = async () => true;
+assert.deepEqual(await processNotification('https://vox.example', receipt.deps), { processed: true });
+assert.ok(!receipt.calls.includes('claim') && !receipt.calls.includes('send'), 'Receipt pass must not send another notification');

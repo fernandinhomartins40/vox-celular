@@ -256,6 +256,8 @@ model EntregaPush {
   tentativas Int @default(0)
   proximaTentativaEm DateTime @default(now())
   processandoDesde DateTime?
+  expoTicketId String?
+  consultasRecibo Int @default(0)
   confirmadaEm DateTime?
   createdAt DateTime @default(now())
   notificacao NotificacaoCliente @relation(fields: [notificacaoId], references: [id], onDelete: Cascade)

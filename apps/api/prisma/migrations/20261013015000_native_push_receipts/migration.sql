@@ -1,0 +1,2 @@
+ALTER TABLE "EntregaPush" ADD COLUMN "expoTicketId" TEXT;
+ALTER TABLE "EntregaPush" ADD COLUMN "consultasRecibo" INTEGER NOT NULL DEFAULT 0;

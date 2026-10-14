@@ -5,6 +5,10 @@ export const expoPushTokenSchema = z.string().max(200).regex(/^(Expo|Exponent)Pu
 const ticketId = z.string().uuid();
 const noticeSchema = z.object({ id: z.string().regex(/^[a-zA-Z0-9_-]{1,100}$/), destino: z.enum(['/pedidos', '/servicos', '/beneficios']), expiresAt: z.date() });
 const accessTokenSchema = z.string().min(8).max(512).regex(/^[a-zA-Z0-9._-]+$/);
+export function nativePushAccessToken() {
+  const parsed = accessTokenSchema.safeParse(process.env.EXPO_PUSH_ACCESS_TOKEN);
+  return process.env.EXPO_PUSH_ENABLED === 'true' && parsed.success ? parsed.data : null;
+}
 export type NativePushResult =
   | { status: 'queued'; ticketId: string }
   | { status: 'provider-accepted' | 'invalid-subscription' | 'rejected' | 'ambiguous' | 'expired' | 'pending' }

@@ -1,10 +1,10 @@
 import { prisma } from './prisma.js';
 import { notificationDeliveryOutcome } from './notificationDeliveryOutcome.js';
-import type { PushTransportResult } from './webPushTransport.js';
+import type { DeliveryResult } from './notificationDeliveryOutcome.js';
 
 // Settle only the exact claimed attempt; stale/duplicate results cannot resurrect
 // a canceled record or overwrite a later attempt. ACEITA means service acceptance.
-export async function settleNotificationDelivery(id: string, attempt: number, result: PushTransportResult, now = new Date()) {
+export async function settleNotificationDelivery(id: string, attempt: number, result: DeliveryResult, now = new Date()) {
   if (!id || id.length > 200) throw new Error('INVALID_DELIVERY_OUTCOME');
   notificationDeliveryOutcome(attempt, result, now, now);
   return prisma.$transaction(async tx => {
@@ -22,7 +22,7 @@ export async function settleNotificationDelivery(id: string, attempt: number, re
     if (!updated.count) return false;
     if (authorized && result.status === 'invalid-subscription') {
       await tx.assinaturaPush.updateMany({ where: { id: delivery.assinaturaId, clienteId: notice.clienteId, lojaId: notice.lojaId }, data: { ativo: false } });
-      await tx.entregaPush.updateMany({ where: { assinaturaId: delivery.assinaturaId, status: { in: ['PENDENTE', 'PROCESSANDO'] } }, data: { status: 'CANCELADA' } });
+      await tx.entregaPush.updateMany({ where: { assinaturaId: delivery.assinaturaId, status: { in: ['PENDENTE', 'PROCESSANDO', 'AGUARDANDO_RECIBO'] } }, data: { status: 'CANCELADA' } });
     }
     return true;
   });

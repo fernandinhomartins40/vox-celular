@@ -13,7 +13,7 @@ export async function expireNotifications(now = new Date()) {
     await tx.entregaPush.updateMany({ where: { notificacaoId: { in: ids }, status: 'PENDENTE' }, data: { status: 'EXPIRADA' } });
     // In-flight work may already have reached the service; expiration must not
     // claim a definite failure or turn it into retryable work.
-    await tx.entregaPush.updateMany({ where: { notificacaoId: { in: ids }, status: 'PROCESSANDO' }, data: { status: 'INCERTA' } });
+    await tx.entregaPush.updateMany({ where: { notificacaoId: { in: ids }, status: { in: ['PROCESSANDO', 'AGUARDANDO_RECIBO'] } }, data: { status: 'INCERTA' } });
     return tx.$executeRaw`
       UPDATE "NotificacaoCliente" n SET status = CASE
         WHEN EXISTS (SELECT 1 FROM "EntregaPush" d WHERE d."notificacaoId" = n.id AND d.status = 'INCERTA') THEN 'INCERTA'
