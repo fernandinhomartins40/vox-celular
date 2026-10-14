@@ -23,6 +23,14 @@ Os testes locais usam módulos nativos simulados; compartilhamento em Android/iO
 ainda exige validação em aparelho. Push nativo e integração real dos provedores de IA
 continuam pendentes; a existência do workspace não prova esses recursos concluídos.
 
+Privacidade também permite cadastrar o aparelho para notificações após salvar o
+consentimento, solicitar a permissão do sistema e remover aparelhos cadastrados.
+Configure o identificador público real do projeto Expo em `EXPO_PUBLIC_EXPO_PROJECT_ID`
+(variável de repositório no GitHub para os builds), ou em `extra.eas.projectId` no
+app config. Não é uma chave secreta. Sem projeto configurado, a ação informa que
+notificações ainda não estão disponíveis nesta versão; não inventa um identificador.
+FCM/APNs e ligação do envio/recibos à fila ainda precisam de configuração/implementação.
+
 Identificadores Android/iOS propostos: `br.com.voxcelular.cliente`.
 Confirmar disponibilidade nas contas das lojas antes de distribuição. Certificados,
 provisionamento, assinatura Android, contas Apple/Google e testes físicos ainda necessários.

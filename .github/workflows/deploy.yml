@@ -38,6 +38,7 @@ env:
   VPS_USER: root
   APP_ROOT: /opt/voxcelular
   DEPLOY_PORT: "3196"
+  EXPO_PUBLIC_EXPO_PROJECT_ID: ${{ vars.EXPO_PUBLIC_EXPO_PROJECT_ID }}
 
 jobs:
   prepare:
@@ -162,6 +163,8 @@ jobs:
         run: node .github/scripts/test-mobile-contact.mjs
       - name: Native account export and temporary file cleanup
         run: node .github/scripts/test-mobile-export.mjs
+      - name: Native push consent and permission registration
+        run: node .github/scripts/test-native-push-registration.mjs
       - name: Validate bounded offline catalog
         run: node .github/scripts/test-mobile-offline-catalog.mjs
       - name: Validate offline operator guides

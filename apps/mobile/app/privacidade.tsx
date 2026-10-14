@@ -4,6 +4,7 @@ import { Link, useFocusEffect } from 'expo-router';
 import { requestForSession, sessionRevision } from '../src/api';
 import AccountClosure from '../src/AccountClosure';
 import { shareAccountExport } from '../src/accountExport';
+import NativePushControls from '../src/NativePushControls';
 
 type Preferences = { personalizacao: boolean; notificacoes: boolean; versaoAviso: string };
 export default function Privacy() {
@@ -64,7 +65,7 @@ export default function Privacy() {
       <View style={styles.option}><Text style={styles.label}>Personalizar recomendações</Text><Switch accessibilityLabel="Personalizar recomendações" value={draft.personalizacao} disabled={busy} onValueChange={value => { setDraft(previous => previous && { ...previous, personalizacao: value }); setMessage(''); }} trackColor={{ false: '#77849a', true: '#0036cc' }} /></View>
       <Text style={styles.description}>Autorizar o uso das suas preferências para recomendações personalizadas. Não autoriza compartilhar senhas ou dados de pagamento.</Text>
       <View style={styles.option}><Text style={styles.label}>Receber notificações</Text><Switch accessibilityLabel="Receber notificações" value={draft.notificacoes} disabled={busy} onValueChange={value => { setDraft(previous => previous && { ...previous, notificacoes: value }); setMessage(''); }} trackColor={{ false: '#77849a', true: '#0036cc' }} /></View>
-      <Text style={styles.description}>Registrar seu consentimento para notificações da Vox. A permissão do aparelho é separada; a entrega de push ainda não está ativada neste aplicativo.</Text>
+      <Text style={styles.description}>Autorizar avisos da Vox. Para cadastrar este aparelho, use a opção abaixo e permita notificações no sistema.</Text>
       <Text style={styles.description}>Versão do aviso: {draft.versaoAviso}</Text>
       <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy || !changed }} disabled={busy || !changed} onPress={save} style={[styles.button, (busy || !changed) && styles.disabled]}><Text style={styles.buttonText}>{busy ? 'Salvando…' : 'Salvar preferências'}</Text></Pressable>
       {changed && <Text style={styles.description}>Há alterações para salvar.</Text>}
@@ -77,6 +78,7 @@ export default function Privacy() {
       <Pressable accessibilityRole="button" accessibilityState={{ disabled: exporting || loading || !saved }} disabled={exporting || loading || !saved} onPress={exportData} style={[styles.button, (exporting || loading || !saved) && styles.disabled]}><Text style={styles.buttonText}>{exporting ? 'Preparando arquivo…' : 'Exportar meus dados'}</Text></Pressable>
       {exportMessage && <Text accessibilityLiveRegion="polite" style={styles.description}>{exportMessage}</Text>}
     </View>
+    {!loading && saved && <NativePushControls consent={saved.notificacoes} unsaved={Boolean(changed)} />}
     <AccountClosure />
   </ScrollView>;
 }
