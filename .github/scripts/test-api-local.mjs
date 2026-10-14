@@ -302,7 +302,12 @@ try {
   assert.equal((await request('/push/native', customer.token)).data.length, 1);
   await request(`/push/web/${nativeDevice.id}`, customer.token, undefined, 'DELETE');
   assert.equal((await request('/push/native', customer.token)).data.length, 1);
-  await request(`/push/native/${nativeDevice.id}`, customer.token, undefined, 'DELETE');
+  const foreignLogout = (await request('/auth/login', null, { email: other.user.email, senha: 'ci-http-client-password-123', lojaId: loja.id, plataforma: 'native' })).data;
+  await request('/auth/logout', foreignLogout.token, { pushDeviceId: nativeDevice.id });
+  assert.equal((await request('/push/native', customer.token)).data.length, 1, 'Logout from another account must not revoke this device');
+  const deviceLogout = (await request('/auth/login', null, { email: customer.user.email, senha: 'ci-http-client-password-123', lojaId: loja.id, plataforma: 'native' })).data;
+  await request('/auth/logout', deviceLogout.token, { pushDeviceId: nativeDevice.id });
+  await request('/auth/me', deviceLogout.token, null, 'GET', [401]);
   assert.equal((await request('/push/native', customer.token)).data.length, 0);
   await request('/push/web', customer.token, subscription, 'PUT');
   await request('/push/web', customer.token, { ...subscription, endpoint: 'https://fcm.googleapis.com/local-other-device' }, 'PUT');

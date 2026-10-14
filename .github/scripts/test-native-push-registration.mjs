@@ -12,6 +12,7 @@ const fixture = {
   },
   Constants: { expoConfig: { extra: { eas: { projectId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' } } } },
   Platform: { OS: 'android' }, sessionRevision: () => revision,
+  rememberNativePushDevice: async (id, expected) => { assert.equal(expected, revision); assert.equal(id, 'device'); calls.push('remember-device'); },
   requestForSession: async (expected, path, body, method) => {
     assert.equal(expected, revision);
     if (path === '/privacidade/preferencias') { calls.push('consent'); return { notificacoes: consent }; }
@@ -21,10 +22,10 @@ const fixture = {
 globalThis.__nativePushFixture = fixture;
 let source = await readFile(new URL('../../apps/mobile/src/nativePush.ts', import.meta.url), 'utf8');
 source = source.replace(/^import .*;\r?\n/gm, '');
-source = `const { Notifications, Constants, Platform, requestForSession, sessionRevision } = globalThis.__nativePushFixture;\n${source}`;
+source = `const { Notifications, Constants, Platform, requestForSession, sessionRevision, rememberNativePushDevice } = globalThis.__nativePushFixture;\n${source}`;
 const { registerNativePush } = await import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(source)).toString('base64')}`);
 assert.deepEqual(await registerNativePush(revision, () => true), { id: 'device' });
-assert.deepEqual(calls, ['consent', 'channel:vox-updates', 'permission', 'token', 'register']);
+assert.deepEqual(calls, ['consent', 'channel:vox-updates', 'permission', 'token', 'register', 'remember-device']);
 calls.length = 0; consent = false;
 await assert.rejects(registerNativePush(revision, () => true), /autorização/); assert.deepEqual(calls, ['consent']);
 consent = true; calls.length = 0; allowed = false;

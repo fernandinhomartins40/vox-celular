@@ -63,8 +63,26 @@ export async function request<T>(path: string, body?: unknown, authenticated = f
   return data as T;
 }
 export async function logout() {
-  try { await request('/auth/logout', {}, true); }
-  finally { await clearLocalSession(); }
+  const version = generation;
+  try {
+    await storageQueue;
+    const pushDeviceId = await SecureStore.getItemAsync('vox.push.device');
+    if (version !== generation) throw new Error('Sua sessão mudou.');
+    await request('/auth/logout', pushDeviceId ? { pushDeviceId } : {}, true);
+    const deletion = storageQueue.then(async () => { if (version === generation) await SecureStore.deleteItemAsync('vox.push.device'); });
+    storageQueue = deletion.catch(() => {});
+    await deletion;
+  } finally { if (version === generation) await clearLocalSession(); }
+}
+export async function rememberNativePushDevice(id: string, revision: number) {
+  if (!/^[a-zA-Z0-9_-]{1,100}$/.test(id)) throw new Error('Cadastro do aparelho inválido.');
+  const write = storageQueue.then(async () => {
+    if (revision !== generation) throw new Error('Sua conta mudou.');
+    await SecureStore.setItemAsync('vox.push.device', id);
+    if (revision !== generation) throw new Error('Sua conta mudou.');
+  });
+  storageQueue = write.catch(() => {});
+  await write;
 }
 export async function clearLocalSession() { const version = ++generation; accessToken = null; renewing = undefined; await persistRefresh(null, version); }
 export async function requestForSession<T>(revision: number, path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> {

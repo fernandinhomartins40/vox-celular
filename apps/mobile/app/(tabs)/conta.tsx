@@ -40,7 +40,7 @@ export default function Account() {
   async function exit() {
     setBusy(true); setError('');
     try { await logout(); }
-    catch { setError('Você saiu neste aparelho. Sem confirmação da rede, encerre este acesso pela lista de sessões ou altere a senha para revogar no servidor.'); }
+    catch { setError('Você saiu neste aparelho, mas a rede não confirmou a remoção do acesso. Desative as notificações nas configurações do aparelho e encerre a sessão pela sua conta quando estiver online.'); }
     finally { setUser(null); setPassword(''); setBusy(false); }
   }
   return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">

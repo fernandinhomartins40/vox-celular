@@ -163,7 +163,7 @@ authRouter.post('/refresh', async (req, res) => {
   } catch { res.status(401).json({ error: 'Sua sessão expirou. Entre novamente.' }); }
 });
 authRouter.post('/logout', requireAuth, async (req: AuthRequest, res) => {
-  const parsed = z.object({ pushEndpoint: z.string().url().max(2048).optional() }).strict().safeParse(req.body);
+  const parsed = z.object({ pushEndpoint: z.string().url().max(2048).optional(), pushDeviceId: z.string().min(1).max(100).optional() }).strict().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'Confira os dados de encerramento.' }); return; }
   try {
     await prisma.$transaction(async tx => {
@@ -171,6 +171,9 @@ authRouter.post('/logout', requireAuth, async (req: AuthRequest, res) => {
       if (parsed.data.pushEndpoint && req.user!.role === 'CLIENTE') {
         const endpointHash = createHash('sha256').update(parsed.data.pushEndpoint).digest('hex');
         await tx.assinaturaPush.deleteMany({ where: { endpointHash, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
+      }
+      if (parsed.data.pushDeviceId && req.user!.role === 'CLIENTE') {
+        await tx.assinaturaPush.deleteMany({ where: { id: parsed.data.pushDeviceId, canal: { in: ['EXPO_ANDROID', 'EXPO_IOS'] }, lojaId: req.user!.lojaId, cliente: { usuarioId: req.user!.userId } } });
       }
       if (req.user!.sessionId) await tx.sessao.deleteMany({ where: { id: req.user!.sessionId, usuarioId: req.user!.userId } });
       else await tx.usuario.update({ where: { id: req.user!.userId }, data: { tokenVersion: { increment: 1 } } });

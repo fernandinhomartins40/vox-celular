@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { requestForSession, sessionRevision } from './api';
+import { requestForSession, sessionRevision, rememberNativePushDevice } from './api';
 
 export async function registerNativePush(revision: number, active: () => boolean) {
   const check = () => { if (!active() || sessionRevision() !== revision) throw new Error('Sua conta mudou. Abra novamente as preferências.'); };
@@ -28,5 +28,8 @@ export async function registerNativePush(revision: number, active: () => boolean
     throw new Error('Não foi possível preparar as notificações. Tente novamente com conexão.');
   }
   check();
-  return requestForSession<{ id: string; ativo: boolean; canal: string }>(revision, '/push/native', { token, plataforma: Platform.OS }, 'PUT');
+  const device = await requestForSession<{ id: string; ativo: boolean; canal: string }>(revision, '/push/native', { token, plataforma: Platform.OS }, 'PUT');
+  check();
+  await rememberNativePushDevice(device.id, revision);
+  return device;
 }
