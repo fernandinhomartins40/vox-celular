@@ -2,11 +2,12 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Request, Response } from 'express';
 import { prisma } from './prisma.js';
 import { signToken } from './jwt.js';
+import { allowedWebOrigin } from './webOrigins.js';
 
 export const hashRefresh = (value: string) => createHash('sha256').update(value).digest('hex');
 export const refreshValue = () => randomBytes(32).toString('base64url');
 export function webOrigin(req: Request) {
-  return req.get('origin') === (process.env.CORS_ORIGIN || 'http://localhost:3000');
+  return allowedWebOrigin(req.get('origin'));
 }
 export function refreshCookie(res: Response, value: string) {
   res.cookie('vox_refresh', value, { httpOnly: true, secure: (process.env.CORS_ORIGIN || '').startsWith('https://'), sameSite: 'strict', path: '/api/auth', maxAge: value ? 28 * 86400000 : 0 });

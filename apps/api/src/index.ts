@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { androidAssociation, appleAssociation } from './lib/mobileAssociation.js';
 import express from 'express';
 import cors from 'cors';
+import { allowedWebOrigin } from './lib/webOrigins.js';
 import path from 'node:path';
 import { prisma } from './lib/prisma.js';
 import { authRouter } from './routes/auth.js';
@@ -39,7 +40,7 @@ app.get('/.well-known/apple-app-site-association', (_req, res) => res.set('Cache
 const PORT = process.env.PORT || 3001;
 const uploadsDir = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedWebOrigin(origin)), credentials: true }));
 app.use(express.json({ limit: '8mb' }));
 app.use('/uploads', express.static(uploadsDir, { maxAge: '1y', immutable: true, dotfiles: 'deny', index: false }));
 

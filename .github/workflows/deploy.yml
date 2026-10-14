@@ -319,6 +319,8 @@ jobs:
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/authLimits.test.js
       - name: Password policy and bcrypt UTF-8 boundaries
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/passwordPolicy.test.js
+      - name: Official web origins and spoofed origin rejection
+        run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/webOrigins.test.js
       - name: Structured catalog data and source validation
         run: docker compose --profile tools run --rm --no-deps migrate node dist/lib/productAttributes.test.js
       - name: Recommendation catalog constraints and unknown attributes

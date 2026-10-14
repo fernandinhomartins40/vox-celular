@@ -20,7 +20,7 @@ await new Promise((resolve, reject) => portCheck.close(error => error ? reject(e
 assert.equal(await prisma.loja.count(), 0, 'HTTP suite requires a fresh disposable database');
 const parent = path.resolve('.git/integration-postgres');
 const root = await mkdtemp(path.join(parent, 'http-'));
-const env = { ...process.env, PORT: '3197', NODE_ENV: 'test', CORS_ORIGIN: base,
+const env = { ...process.env, PORT: '3197', NODE_ENV: 'test', CORS_ORIGIN: 'https://www.voxcelular.com.br',
   JWT_SECRET: 'local-disposable-api-secret-never-for-production', WEB_PUSH_ENABLED: 'false',
   MOBILE_ANDROID_SHA256: Array(32).fill('AB').join(':'), MOBILE_APPLE_TEAM_ID: 'A123456789',
   UPLOADS_DIR: path.join(root, 'uploads'), MARKETPLACE_KEY_FILE: path.join(root, 'vault.key'),
@@ -58,6 +58,26 @@ try {
   assert.ok(appleDocument.applinks.details[0].paths.includes('/area-cliente/pedidos'));
   assert.ok(!appleDocument.applinks.details[0].paths.includes('*'));
   const loja = (await request('/loja')).data;
+  for (const [index, origin] of ['https://www.voxcelular.com.br', 'https://voxcelular.com.br'].entries()) {
+    const send = (path, body, cookie) => fetch(base + '/api/auth/' + path, {
+      method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify(body),
+    });
+    const credentials = { email: `origin-${index}@example.invalid`, senha: 'ci-http-origin-password-123', lojaId: loja.id, plataforma: 'web' };
+    const registered = await send('register', { ...credentials, nome: 'Cliente de teste de origem' });
+    assert.equal(registered.status, 201);
+    assert.equal(registered.headers.get('access-control-allow-origin'), origin);
+    assert.equal((await registered.json()).refreshToken, undefined);
+    const login = await send('login', credentials);
+    assert.equal(login.status, 200);
+    const cookie = login.headers.get('set-cookie');
+    assert.ok(cookie?.includes('HttpOnly') && cookie.includes('Secure'));
+    const refreshed = await send('refresh', { plataforma: 'web' }, cookie.split(';')[0]);
+    assert.equal(refreshed.status, 200);
+    assert.equal(refreshed.headers.get('access-control-allow-origin'), origin);
+  }
+  const denied = await fetch(base + '/api/auth/register', { method: 'POST', headers: { Origin: 'https://evil.voxcelular.com.br', 'Content-Type': 'application/json' }, body: JSON.stringify({ plataforma: 'web' }) });
+  assert.equal(denied.status, 403);
+  assert.equal(denied.headers.get('access-control-allow-origin'), null);
   const admin = (await request('/auth/login', null, { email: env.ADMIN_EMAIL, senha: env.ADMIN_PASSWORD, plataforma: 'native' })).data;
   const register = async name => (await request('/auth/register', null, { nome: name, email: `${name}@example.invalid`, senha: 'ci-http-client-password-123', lojaId: loja.id, plataforma: 'native' }, 'POST', [201])).data;
   const customer = await register('cliente-one');
