@@ -4,7 +4,7 @@
   "short_name": "Vox",
   "description": "Produtos, pedidos e atendimento da Vox Celular.",
   "lang": "pt-BR",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",

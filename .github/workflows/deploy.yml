@@ -384,6 +384,8 @@ jobs:
         run: node .github/scripts/test-panels-browser.mjs
       - name: PWA installation resources and safe offline behavior
         run: node .github/scripts/test-pwa-browser.mjs
+      - name: Installed PWA navigation avoids marketing landing
+        run: node .github/scripts/test-pwa-entry-browser.mjs
       - name: PWA update without interrupting active pages
         run: node .github/scripts/test-pwa-update-browser.mjs
       - name: Bounded public catalogue offline

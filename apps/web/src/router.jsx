@@ -3,17 +3,19 @@ import { createBrowserRouter } from 'react-router-dom';
 import { ConfirmarConta } from './routePages';
 import { Novidades, AdminNovidades } from './routePages';
 import { ProtectedAdmin, ProtectedCliente } from './auth/RouteGuards.jsx';
+import PwaLandingGuard from './components/PwaLandingGuard';
 
 
 export const router = createBrowserRouter([
-  { path: '/', element: <LandingPage /> },
+  { path: '/', element: <PwaLandingGuard><LandingPage /></PwaLandingGuard> },
+  { path: '/app', element: <LandingPage appMode /> },
   { path: '/confirmar-conta', element: <ConfirmarConta /> },
   { path: '/instalar', element: <InstalarApp /> },
   { path: '/assistente', element: <Assistente /> },
   { path: '/ajuda', element: <Ajuda /> },
   { path: '/novidades', element: <Novidades /> },
 
-  { path: '/admin/landing-preview', element: <ProtectedAdmin><LandingPreview /></ProtectedAdmin> },
+  { path: '/admin/landing-preview', element: <PwaLandingGuard><ProtectedAdmin><LandingPreview /></ProtectedAdmin></PwaLandingGuard> },
   { path: '/admin/login', element: <AdminLogin /> },
   {
     path: '/admin',
