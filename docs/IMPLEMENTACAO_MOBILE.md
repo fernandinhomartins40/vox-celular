@@ -751,3 +751,10 @@ Worker da API processa web e nativo quando a configuração Expo está habilitad
 Consentimento retirado cancela entregas aguardando recibo, e dispositivo inválido desativa assinatura. Expiração de ticket sem resultado é INCERTA; envio ambíguo mantém a proteção existente contra reenvio. Uma passagem faz no máximo uma chamada externa, seja envio ou recibo. Docker Compose acrescenta EXPO_PUSH_ENABLED (false por padrão) e EXPO_PUSH_ACCESS_TOKEN; ativação exige também WEB_PUSH_ENABLED para ligar o worker compartilhado e segurança de push habilitada no projeto Expo. Não expor o token ao aplicativo.
 
 Build API, testes do processador/transporte com HTTP simulado e suíte PostgreSQL/HTTP real com 38 migrations passaram: persistência do ticket, espera de quinze minutos, claim concorrente único, settlement repetido/atrasado, retirada de consentimento, dispositivo inválido e última consulta abandonada. Nenhum envio Expo real ou escrita em produção. Faltam configuração externa, abertura da tela ao tocar na notificação e validação física/operacional antes de declarar o push pronto para uso.
+
+### Abertura do app pela notificação — 13/10/2026
+Layout nativo trata toque recebido com app aberto e última resposta na inicialização, somente após o navegador estar pronto. Valida ID do aviso e aceita apenas pedidos/serviços/benefícios; ignora URLs, parâmetros privados e ações não previstas. Não extrai dados pessoais do payload: as telas consultam a API autenticada existente. Resposta repetida não duplica tela; resposta antiga de inicialização não substitui toque recente; listener é removido no unmount. Não solicita permissão ou registra dispositivo ao iniciar o app.
+
+Typecheck e testes com módulos/router simulados passaram para destinos, navegação ainda indisponível, repetição, inicialização, corrida com toque recente e cleanup. Teste incluído no workflow. Testes físicos continuam pendentes e os simulados não comprovam comportamento do sistema operacional, entrega real ou autenticação de ponta a ponta no aparelho.
+
+Bundles Expo Android (3,1 MB) e iOS (2,8 MB) também exportados com sucesso. Não são arquivos instaláveis ou prova de recebimento push.

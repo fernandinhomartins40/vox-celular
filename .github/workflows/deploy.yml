@@ -165,6 +165,8 @@ jobs:
         run: node .github/scripts/test-mobile-export.mjs
       - name: Native push consent and permission registration
         run: node .github/scripts/test-native-push-registration.mjs
+      - name: Native notification destination safety
+        run: node .github/scripts/test-native-notification-destination.mjs
       - name: Validate bounded offline catalog
         run: node .github/scripts/test-mobile-offline-catalog.mjs
       - name: Validate offline operator guides
