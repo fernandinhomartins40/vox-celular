@@ -15,8 +15,8 @@ A aplicação já possui PWA (manifest, service worker, instalação guiada e of
 - [x] Preparar perfis de build Android/iOS e identidade visual nativa com recursos existentes.
 - [x] Documentar requisitos de publicação e dependências externas, sem inventar certificados, contas ou links de download.
 - [x] Compilar web/API, verificar tipos e bundles Android/iOS; executar testes de recomendação, IA, PWA e fluxos existentes compatíveis com o ambiente.
-- [ ] Commit apenas desta entrega; push na main e acompanhamento do GitHub Actions autorizado.
-- [ ] Registrar resultado e limites de validação neste arquivo.
+- [x] Commit apenas desta entrega; push na main e acompanhamento do GitHub Actions autorizado.
+- [x] Registrar resultado e limites de validação neste arquivo.
 
 ## Dependências externas
 
@@ -33,3 +33,9 @@ Chromium aprovou o wizard em 390/768/1440 px, ajuda das operadoras, instalação
 Incluída Algar nas telas web/nativa, editor e validação de guias online/offline, com domínio oficial `algar.com.br`. Conteúdo editorial continua no banco existente; nenhum plano/preço de operadora foi inventado ou inserido em produção.
 
 Requisitos e fontes oficiais pesquisados estão em [PUBLICACAO_APPS_CLIENTE.md](docs/PUBLICACAO_APPS_CLIENTE.md). Implementação local preparada; aceite final de publicação continua dependente de binários assinados, dispositivos, credenciais e revisão das lojas.
+
+## Resultado de entrega
+
+Implementação enviada à main no commit `6ceea37`. [Workflow do push](https://github.com/fernandinhomartins40/vox-celular/actions/runs/38500625417) e [workflow manual com builds Android/iOS solicitados](https://github.com/fernandinhomartins40/vox-celular/actions/runs/38500667713) terminaram em falha: GitHub informou que os jobs não iniciaram por pagamentos recentes com falha ou limite de gastos. Jobs de build nativo e deploy foram ignorados; nenhum APK/app de simulador foi gerado e este código não foi implantado por essas execuções. Resolver faturamento/limite e reexecutar os workflows; depois concluir testes físicos e distribuição assinada com as contas das lojas.
+
+Execução local encerrada com as tarefas de código/documentação/testes acima atendidas e dependências externas explícitas. Objetivo final de aplicativos instaláveis publicados permanece pendente; não confundir preparação de código/bundles com publicação ou deploy.
