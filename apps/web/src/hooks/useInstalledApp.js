@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 const query = '(display-mode: standalone), (display-mode: minimal-ui)';
+const appEntry = typeof window !== 'undefined' && /^\/app(?:\/|$)/.test(window.location.pathname);
 function snapshot() { return window.matchMedia(query).matches || navigator.standalone === true; }
 function subscribe(listener) {
   const media = window.matchMedia(query);
@@ -9,3 +10,4 @@ function subscribe(listener) {
   return () => { media.removeEventListener('change', listener); window.removeEventListener('appinstalled', listener); };
 }
 export function useInstalledApp() { return useSyncExternalStore(subscribe, snapshot, () => false); }
+export function useCustomerAppMode() { return useInstalledApp() || appEntry; }

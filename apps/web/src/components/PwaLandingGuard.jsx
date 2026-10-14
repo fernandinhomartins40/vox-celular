@@ -1,9 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useInstalledApp } from '../hooks/useInstalledApp';
+import { useCustomerAppMode } from '../hooks/useInstalledApp';
 import { useAuth } from '../auth/useAuth';
 
 export default function PwaLandingGuard({ children }) {
-  const installed = useInstalledApp();
+  const installed = useCustomerAppMode();
   const { user } = useAuth();
   const location = useLocation();
   // replace also protects existing installations whose launch URL is still '/'.

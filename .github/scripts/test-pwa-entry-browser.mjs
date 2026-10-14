@@ -55,6 +55,16 @@ try {
     await page.waitForURL('**/app/loja');
     await page.close();
   }
+  const preview = await browser.newPage({ viewport: { width: 390, height: 900 } });
+  await preview.addInitScript(() => localStorage.setItem('vox_user', JSON.stringify({ id: 'client', nome: 'Cliente', role: 'CLIENTE', lojaId: 'store', token: 'fixture-token' })));
+  await preview.route('**/api/**', route => route.fulfill({ json: new URL(route.request().url()).pathname === '/api/loja' ? { id: 'store' } : [] }));
+  await preview.goto(base + '/app');
+  await preview.getByRole('navigation', { name: /Navega.*o do aplicativo/ }).getByRole('link', { name: 'Assistente', exact: true }).click();
+  await preview.getByRole('heading', { name: /Encontre seu pr.*ximo aparelho/ }).waitFor();
+  assert.equal(await preview.getByRole('navigation', { name: /Navega.*o do aplicativo/ }).count(), 1);
+  await preview.getByRole('link', { name: /Voltar.*loja Vox/ }).click();
+  await preview.waitForURL('**/app/loja');
+  await preview.close();
   const web = await browser.newPage();
   await web.route('**/api/**', route => route.fulfill({ json: new URL(route.request().url()).pathname === '/api/loja' ? { id: 'store' } : [] }));
   await web.goto(base); await web.getByRole('contentinfo').waitFor();

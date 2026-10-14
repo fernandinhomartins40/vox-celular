@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { useInstalledApp } from '../hooks/useInstalledApp';
+import { useCustomerAppMode } from '../hooks/useInstalledApp';
 import { Icon } from '../icons';
 import '../customer-app.css';
 
@@ -10,7 +10,7 @@ const tabs = [
 ];
 export default function CustomerAppFrame() {
   const { pathname } = useLocation();
-  const installed = useInstalledApp();
+  const installed = useCustomerAppMode();
   const active = (installed || pathname.startsWith('/app')) && !pathname.startsWith('/admin');
   if (!active) return <Outlet />;
   const login = pathname === '/app/login' || pathname === '/area-cliente/login';
