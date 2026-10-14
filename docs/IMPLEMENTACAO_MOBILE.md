@@ -717,3 +717,10 @@ Declarações Android e associação Apple acrescentam `/produto`, já tratado p
 
 ### Correções na validação do workflow — 13/10/2026
 Revisão encontrou indentação inválida na etapa de carrinho adicionada recentemente e allowlist antiga no teste de configuração Android. Corrigidos ambos; YAML completo parseado localmente com oito jobs. Todos os scripts nativos existentes de links, configuração, sessões, carrinho, contato, catálogo/guias offline e resgates passaram. As execuções recentes com zero jobs não comprovam por si só faturamento como causa; o erro de YAML é um bloqueio de código confirmado, agora corrigido. Resultado de nova execução deve ser consultado antes de atribuir sua falha. Pipeline de APK e simulador já existe, opcional no mesmo workflow; não houve build instalável nesta validação.
+
+### Exportação dos dados na conta nativa — 13/10/2026
+Privacidade oferece Exportar meus dados. Usa `/privacidade/exportar` autenticado existente, escreve JSON temporário no cache do aparelho e abre a janela nativa de compartilhamento; não envia automaticamente o arquivo a terceiros. Preserva todas as coleções recebidas. Revalida sessão e tela ativa antes de criar/compartilhar e remove o arquivo ao finalizar a janela, inclusive em falha. `expo-file-system` e `expo-sharing` seguem as versões recomendadas pelo SDK instalado. Não cria endpoint, storage externo ou serviço na VPS.
+
+Typecheck e verificação de compatibilidade Expo passaram. Teste com módulos nativos simulados valida arquivo completo, endpoint, indisponibilidade do compartilhamento, remoção após falha, troca de conta sem compartilhar e liberação após erro; incluído no workflow, cujo YAML foi parseado. Compartilhamento físico, retenção após encerramento abrupto do processo e exportações muito grandes ainda requerem validação; backend transmite em lotes, mas o cliente usa o JSON em memória. Referências: https://docs.expo.dev/versions/latest/sdk/filesystem/ e https://docs.expo.dev/versions/v54.0.0/sdk/sharing/.
+
+Exportação Expo também passou nas duas plataformas: bundle iOS de 2,7 MB e Android de 3 MB. São bundles de código; não são APK/IPA instaláveis.

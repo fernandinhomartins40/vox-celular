@@ -16,8 +16,12 @@ Refresh token usa Expo SecureStore e access token fica em memória. Não há Asy
 para credenciais. Carrinho e chave de confirmação pendente usam AsyncStorage, sem credenciais. O catálogo consulta os preços/estoque reais e não confirma compras offline.
 Cadastro e login de cliente, restauração de sessão, pedidos com histórico, favoritos com comparação, preferências de privacidade, gerenciamento de acessos, pontos e resgates, serviços com agenda, carrinho com confirmação, assistente por regras e ajuda das operadoras têm telas nativas ligadas à API.
 Esses fluxos ainda precisam de teste funcional em emulador/aparelho.
-adaptadores de IA, exportação de dados e push
-continuam em implementação; a existência do workspace não prova esses recursos concluídos.
+Privacidade inclui exportação dos dados pela API autenticada para um arquivo JSON
+temporário, compartilhado pela janela do sistema e removido após seu encerramento.
+O usuário escolhe onde salvar; cancelar a janela não comprova que o arquivo foi salvo.
+Os testes locais usam módulos nativos simulados; compartilhamento em Android/iOS
+ainda exige validação em aparelho. Push nativo e integração real dos provedores de IA
+continuam pendentes; a existência do workspace não prova esses recursos concluídos.
 
 Identificadores Android/iOS propostos: `br.com.voxcelular.cliente`.
 Confirmar disponibilidade nas contas das lojas antes de distribuição. Certificados,

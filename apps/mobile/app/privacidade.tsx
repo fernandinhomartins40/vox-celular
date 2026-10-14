@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, Vie
 import { Link, useFocusEffect } from 'expo-router';
 import { requestForSession, sessionRevision } from '../src/api';
 import AccountClosure from '../src/AccountClosure';
+import { shareAccountExport } from '../src/accountExport';
 
 type Preferences = { personalizacao: boolean; notificacoes: boolean; versaoAviso: string };
 export default function Privacy() {
@@ -15,9 +16,13 @@ export default function Privacy() {
   const [reload, setReload] = useState(0);
   const listedRevision = useRef(-1);
   const operation = useRef<symbol | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState('');
+  const exportOperation = useRef<symbol | null>(null);
   useFocusEffect(useCallback(() => {
     let active = true;
     operation.current = null; listedRevision.current = -1;
+    exportOperation.current = null; setExporting(false); setExportMessage('');
     setBusy(false); setSaved(null); setDraft(null);
     setLoading(true); setError(''); setMessage('');
     const revision = sessionRevision();
@@ -25,7 +30,7 @@ export default function Privacy() {
       .then(data => { if (active) { listedRevision.current = revision; setSaved(data); setDraft(data); } })
       .catch(e => { if (active) { setSaved(null); setDraft(null); setError(e instanceof Error ? e.message : 'Não foi possível consultar suas preferências.'); } })
       .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; operation.current = null; listedRevision.current = -1; };
+    return () => { active = false; operation.current = null; exportOperation.current = null; listedRevision.current = -1; };
   }, [reload]));
   async function save() {
     if (!draft || operation.current || listedRevision.current !== sessionRevision()) return;
@@ -40,6 +45,16 @@ export default function Privacy() {
     finally { if (active()) { operation.current = null; setBusy(false); } }
   }
   const changed = saved && draft && (saved.personalizacao !== draft.personalizacao || saved.notificacoes !== draft.notificacoes);
+  async function exportData() {
+    if (exportOperation.current) return;
+    const token = Symbol(); exportOperation.current = token;
+    const revision = sessionRevision();
+    const active = () => exportOperation.current === token && sessionRevision() === revision;
+    setExporting(true); setExportMessage('');
+    try { await shareAccountExport(revision, active); if (active()) setExportMessage('Use a opção de salvar ou compartilhar do aparelho para guardar seu arquivo.'); }
+    catch (e) { if (active()) setExportMessage(e instanceof Error ? e.message : 'Não foi possível exportar seus dados. Tente novamente.'); }
+    finally { if (active()) { exportOperation.current = null; setExporting(false); } }
+  }
   return <ScrollView contentContainerStyle={styles.screen}>
     <Text accessibilityRole="header" style={styles.heading}>Privacidade</Text>
     <Text style={styles.description}>Você escolhe. É possível retirar estas autorizações a qualquer momento, sem perder acesso às compras.</Text>
@@ -56,6 +71,12 @@ export default function Privacy() {
       {message && <Text accessibilityLiveRegion="polite" style={styles.description}>{message}</Text>}
     </View>}
     {!loading && !draft && <Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={styles.button}><Text style={styles.buttonText}>Tentar novamente</Text></Pressable>}
+    <View style={[styles.card, { marginTop: 16 }]}>
+      <Text accessibilityRole="header" style={styles.label}>Uma cópia dos meus dados</Text>
+      <Text style={styles.description}>Salve seus dados de cadastro, compras e atendimentos em um arquivo. Você escolhe onde guardar ou com quem compartilhar.</Text>
+      <Pressable accessibilityRole="button" accessibilityState={{ disabled: exporting || loading || !saved }} disabled={exporting || loading || !saved} onPress={exportData} style={[styles.button, (exporting || loading || !saved) && styles.disabled]}><Text style={styles.buttonText}>{exporting ? 'Preparando arquivo…' : 'Exportar meus dados'}</Text></Pressable>
+      {exportMessage && <Text accessibilityLiveRegion="polite" style={styles.description}>{exportMessage}</Text>}
+    </View>
     <AccountClosure />
   </ScrollView>;
 }
