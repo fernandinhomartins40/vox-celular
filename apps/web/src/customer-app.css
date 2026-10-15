@@ -57,3 +57,23 @@
 .customer-app-message button{border:0;background:none;color:#003acb;min-height:44px;font:inherit}
 .customer-app-frame button:focus-visible,.customer-app-frame a:focus-visible,.customer-app-frame input:focus-visible{outline:2px solid #003acb;outline-offset:3px}
 @media(min-width:768px){.customer-app-main{padding:28px}.customer-app-products{grid-template-columns:repeat(4,minmax(0,1fr))}.customer-app-tabs{max-width:900px;margin:auto;border-radius:20px 20px 0 0}.customer-app-assistant{max-width:600px}.customer-app-shortcuts{max-width:600px}}
+
+/* The assistant is the central, raised glass action. Its label stays in the tab grid. */
+.customer-app-tabs a.customer-app-tab-assistant{position:relative;color:#003acb;font-weight:800;background:none;gap:3px}
+.customer-app-assistant-glass{position:relative;isolation:isolate;display:grid;place-items:center;width:56px;height:56px;margin-top:-26px;margin-bottom:2px;border:1px solid #ffffffb0;border-radius:19px;background:linear-gradient(145deg,#6687ffcc,#003acbf0 55%,#533cd5e8);backdrop-filter:blur(14px);box-shadow:inset 1px 2px 2px #ffffffa0,inset -2px -3px 7px #001e8155,0 5px 0 #002c9e,0 10px 22px #003acb44;transform:perspective(300px) rotateX(8deg);transition:transform .2s}
+.customer-app-assistant-glass::before{content:'';position:absolute;inset:-3px;z-index:-1;border-radius:22px;background:conic-gradient(from var(--assistant-light-angle),#80eaff,#c8b9ff,#ffffff,#386aff,#80eaff);animation:assistant-border 4s linear infinite;box-shadow:0 0 10px #5d9fff66}
+.customer-app-assistant-glass::after{content:'';position:absolute;inset:2px;border-radius:16px;background:linear-gradient(150deg,#ffffff50 0%,#ffffff05 45%,#ffffff00 46%);pointer-events:none}
+.customer-app-assistant-spark{position:relative;color:white;font-size:34px;line-height:1;text-shadow:0 2px 5px #ffffff77;animation:assistant-spark 3s ease-in-out infinite}
+.customer-app-tabs a.customer-app-tab-assistant:hover .customer-app-assistant-glass{transform:perspective(300px) rotateX(0) translateY(-3px)}
+.customer-app-tabs a.customer-app-tab-assistant[aria-current=page] .customer-app-assistant-glass{box-shadow:inset 1px 2px 2px #ffffffa0,0 5px 0 #002c9e,0 10px 25px #003acb66}
+@property --assistant-light-angle{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes assistant-border{to{--assistant-light-angle:360deg}}
+@keyframes assistant-spark{50%{transform:scale(.9);text-shadow:0 0 12px #ffffff99}}
+@media(prefers-reduced-motion:reduce){.customer-app-assistant-glass,.customer-app-assistant-glass::before,.customer-app-assistant-spark{animation:none!important;transition:none!important}}
+
+.customer-app-assistant{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;aspect-ratio:3/2;padding:22px;border-radius:26px;max-width:none;box-shadow:0 12px 30px #003acb22}
+.customer-app-assistant-art{position:absolute;inset:0;z-index:-1}.customer-app-assistant-art img{width:100%;height:100%;object-fit:cover}.customer-app-assistant-copy{width:52%;min-width:0}.customer-app-assistant small{font-size:9px;letter-spacing:1.1px;color:#cbdcff}.customer-app-assistant h2{font-size:clamp(19px,4.8vw,24px);line-height:1.12;letter-spacing:-.6px;margin:12px 0}.customer-app-assistant p{font-size:11px;line-height:1.5;max-width:150px;margin-bottom:16px}.customer-app-assistant strong{display:inline-flex;gap:12px;align-items:center;background:#ffdb5a;border:1px solid #ffe88d;color:#14346c;font-size:12px;min-height:40px;padding:10px 14px;border-radius:14px;box-shadow:0 3px 0 #cf9f20}.customer-app-assistant strong svg{width:15px;height:15px}
+@media(min-width:600px){.customer-app-assistant{aspect-ratio:2/1;padding:30px}.customer-app-assistant h2{font-size:32px;max-width:260px}.customer-app-assistant p{font-size:14px;max-width:250px}.customer-app-assistant small{font-size:10px}.customer-app-assistant strong{font-size:14px}}
+@media(min-width:1024px){.customer-app-assistant{aspect-ratio:3/1;padding:28px 32px}.customer-app-assistant-copy{width:47%}.customer-app-assistant h2{font-size:30px;max-width:330px;margin:10px 0}.customer-app-assistant p{margin-bottom:12px}}
+
+.customer-app-assistant,.customer-app-assistant h2,.customer-app-assistant strong{font-family:var(--font-sans,system-ui)}

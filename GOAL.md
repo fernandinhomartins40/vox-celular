@@ -55,3 +55,14 @@ Execução local encerrada com as tarefas de código/documentação/testes acima
 - Consulta de leitura confirmou ausência de configuração de IA na produção. Integração DeepSeek/Qwen existe; ativação real depende da chave/tarifas configuradas pelo lojista. Sem isso, a seleção por regras continua explicitamente identificada.
 - Compilação e Chromium validaram login, início, assistente, navegação inferior, catálogo próprio, preço atual no carrinho e proteção da landing em três tamanhos. A configuração do SDK para APK foi corrigida para não solicitar o pacote removido `tools`.
 - A compilação Android revelou dependência nativa ausente: declarados Reanimated 4.5.1 e Worklets 0.10.1, versões recomendadas pelo Expo instalado. Compatibilidade, tipos, bundles e autolinking Android locais aprovados; incluída verificação de autolinking no Actions antes do Gradle.
+
+### Discovery: redesign solicitado em 14/10/2026
+
+- [x] Substituir formulário simultâneo por uma escolha por tela: formato, orçamento, uso e prioridade; três fases de progresso e recomendação final.
+- [x] Tela cheia com azul Vox, ação amarela, elementos com volume e animações suaves; movimento reduzido respeitado. O menu inferior fica no app e sai do caminho durante a descoberta.
+- [x] Recomendações reais apresentadas uma por vez, alternativas por toque e detalhes técnicos/acessórios em janela opcional. Preservados orçamento, revalidação de preço/estoque e autorização explícita da IA externa.
+- [x] Botão central do menu inferior com vidro, relevo, brilho e borda luminosa animada.
+- [x] Gerar e integrar três imagens 3D horizontais para o banner: desktop, tablet e mobile, selecionadas por `picture`, WebP de aproximadamente 13–26 KB. Prompts e arquivos em `docs/DISCOVERY_ASSETS.md`.
+- [x] Validar encaixe de todas as escolhas e recomendações em seis dimensões, incluindo 320×568 e 844×390, sem rolagem da página nem controles cortados. Detalhes opcionais mantêm rolagem interna acessível quando necessário.
+- [x] Validar consulta local/IA autorizada e fallback, critérios técnicos, mudança de preço/orçamento, compatibilidade e compra de acessórios, retorno ao app, login e imagens responsivas.
+- [x] Implementação, compilação, lint dos componentes alterados e testes Chromium concluídos. Publicação pelo workflow automático da main; o status de implantação é registrado no GitHub Actions.

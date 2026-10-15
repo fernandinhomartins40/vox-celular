@@ -18,9 +18,12 @@ try {
       return route.fulfill({ json: { id: 'fixture' } });
     });
     await page.goto(`${process.env.PANEL_BASE || 'http://127.0.0.1:3196'}/assistente`);
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     await page.getByLabel('Valor máximo em reais').fill('1200');
     await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
+    await page.getByRole('button', { name: 'Por que combina comigo?' }).click();
     const add = page.getByRole('button', { name: 'Adicionar acessório', exact: true });
     await add.waitFor();
     approved = false; await add.click();

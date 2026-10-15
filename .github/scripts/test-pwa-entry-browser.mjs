@@ -34,10 +34,14 @@ try {
     await tabs.waitFor();
     assert.equal(await tabs.evaluate(el => getComputedStyle(el).position), 'fixed');
     assert.equal(await tabs.getByRole('link').count(), 5);
+    const art = page.locator('.customer-app-assistant-art img');
+    await art.waitFor();
+    assert.equal(await art.evaluate(el => new URL(el.currentSrc).pathname), `/brand/discovery/assistant-${width >= 1024 ? 'desktop' : width >= 600 ? 'tablet' : 'mobile'}.webp`);
+    assert.equal(await tabs.locator('.customer-app-assistant-glass').count(), 1);
     if (width === 390) await page.screenshot({ path: '.git/pwa-app-home.png', fullPage: true });
     await page.getByRole('link', { name: /Qual aparelho combina com voc/ }).click();
     await page.getByRole('heading', { name: /Encontre seu pr.*ximo aparelho/ }).waitFor();
-    await tabs.getByRole('link', { name: 'Loja', exact: true }).click();
+    await page.getByRole('link', { name: /Voltar.*loja Vox/ }).click();
     await page.waitForURL('**/app/loja');
     await page.getByRole('heading', { name: device.nome }).waitFor();
     assert.equal(await page.locator('.product-card, .store-hero, .store-bottom-nav').count(), 0);
@@ -61,7 +65,7 @@ try {
   await preview.goto(base + '/app');
   await preview.getByRole('navigation', { name: /Navega.*o do aplicativo/ }).getByRole('link', { name: 'Assistente', exact: true }).click();
   await preview.getByRole('heading', { name: /Encontre seu pr.*ximo aparelho/ }).waitFor();
-  assert.equal(await preview.getByRole('navigation', { name: /Navega.*o do aplicativo/ }).count(), 1);
+  assert.equal(await preview.getByRole('navigation', { name: /Navega.*o do aplicativo/ }).count(), 0, 'Discovery is an immersive full-screen flow');
   await preview.getByRole('link', { name: /Voltar.*loja Vox/ }).click();
   await preview.waitForURL('**/app/loja');
   await preview.close();
