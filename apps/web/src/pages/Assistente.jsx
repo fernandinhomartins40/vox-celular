@@ -1,15 +1,26 @@
 import '../assistant.css';
 import ProductCompatibility from '../components/ProductCompatibility';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api, assetUrl } from '../lib/api';
 import { formatBRL } from '../utils';
 import { PHONE_DIGITS } from '../data';
 import CartDrawer from '../components/CartDrawer';
+import { useAuth } from '../auth/useAuth';
+import { queueDiscoveries } from '../lib/discoveries';
 import { useCustomerAppMode } from '../hooks/useInstalledApp';
+
+const vibeIcons = { 'dia-a-dia': 'connect', fotos: 'create', jogos: 'play', trabalho: 'work', estudos: 'learn', 'redes-sociais': 'social', 'nao-sei': 'discover', equilibrado: 'balance', economia: 'save', bateria: 'battery', armazenamento: 'storage' };
+const vibeImage = value => `/brand/discovery/icons/${vibeIcons[value] || 'discover'}.webp`;
+function DiscoveryIcon({ value }) {
+  const source = vibeImage(value);
+  return <div className="discovery-vibe-stage" aria-hidden="true"><span className="discovery-vibe-orbit" /><div className="discovery-vibe-art" style={{ '--vibe-mask': `url("${source}")` }}><img src={source} alt="" width="384" height="384" fetchPriority="high" draggable="false" /><span className="discovery-vibe-shine" /></div><span className="discovery-vibe-glint">✦</span></div>;
+}
 
 export default function Assistente() {
   const appMode = useCustomerAppMode();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [scene, setScene] = useState('type');
   const [needs, setNeeds] = useState({ tipo: 'celular', orcamento: '', uso: 'nao-sei', prioridade: 'equilibrado', ramMinima: '', armazenamentoMinimo: '' });
@@ -29,10 +40,14 @@ export default function Assistente() {
   useEffect(() => { screenActive.current = true; return () => { screenActive.current = false; }; }, []);
   useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [step, scene]);
   useEffect(() => { sessionStorage.setItem('vox_cart', JSON.stringify(cart)); }, [cart]);
+  function finishDiscovery() {
+    try { queueDiscoveries(result.resultados, user?.id); navigate('/app/descobertas'); }
+    catch (e) { setError(e.message); }
+  }
   function openCart() { setDialogKind(null); setCartOpen(true); }
   function update(field, value) { setNeeds(previous => ({ ...previous, [field]: value })); setError(''); }
   async function search(event) {
-    event.preventDefault(); setBusy(true); setError('');
+    event.preventDefault(); if (busy) return; setBusy(true); setError('');
     try {
       const store = await api.get('/loja');
       const payload = { lojaId: store.id, tipo: needs.tipo, orcamento: Number(needs.orcamento), uso: needs.uso, ...(needs.prioridade !== 'equilibrado' ? { prioridade: needs.prioridade } : {}) };
@@ -79,28 +94,29 @@ export default function Assistente() {
     } catch (e) { if (screenActive.current) setError(e.message); }
     finally { addingAccessory.current = false; if (screenActive.current) setBusy(false); }
   }
-  const usages = [['dia-a-dia', '💬', 'Conectar', 'Meu dia a dia'], ['fotos', '📸', 'Criar', 'Fotos e vídeos'], ['jogos', '🎮', 'Jogar', 'Minha próxima partida'], ['trabalho', '💼', 'Produzir', 'Trabalho e arquivos'], ['estudos', '🎓', 'Aprender', 'Estudos'], ['redes-sociais', '✨', 'Compartilhar', 'Redes sociais']];
+  const usages = [['dia-a-dia', 'Conectar', 'Meu dia a dia'], ['fotos', 'Criar', 'Fotos e vídeos'], ['jogos', 'Jogar', 'Minha próxima partida'], ['trabalho', 'Produzir', 'Trabalho e arquivos'], ['estudos', 'Aprender', 'Estudos'], ['redes-sociais', 'Compartilhar', 'Redes sociais']];
   const fieldClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 p-3 mt-2 text-base';
   return <div className={`discovery discovery-step-${step}`} aria-busy={busy}>
     <div className="discovery-orb discovery-orb-one" aria-hidden="true" /><div className="discovery-orb discovery-orb-two" aria-hidden="true" />
-    <header className="discovery-header"><Link to={appMode ? '/app/loja' : '/'} aria-label="Voltar à loja Vox"><img src="/brand/icon-192.png" alt="Vox Celular" width="38" height="38" /><span>vox <small>discovery</small></span></Link><button onClick={openCart}>Carrinho ({cart.reduce((total, item) => total + item.qty, 0)})</button></header>
+    <header className="discovery-header"><Link to={appMode ? '/app/loja' : '/'} aria-label="Voltar à loja Vox"><img src="/brand/icon-192.png" alt="Vox Celular" width="38" height="38" /><span>vox <small>discovery</small></span></Link><Link className="discovery-saved-link" to="/app/descobertas" aria-label="Minhas descobertas">✦</Link><button onClick={openCart}>Carrinho ({cart.reduce((total, item) => total + item.qty, 0)})</button></header>
     <main className="discovery-main">
       <h1 className="sr-only">Encontre seu próximo aparelho</h1>
       <ol aria-label="Etapas da escolha" className="discovery-progress">{['Seu limite', 'Sua vibe', 'Seu match'].map((label, index) => <li key={label} aria-current={step === index + 1 ? 'step' : undefined} className={step > index + 1 ? 'complete' : ''}><span>{step > index + 1 ? '✓' : `0${index + 1}`}</span>{label}</li>)}</ol>
       {error && !dialogKind && <p role="alert" className="rounded-xl bg-red-50 text-red-800 p-4 mb-4">{error}</p>}
       <h2 ref={heading} tabIndex={-1} className="discovery-question">{step === 3 ? 'Seu próximo match.' : ({ type: 'Qual vai ser seu upgrade?', budget: 'Até quanto vamos?', usage: 'O que te move?', priority: 'O que faz a diferença?' })[scene]}</h2>
-      {step < 3 ? <form key={scene} className="discovery-scene" onSubmit={event => { event.preventDefault(); if (scene === 'type') setScene('budget'); else if (scene === 'budget') { setStep(2); setScene('usage'); } else if (scene === 'usage') setScene('priority'); else search(event); }}>
+      {step < 3 ? <form key={scene} className="discovery-scene" onSubmit={event => { event.preventDefault(); if (scene === 'type') setScene('budget'); else if (scene === 'budget') { setStep(2); setScene('usage'); } else if (scene === 'usage') setScene('priority'); else search(event); }}><fieldset disabled={busy} className="discovery-choice-fieldset">
         {scene === 'type' && <div className="discovery-single"><div className={`discovery-device-stage discovery-device-${needs.tipo}`} aria-hidden="true"><div className="discovery-device-shadow" /><div className="discovery-device-3d"><div className="discovery-device-screen"><span>✦</span></div></div><span className="discovery-floating-spark">✦</span></div><div className="discovery-format-choices" role="group" aria-label="O que procura?">{[['celular', 'Celular'], ['tablet', 'Tablet']].map(([value, label]) => <button type="button" key={value} aria-pressed={needs.tipo === value} onClick={() => update('tipo', value)}>{label}</button>)}</div></div>}
         {scene === 'budget' && <div className="discovery-single"><div className="discovery-budget-emblem" aria-hidden="true"><span>R$</span><i>✦</i></div><div className="discovery-budget"><label htmlFor="discovery-budget">Valor máximo em reais</label><div><span aria-hidden="true">R$</span><input id="discovery-budget" type="number" inputMode="decimal" min="1" max="100000" step="0.01" required value={needs.orcamento} onChange={e => update('orcamento', e.target.value)} placeholder="Seu limite" /></div><div className="discovery-presets" aria-label="Sugestões de orçamento">{[1000, 2000, 3000, 5000].map(value => <button key={value} type="button" aria-pressed={Number(needs.orcamento) === value} onClick={() => update('orcamento', String(value))}>{formatBRL(value).replace(',00', '')}</button>)}</div></div><p className="discovery-single-caption">Seu limite é o nosso ponto de partida.</p></div>}
-        {scene === 'usage' && <div className="discovery-single"><div className="discovery-emoji-stage" aria-hidden="true" key={needs.uso}><span>{usages.find(item => item[0] === needs.uso)?.[1] || '✨'}</span><i>✦</i></div><p className="discovery-single-caption">{usages.find(item => item[0] === needs.uso)?.[3] || 'Descubra no seu ritmo'}</p><div className="discovery-usage-choices" role="group" aria-label="Uso principal">{usages.map(([value, , label]) => <button key={value} type="button" aria-pressed={needs.uso === value} onClick={() => update('uso', value)}>{label}</button>)}</div><button type="button" className="discovery-unsure" aria-pressed={needs.uso === 'nao-sei'} onClick={() => update('uso', 'nao-sei')}>Ainda estou descobrindo</button></div>}
-        {scene === 'priority' && <div className="discovery-single"><div className="discovery-emoji-stage" aria-hidden="true" key={needs.prioridade}><span>{({ equilibrado: '⚖️', economia: '💎', bateria: '🔋', armazenamento: '🗂️' })[needs.prioridade]}</span><i>✦</i></div><div className="discovery-priority-choices" role="group" aria-label="O que mais importa?">{[['equilibrado', 'Equilíbrio'], ['economia', 'Economia'], ['bateria', 'Bateria'], ['armazenamento', 'Espaço']].map(([value, label]) => <button key={value} type="button" aria-pressed={needs.prioridade === value} onClick={() => update('prioridade', value)}>{label}</button>)}</div><div className="discovery-refine-row"><button type="button" className="discovery-options" onClick={() => setDialogKind('options')}>Ajustes opcionais</button><label className="discovery-inline-ai"><input type="checkbox" checked={externalAi} disabled={busy} onChange={e => setExternalAi(e.target.checked)} /><span>Autorizar IA externa</span></label><button type="button" className="discovery-inline-info" onClick={() => setDialogKind('privacy')} aria-label="Como funciona a IA?">ⓘ</button></div></div>}
+        {scene === 'usage' && <div className="discovery-single"><DiscoveryIcon key={needs.uso} value={needs.uso} /><p className="discovery-single-caption">{usages.find(item => item[0] === needs.uso)?.[2] || 'Descubra no seu ritmo'}</p><div className="discovery-usage-choices" role="group" aria-label="Uso principal">{usages.map(([value, label]) => <button key={value} type="button" aria-pressed={needs.uso === value} onClick={() => update('uso', value)}><img src={vibeImage(value)} alt="" width="28" height="28" />{label}</button>)}</div><button type="button" className="discovery-unsure" aria-pressed={needs.uso === 'nao-sei'} onClick={() => update('uso', 'nao-sei')}>Ainda estou descobrindo</button></div>}
+        {scene === 'priority' && <div className="discovery-single"><DiscoveryIcon key={needs.prioridade} value={needs.prioridade} /><div className="discovery-priority-choices" role="group" aria-label="O que mais importa?">{[['equilibrado', 'Equilíbrio'], ['economia', 'Economia'], ['bateria', 'Bateria'], ['armazenamento', 'Espaço']].map(([value, label]) => <button key={value} type="button" aria-pressed={needs.prioridade === value} onClick={() => update('prioridade', value)}><img src={vibeImage(value)} alt="" width="28" height="28" />{label}</button>)}</div><div className="discovery-refine-row"><button type="button" className="discovery-options" onClick={() => setDialogKind('options')}>Ajustes opcionais</button><label className="discovery-inline-ai"><input type="checkbox" checked={externalAi} disabled={busy} onChange={e => setExternalAi(e.target.checked)} /><span>Autorizar IA externa</span></label><button type="button" className="discovery-inline-info" onClick={() => setDialogKind('privacy')} aria-label="Como funciona a IA?">ⓘ</button></div></div>}
         <div className="discovery-actions">{scene !== 'type' && <button type="button" disabled={busy} onClick={() => { if (scene === 'budget') setScene('type'); else if (scene === 'usage') { setScene('budget'); setStep(1); } else setScene('usage'); }} className="discovery-back" aria-label="Voltar">←</button>}<button disabled={busy} className="discovery-next">{busy ? 'Buscando seu match…' : scene === 'priority' ? 'Mostrar opções' : 'Continuar'}<span aria-hidden="true"> ↗</span></button></div>
-      </form> : <>
+      </fieldset></form> : <>
         <p className="discovery-mode">{result?.aviso}</p>
 
         {!result?.resultados.length && <div className="discovery-empty"><p>{result?.mensagem}</p></div>}
-        <div className="discovery-results">{result?.resultados.slice(selectedResult, selectedResult + 1).map(row => <article key={row.produto.id} className="discovery-product"><img src={assetUrl(row.produto.imgUrl) || '/brand/icon-192.png'} alt={row.produto.nome} width="220" height="220" /><h3>{row.produto.nome}</h3><strong>{formatBRL(row.produto.preco)}</strong><p className="discovery-reason">{row.motivos[0]}</p><button type="button" className="discovery-details" onClick={() => setDialogKind('product')}>Por que combina comigo?</button><button disabled={busy} className="discovery-next" onClick={() => add(row.produto)}>Adicionar ao carrinho</button></article>)}</div>
-        {result?.resultados.length > 1 && <div className="discovery-pager" aria-label="Alternativas do catálogo">{result.resultados.map((row, index) => <button key={row.produto.id} aria-pressed={selectedResult === index} onClick={() => setSelectedResult(index)} aria-label={`Ver opção ${index + 1}: ${row.produto.nome}`}>{index + 1}</button>)}</div>}
+        <div className={`discovery-results${result?.resultados.length ? ' discovery-match-reveal' : ''}`} key={result?.resultados[selectedResult]?.produto.id || 'empty'}>{!!result?.resultados.length && <div className="discovery-match-aura" aria-hidden="true"><span /><span /><span /></div>}{result?.resultados.slice(selectedResult, selectedResult + 1).map(row => <article key={row.produto.id} className="discovery-product"><span className="discovery-match-light" aria-hidden="true" /><img src={assetUrl(row.produto.imgUrl) || '/brand/icon-192.png'} alt={row.produto.nome} width="220" height="220" /><h3>{row.produto.nome}</h3><strong>{formatBRL(row.produto.preco)}</strong><p className="discovery-reason">{row.motivos[0]}</p><button type="button" className="discovery-details" onClick={() => setDialogKind('product')}>Por que combina comigo?</button><button disabled={busy} className="discovery-next" onClick={() => add(row.produto)}>Adicionar ao carrinho</button></article>)}</div>
+        {!!result?.resultados.length && <div className="discovery-match-footer">{result?.resultados.length > 1 && <div className="discovery-pager" aria-label="Alternativas do catálogo">{result.resultados.map((row, index) => <button key={row.produto.id} aria-pressed={selectedResult === index} onClick={() => setSelectedResult(index)} aria-label={`Ver opção ${index + 1}: ${row.produto.nome}`}>{index + 1}</button>)}</div>}
+        {!!result?.resultados.length && <button type="button" className="discovery-finish" disabled={busy} onClick={finishDiscovery} aria-label="Finalizar e guardar descobertas">Guardar descobertas <span aria-hidden="true">↗</span></button>}</div>}
         <div className="discovery-actions"><button className="discovery-adjust" disabled={busy} onClick={() => { setStep(1); setScene('budget'); setError(''); setExternalAi(false); }}>Ajustar escolhas</button><a className="discovery-help" href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent('Olá! Preciso de ajuda para escolher meu próximo aparelho.')}`} target="_blank" rel="noopener noreferrer">Pedir ajuda à Vox</a><Link className="discovery-help" to={appMode ? "/app/loja" : "/#produtos"}>Ver catálogo completo</Link></div>
       </>}
     </main>

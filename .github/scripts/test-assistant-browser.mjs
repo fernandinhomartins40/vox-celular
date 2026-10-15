@@ -48,6 +48,7 @@ try {
     await budget(); await choose('Produzir'); await next();
     assert.equal(await page.getByRole('checkbox').isChecked(), false);
     await recommendations();
+    assert.equal(await page.locator('.discovery-product').evaluate(el => getComputedStyle(el).animationName), 'discovery-match-open');
     await page.getByRole('button', { name: 'Por que combina comigo?' }).click();
     await page.getByText('Capa compatível fixture', { exact: true }).waitFor();
     assert.equal(submitted.orcamento, 2000);
@@ -79,6 +80,7 @@ try {
     await page.reload(); await choose('Tablet'); await budget(); await next(); await recommendations();
     await page.getByText('Não encontramos opções que atendam aos critérios.', { exact: true }).waitFor();
     assert.equal(await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).count(), 0);
+    assert.equal(await page.locator('.discovery-match-aura').count(), 0, 'No match celebration for an empty catalog');
     assert.equal(new URL(await page.getByRole('link', { name: 'Pedir ajuda à Vox' }).getAttribute('href')).hostname, 'wa.me');
     await choose('Ajustar escolhas'); await next(); await next();
     await page.getByRole('checkbox').check(); await recommendations();
@@ -103,12 +105,18 @@ try {
     await page.goto(`${base}/assistente`);
     await page.getByRole('heading', { name: 'Qual vai ser seu upgrade?' }).waitFor();
     const fit = async scene => {
+      if (scene === 'usage' || scene === 'priority') {
+        await page.waitForFunction(() => [...document.querySelectorAll('.discovery-vibe-art img,.discovery-usage-choices img,.discovery-priority-choices img')].every(img => img.complete && img.naturalWidth > 0));
+        assert.equal(await page.locator('.discovery-vibe-art').evaluate(el => getComputedStyle(el).animationName), 'none');
+      }
+      if (scene === 'result') assert.equal(await page.locator('.discovery-product').evaluate(el => getComputedStyle(el).animationName), 'none');
       const problems = await page.evaluate(() => {
         const out = [];
         if (document.documentElement.scrollHeight > innerHeight + 1 || document.documentElement.scrollWidth > innerWidth + 1) out.push('document overflow');
-        for (const el of document.querySelectorAll('.discovery-header a,.discovery-header button,.discovery-scene button,.discovery-scene input,.discovery-product button,.discovery-actions button,.discovery-actions a,.discovery-pager button')) {
+        for (const el of document.querySelectorAll('.discovery-header a,.discovery-header button,.discovery-scene button,.discovery-scene input,.discovery-product button,.discovery-actions button,.discovery-actions a,.discovery-pager button,.discovery-finish')) {
           const r = el.getBoundingClientRect();
           if (r.width && r.height && (r.top < -1 || r.left < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1)) out.push(`${el.textContent}: ${JSON.stringify(r.toJSON())}`);
+          else if (r.width && r.height && !el.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2))) out.push(`Covered control: ${el.textContent}`);
         }
         return out;
       });
@@ -120,6 +128,7 @@ try {
     await page.getByLabel('Valor máximo em reais').fill('2000');
     await page.getByRole('button', { name: 'Continuar', exact: true }).click(); await fit('usage');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    assert.match(await page.locator('.discovery-vibe-art img').getAttribute('src'), /create\.webp$/);
     await page.getByRole('button', { name: 'Continuar', exact: true }).click(); await fit('priority');
     await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
     await page.getByRole('heading', { name: 'Seu próximo match.' }).waitFor(); await fit('result');
@@ -128,5 +137,68 @@ try {
     assert.equal(await page.getByRole('button', { name: /Ver opção 2:/ }).getAttribute('aria-pressed'), 'true');
     await page.close();
   }
-  console.log('PASS: single-choice full-screen discovery; criteria, consent, fallback, current cart prices, budget and empty results; six viewport layouts without scrolling or clipped controls. API fixtures only.');
+  // Save uses the existing authenticated favorites API; failed items remain retryable.
+  for (const [width, height] of [[320, 568], [390, 844], [844, 390]]) {
+    const page = await browser.newPage({ viewport: { width, height }, reducedMotion: 'reduce' });
+    const user = { id: 'client', lojaId: 'store', nome: 'Cliente', role: 'CLIENTE' };
+    const devices = [1, 2, 3].map(id => ({ id: `device-${id}`, lojaId: 'store', nome: `Descoberta ${id}`, categoria: 'Celulares', preco: 1700, estoque: 2 }));
+    const saved = new Set(); let failSecond = true; let putCount = 0; let latestPrice = 1900;
+    await page.route('**/api/**', route => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/api/loja') return route.fulfill({ json: { id: 'store' } });
+      if (path === '/api/auth/login' || path === '/api/auth/refresh') return route.fulfill({ json: { user, token: 'fixture-token' } });
+      if (path === '/api/assistente/recomendar') return route.fulfill({ json: { aviso: 'Seleção pelas regras do catálogo.', resultados: devices.map(produto => ({ produto, motivos: ['Dentro do orçamento.'] })) } });
+      if (path === '/api/favoritos') return route.fulfill({ json: devices.filter(row => saved.has(row.id)).map(row => ({ ...row, preco: latestPrice })) });
+      if (path.startsWith('/api/favoritos/')) {
+        assert.equal(route.request().method(), 'PUT'); putCount++;
+        const id = path.split('/').pop();
+        if (id === 'device-2' && failSecond) return route.fulfill({ status: 503, json: { error: 'Falha temporária ao guardar esta descoberta.' } });
+        saved.add(id); return route.fulfill({ json: { ok: true } });
+      }
+      if (path === '/api/produtos') return route.fulfill({ json: devices });
+      if (path.startsWith('/api/produtos/')) return route.fulfill({ json: { ...devices.find(row => row.id === path.split('/').pop()), preco: latestPrice } });
+      throw new Error(`Unexpected discovery request ${path}`);
+    });
+    await page.goto(`${base}/assistente`);
+    for (let n = 0; n < 2; n++) {
+      if (n === 1) await page.getByLabel('Valor máximo em reais').fill('2000');
+      await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    }
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Mostrar opções', exact: true }).click();
+    await page.getByRole('button', { name: 'Finalizar e guardar descobertas' }).click();
+    await page.waitForURL('**/app/login');
+    assert.equal(putCount, 0, 'Guest selections cannot write to an account');
+    assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('vox_pending_discoveries')).ids.length), 3);
+    await page.getByLabel('E-mail', { exact: true }).fill('client@example.invalid');
+    await page.getByLabel('Senha', { exact: true }).fill('fixture-password');
+    await page.getByRole('button', { name: 'Entrar na minha conta', exact: true }).click();
+    await page.waitForURL('**/app/descobertas');
+    const saveButton = page.getByRole('button', { name: 'Salvar minhas descobertas', exact: true });
+    await saveButton.waitFor();
+    const fit = async () => {
+      assert.equal(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1 && document.documentElement.scrollWidth <= innerWidth + 1), true);
+      assert.deepEqual(await page.locator('.discovery-library button,.discovery-library a').evaluateAll(els => els.filter(el => { const r = el.getBoundingClientRect(); return r.width && r.height && (r.top < -1 || r.left < -1 || r.bottom > innerHeight + 1 || r.right > innerWidth + 1); }).map(el => el.textContent)), [], 'Saved discoveries controls must fit');
+    };
+    await fit();
+    if (width === 390) await page.screenshot({ path: '.git/discovery-save.png' });
+    await saveButton.click();
+    await page.getByRole('alert').filter({ hasText: 'Falha temporária' }).waitFor();
+    assert.equal(saved.size, 2);
+    assert.deepEqual(await page.evaluate(() => JSON.parse(sessionStorage.getItem('vox_pending_discoveries')).ids), ['device-2']);
+    failSecond = false; await saveButton.click();
+    await page.getByRole('status').filter({ hasText: 'Descobertas salvas na sua conta.' }).waitFor();
+    assert.equal(saved.size, 3);
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('vox_pending_discoveries')), null);
+    await fit();
+    if (width === 390) await page.screenshot({ path: '.git/discovery-library.png' });
+    await page.reload();
+    await page.getByRole('heading', { name: 'Descoberta 1', exact: true }).waitFor();
+    await page.getByText('R$ 1.900,00', { exact: true }).waitFor();
+    latestPrice = 1950;
+    await page.getByRole('button', { name: 'Adicionar ao carrinho', exact: true }).click();
+    await page.waitForFunction(() => JSON.parse(sessionStorage.getItem('vox_cart'))?.[0]?.preco === 1950);
+    await page.close();
+  }
+  console.log('PASS: single-choice full-screen discovery; criteria, consent, fallback, current cart prices, budget and empty results; six viewport layouts without scrolling or covered controls; 3D assets, reduced motion, authenticated discoveries, partial save retry, persistence and fresh-price purchase. API fixtures only.');
 } finally { await browser.close(); }

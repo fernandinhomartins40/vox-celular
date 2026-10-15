@@ -77,3 +77,5 @@
 @media(min-width:1024px){.customer-app-assistant{aspect-ratio:3/1;padding:28px 32px}.customer-app-assistant-copy{width:47%}.customer-app-assistant h2{font-size:30px;max-width:330px;margin:10px 0}.customer-app-assistant p{margin-bottom:12px}}
 
 .customer-app-assistant,.customer-app-assistant h2,.customer-app-assistant strong{font-family:var(--font-sans,system-ui)}
+
+.customer-app-discoveries-link{display:flex;align-items:center;justify-content:space-between;color:#003acb;min-height:44px;font-size:12px;font-weight:700;margin:8px 4px 0;text-decoration:none}

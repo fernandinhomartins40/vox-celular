@@ -5,13 +5,14 @@ import { Novidades, AdminNovidades } from './routePages';
 import { ProtectedAdmin, ProtectedCliente } from './auth/RouteGuards.jsx';
 import PwaLandingGuard from './components/PwaLandingGuard';
 import CustomerAppFrame from './components/CustomerAppFrame';
-import { CustomerApp } from './routePages';
+import { CustomerApp, Descobertas } from './routePages';
 
 
 export const router = createBrowserRouter([{ element: <CustomerAppFrame />, children: [
   { path: '/', element: <PwaLandingGuard><LandingPage /></PwaLandingGuard> },
   { path: '/app/login', element: <ClienteLogin /> },
   { path: '/app', element: <ProtectedCliente><CustomerApp /></ProtectedCliente> },
+  { path: '/app/descobertas', element: <ProtectedCliente><Descobertas /></ProtectedCliente> },
   { path: '/app/loja', element: <ProtectedCliente><CustomerApp catalog /></ProtectedCliente> },
   { path: '/confirmar-conta', element: <ConfirmarConta /> },
   { path: '/instalar', element: <InstalarApp /> },

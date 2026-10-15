@@ -13,7 +13,7 @@ export default function CustomerAppFrame() {
   const installed = useCustomerAppMode();
   const active = (installed || pathname.startsWith('/app')) && !pathname.startsWith('/admin');
   if (!active) return <Outlet />;
-  if (pathname === '/assistente') return <Outlet />;
+  if (pathname === '/assistente' || pathname === '/app/descobertas') return <Outlet />;
   const login = pathname === '/app/login' || pathname === '/area-cliente/login';
   return <div className={`customer-app-frame${login ? ' customer-app-login' : ''}`}>
     <div className="customer-app-content"><Outlet /></div>

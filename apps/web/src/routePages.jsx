@@ -30,3 +30,5 @@ export const ClienteFavoritos = lazy(() => import('./pages/cliente/ClienteFavori
 export const ClienteServicos = lazy(() => import('./pages/cliente/ClienteServicos'));
 export const ClienteAvisos = lazy(() => import('./pages/cliente/ClienteAvisos'));
 export const ClienteBeneficios = lazy(() => import('./pages/cliente/ClienteBeneficios'));
+
+export const Descobertas = lazy(() => import('./pages/Descobertas'));

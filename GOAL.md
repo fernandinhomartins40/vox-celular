@@ -66,3 +66,12 @@ Execução local encerrada com as tarefas de código/documentação/testes acima
 - [x] Validar encaixe de todas as escolhas e recomendações em seis dimensões, incluindo 320×568 e 844×390, sem rolagem da página nem controles cortados. Detalhes opcionais mantêm rolagem interna acessível quando necessário.
 - [x] Validar consulta local/IA autorizada e fallback, critérios técnicos, mudança de preço/orçamento, compatibilidade e compra de acessórios, retorno ao app, login e imagens responsivas.
 - [x] Implementação, compilação, lint dos componentes alterados e testes Chromium concluídos. Publicação pelo workflow automático da main; o status de implantação é registrado no GitHub Actions.
+
+### Sua vibe, revelação e descobertas salvas
+
+- [x] Substituir emojis de uso e prioridade por 11 ícones 3D transparentes em WebP, com materiais e enquadramento consistentes. Arquivos e prompts em `docs/DISCOVERY_ICONS.md`.
+- [x] Adicionar brilho sobre os ícones, órbita de luz e fundo com vidro embaçado e iluminação suave em movimento, respeitando movimento reduzido.
+- [x] Revelar o aparelho real com entrada em profundidade e passagem de luz; sem atraso artificial, pontuação inventada ou animação de celebração em resultados vazios.
+- [x] Adicionar finalização e página `/app/descobertas`, usando a API e o armazenamento de favoritos já existentes, sem nova tabela ou serviço.
+- [x] Preservar apenas IDs da seleção durante o login, com limite de três, validade de 30 minutos e vínculo à loja/conta. Exigir confirmação para salvar, manter falhas parciais para nova tentativa e consultar novamente preço/estoque antes de comprar.
+- [x] Compilação, lint dos componentes e testes Chromium de animação, movimento reduzido, encaixe sem rolagem, login, salvamento parcial, persistência e carrinho aprovados. Publicação segue o workflow automático da main, com resultado registrado no Actions.
