@@ -15,14 +15,14 @@ export default function CartDrawer({ open, onClose, items, setItems }) {
     if (pending) return;
     setPending(true); setError('');
     try {
-      const signature = JSON.stringify([user.id, items.map(p => [p.id, p.qty, Math.round(p.preco * 100)])]);
+      const signature = JSON.stringify([user.id, items.map(p => [p.id, p.qty, Math.round(p.preco * 100), p.promocaoId || null])]);
       let attempt;
       try { attempt = JSON.parse(sessionStorage.getItem('vox_checkout_attempt')); } catch { /* new attempt */ }
       if (!attempt || attempt.signature !== signature) {
         attempt = { signature, key: crypto.randomUUID() };
         sessionStorage.setItem('vox_checkout_attempt', JSON.stringify(attempt));
       }
-      const result = await api.post('/pedidos', { checkoutKey: attempt.key, itens: items.map(p => ({ produtoId: p.id, qty: p.qty, precoCentavos: Math.round(p.preco * 100) })) });
+      const result = await api.post('/pedidos', { checkoutKey: attempt.key, itens: items.map(p => ({ produtoId: p.id, qty: p.qty, precoCentavos: Math.round(p.preco * 100), ...(p.promocaoId ? { promocaoId: p.promocaoId } : {}) })) });
       setPedido(result); setItems([]); sessionStorage.removeItem('vox_checkout_attempt');
     } catch (e) { setError(e.message); }
     finally { setPending(false); }

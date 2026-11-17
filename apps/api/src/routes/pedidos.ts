@@ -9,7 +9,7 @@ export const pedidosRouter = Router();
 
 const checkoutSchema = z.object({
   checkoutKey: z.string().uuid(),
-  itens: z.array(z.object({ produtoId: z.string().min(1), qty: z.number().int().min(1).max(100), precoCentavos: z.number().int().nonnegative().max(1e12).optional() })).min(1).max(30),
+  itens: z.array(z.object({ produtoId: z.string().min(1), qty: z.number().int().min(1).max(100), precoCentavos: z.number().int().nonnegative().max(1e12).optional(), promocaoId: z.string().min(1).max(100).optional() })).min(1).max(30),
 });
 
 pedidosRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
@@ -19,6 +19,7 @@ pedidosRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
   if (!cliente) { res.status(403).json({ error: 'Entre com uma conta de cliente para concluir a compra.' }); return; }
   const quantities = new Map<string, number>();
   for (const item of parsed.data.itens) quantities.set(item.produtoId, (quantities.get(item.produtoId) ?? 0) + item.qty);
+  if ([...quantities.values()].some(qty => qty > 100) || [...quantities.keys()].some(id => new Set(parsed.data.itens.filter(item => item.produtoId === id).map(item => item.promocaoId || '')).size > 1)) { res.status(400).json({ error: 'Use uma única oferta e até cem unidades por produto.' }); return; }
   try {
     const pedido = await prisma.$transaction(async tx => {
       // Serialize retries for the same customer/key, including concurrent requests.
@@ -31,11 +32,18 @@ pedidosRouter.post('/', requireAuth, async (req: AuthRequest, res) => {
       for (const [produtoId, qty] of [...quantities].sort(([a], [b]) => a.localeCompare(b))) {
         const produto = await tx.produto.findFirst({ where: { id: produtoId, lojaId: cliente.lojaId, ativo: true } });
         if (!produto) throw new Error('Um produto não está mais disponível. Atualize o carrinho.');
-        if (parsed.data.itens.some(item => item.produtoId === produtoId && item.precoCentavos !== undefined && item.precoCentavos !== Math.round(Number(produto.preco) * 100))) throw new Error(`Estoque ou preço de ${produto.nome} mudou. Atualize o carrinho.`);
+        const promocaoId = parsed.data.itens.find(item => item.produtoId === produtoId)?.promocaoId;
+        let preco = produto.preco;
+        if (promocaoId) {
+          const offers = await tx.$queryRaw<{ preco: typeof produto.preco }[]>`SELECT preco FROM "Promocao" WHERE id = ${promocaoId} AND "lojaId" = ${cliente.lojaId} AND "produtoId" = ${produtoId} AND ativa = true AND validade > CURRENT_TIMESTAMP AT TIME ZONE 'UTC' FOR SHARE`;
+          if (!offers.length || Number(offers[0].preco) < 0 || Number(offers[0].preco) > Number(produto.preco)) throw new Error(`Estoque ou preço de ${produto.nome} mudou. A oferta não está mais disponível. Atualize o carrinho.`);
+          preco = offers[0].preco;
+        }
+        if (parsed.data.itens.some(item => item.produtoId === produtoId && item.precoCentavos !== undefined && item.precoCentavos !== Math.round(Number(preco) * 100))) throw new Error(`Estoque ou preço de ${produto.nome} mudou. Atualize o carrinho.`);
         const reserved = await tx.produto.updateMany({ where: { id: produtoId, lojaId: cliente.lojaId, ativo: true, preco: produto.preco, estoque: { gte: qty } }, data: { estoque: { decrement: qty } } });
         if (reserved.count !== 1) throw new Error(`Estoque ou preço de ${produto.nome} mudou. Atualize o carrinho.`);
-        cents += Math.round(Number(produto.preco) * 100) * qty;
-        itens.push({ produtoId, nome: produto.nome, qty, preco: produto.preco });
+        cents += Math.round(Number(preco) * 100) * qty;
+        itens.push({ produtoId, nome: produto.nome, qty, preco, ...(promocaoId ? { promocaoId } : {}) });
       }
       return tx.pedido.create({ data: {
         lojaId: cliente.lojaId, clienteId: cliente.id, checkoutKey: parsed.data.checkoutKey,

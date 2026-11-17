@@ -484,6 +484,7 @@ model ItemPedido {
   nome      String
   qty       Int
   preco     Decimal  @db.Decimal(10,2)
+  promocaoId String?
 
   pedido    Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   produto   Produto  @relation(fields: [produtoId], references: [id])

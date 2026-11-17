@@ -6,6 +6,7 @@ import { api, assetUrl } from '../../lib/api.js';
 import { Icon } from '../../icons';
 import { formatBRL } from '../../utils';
 import { PHONE_DIGITS } from '../../data';
+import CartDrawer from '../../components/CartDrawer';
 
 function diasRestantes(validade) {
   const hoje = new Date();
@@ -18,6 +19,30 @@ export default function ClientePromocoes({ embedded = false }) {
   const [promocoes, setPromocoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  useEffect(() => { if (cartOpen) sessionStorage.setItem('vox_cart', JSON.stringify(cart)); }, [cart, cartOpen]);
+  async function addOffer(promo) {
+    if (adding || !user?.lojaId) return;
+    setAdding(true); setError('');
+    try {
+      const offers = await api.get(`/promocoes?lojaId=${encodeURIComponent(user.lojaId)}`);
+      const current = offers.find(offer => offer.id === promo.id);
+      if (!current || current.preco !== promo.preco) throw new Error('Esta oferta mudou ou terminou. Atualize as ofertas antes de continuar.');
+      const product = await api.get(`/produtos/${encodeURIComponent(current.produtoId)}`);
+      if (product.lojaId !== user.lojaId || product.estoque < 1) throw new Error('O produto não está disponível.');
+      const saved = JSON.parse(sessionStorage.getItem('vox_cart') || '[]');
+      if (!Array.isArray(saved)) throw new Error('Abra o carrinho para conferir os itens salvos.');
+      const existing = saved.find(item => item.id === product.id);
+      if (existing && existing.promocaoId !== promo.id) throw new Error('Este produto já está no carrinho com outro preço. Remova-o antes de adicionar esta oferta.');
+      const qty = (existing?.qty || 0) + 1;
+      if (qty > Math.min(100, product.estoque) || (!existing && saved.length >= 30)) throw new Error('O limite de itens ou o estoque disponível foi atingido.');
+      const next = [...saved.filter(item => item.id !== product.id), { ...product, img: assetUrl(product.imgUrl), preco: current.preco, promocaoId: promo.id, qty }];
+      sessionStorage.setItem('vox_cart', JSON.stringify(next)); setCart(next); setCartOpen(true);
+    } catch (e) { setError(e.message); }
+    finally { setAdding(false); }
+  }
 
   useEffect(() => {
     const lojaId = user?.lojaId ?? localStorage.getItem('vox_loja_id') ?? '';
@@ -32,6 +57,7 @@ export default function ClientePromocoes({ embedded = false }) {
 
   return (
     <div>
+      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} items={cart} setItems={setCart} />
       {!embedded && <PanelPageHeader title="Ofertas" description="Confira as ofertas disponíveis na loja." />}
 
       {promocoes.length > 0 && <div className="bg-[var(--royal-900)] text-white rounded-2xl px-6 py-4 mb-6 flex items-center justify-between gap-4">
@@ -47,7 +73,8 @@ export default function ClientePromocoes({ embedded = false }) {
       </div>}
 
       {/* Estado vazio */}
-      {error ? <p role="alert" className="text-red-600">Não foi possível carregar as ofertas. {error}</p> : promocoes.length === 0 ? (
+      {error && <p role="alert" className="text-red-600 mb-4">{error}</p>}
+      {promocoes.length === 0 ? (
         <div className="text-center py-16 bg-white border border-[var(--line)] rounded-2xl">
           <div className="w-16 h-16 mx-auto rounded-full bg-zinc-100 grid place-items-center mb-4">
             <Icon.tag className="w-7 h-7 text-zinc-400" />
@@ -85,6 +112,7 @@ export default function ClientePromocoes({ embedded = false }) {
                   </div>
                 )}
                 <div className="p-5 flex flex-col flex-1">
+                  {promo.produtoId && <button type="button" disabled={adding} onClick={() => addOffer(promo)} className="panel-primary-button mb-4">{adding ? 'Conferindo oferta…' : 'Adicionar oferta ao carrinho'}</button>}
                   <h3 className="font-display font-bold text-[18px] leading-tight mb-1">{promo.titulo}</h3>
                   <p className="text-[13px] text-zinc-600 leading-relaxed mb-4 flex-1">{promo.desc ?? promo.descricao}</p>
                   {promo.preco && (

@@ -9,14 +9,16 @@ promocoesRouter.get('/', async (req, res) => {
   if (!lojaId) { res.status(400).json({ error: 'lojaId obrigatório' }); return; }
 
   const promocoes = await prisma.promocao.findMany({
-    where: { lojaId, ativa: true, validade: { gte: new Date() } },
-    include: { produto: { select: { imgUrl: true } } },
+    where: { lojaId, ativa: true, validade: { gt: new Date() }, produto: { lojaId, ativo: true, estoque: { gt: 0 } } },
+    include: { produto: { select: { imgUrl: true, preco: true } } },
     orderBy: { validade: 'asc' },
   });
 
   type PromoResult = typeof promocoes[number];
-  res.json(promocoes.map((p: PromoResult) => ({
+  res.json(promocoes.filter(p => Number(p.preco) >= 0 && Number(p.preco) <= Number(p.produto.preco)).map((p: PromoResult) => ({
     id: p.id,
+    produtoId: p.produtoId,
+    validadeEm: p.validade.toISOString(),
     titulo: p.titulo,
     desc: p.descricao,
     preco: Number(p.preco),
