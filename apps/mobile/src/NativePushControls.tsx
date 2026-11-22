@@ -30,14 +30,14 @@ export default function NativePushControls({ consent, unsaved }: { consent: bool
     } catch (e) { if (active()) setMessage(e instanceof Error ? e.message : 'Não foi possível atualizar. Tente novamente.'); }
     finally { if (active()) { operation.current = null; setBusy(false); } }
   }
-  const action = (label: string, onPress: () => void, disabled = busy) => <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={{ minHeight: 48, paddingVertical: 14, opacity: disabled ? 0.5 : 1 }}><Text style={{ color: '#0036cc', fontWeight: '600' }}>{label}</Text></Pressable>;
-  return <View style={{ marginTop: 16, padding: 20, borderRadius: 16, backgroundColor: '#fff', borderWidth: 1, borderColor: '#dce4f3' }}>
-    <Text accessibilityRole="header" style={{ fontSize: 18, fontWeight: '700', color: '#10243e', marginBottom: 12 }}>Notificações no aparelho</Text>
-    <Text style={{ color: '#52647b', lineHeight: 22 }}>Salve sua preferência e autorize este aparelho. Você pode remover os acessos quando quiser.</Text>
+  const action = (label: string, onPress: () => void, disabled = busy) => <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={onPress} style={{ minHeight: 48, paddingVertical: 14, opacity: disabled ? 0.5 : 1 }}><Text style={{ color: '#0825A3', fontFamily: 'DMSans_600SemiBold' }}>{label}</Text></Pressable>;
+  return <View style={{ marginTop: 16, padding: 20, borderRadius: 16, backgroundColor: '#fff', borderWidth: 1, borderColor: '#dce3ef' }}>
+    <Text accessibilityRole="header" style={{ fontSize: 18, fontFamily: 'DMSans_700Bold', color: '#14213d', marginBottom: 12 }}>Notificações no aparelho</Text>
+    <Text style={{ color: '#4a5870', lineHeight: 22 }}>Salve sua preferência e autorize este aparelho. Você pode remover os acessos quando quiser.</Text>
     {action(busy ? 'Aguarde…' : 'Cadastrar este aparelho', () => { void run(); }, busy || !consent || unsaved)}
-    {unsaved && <Text style={{ color: '#52647b' }}>Salve suas preferências antes de cadastrar.</Text>}
+    {unsaved && <Text style={{ color: '#4a5870' }}>Salve suas preferências antes de cadastrar.</Text>}
     {action('Abrir permissões do aparelho', () => { void Linking.openSettings().catch(() => setMessage('Abra as configurações do aparelho para alterar a permissão.')); })}
-    {devices.map((device, index) => <View key={device.id} style={{ borderTopWidth: 1, borderColor: '#dce4f3', marginTop: 8, paddingTop: 12 }}><Text style={{ color: '#10243e' }}>{device.canal === 'EXPO_IOS' ? 'iPhone/iPad' : 'Android'} · {device.ativo ? 'Cadastrado' : 'Desativado'}</Text><Text style={{ color: '#52647b' }}>{new Date(device.createdAt).toLocaleDateString('pt-BR')}</Text>{action(`Remover aparelho ${index + 1}`, () => { void run(device.id); })}</View>)}
-    {message && <Text accessibilityLiveRegion="polite" style={{ color: '#52647b', lineHeight: 22 }}>{message}</Text>}
+    {devices.map((device, index) => <View key={device.id} style={{ borderTopWidth: 1, borderColor: '#dce3ef', marginTop: 8, paddingTop: 12 }}><Text style={{ color: '#14213d' }}>{device.canal === 'EXPO_IOS' ? 'iPhone/iPad' : 'Android'} · {device.ativo ? 'Cadastrado' : 'Desativado'}</Text><Text style={{ color: '#4a5870' }}>{new Date(device.createdAt).toLocaleDateString('pt-BR')}</Text>{action(`Remover aparelho ${index + 1}`, () => { void run(device.id); })}</View>)}
+    {message && <Text accessibilityLiveRegion="polite" style={{ color: '#4a5870', lineHeight: 22 }}>{message}</Text>}
   </View>;
 }

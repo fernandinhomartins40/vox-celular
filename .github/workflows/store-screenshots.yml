@@ -1,0 +1,134 @@
+name: Store screenshots (iPhone 6.9" and Android phone)
+
+# Runs only on the dedicated branch or by hand: never deploys and never touches the stores.
+on:
+  push:
+    branches: [store-screenshots]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voxcelular-store-screenshots
+  cancel-in-progress: true
+
+env:
+  CI: 'true'
+  EXPO_NO_TELEMETRY: '1'
+  EXPO_PUBLIC_API_URL: https://www.voxcelular.com.br/api
+
+jobs:
+  ios:
+    name: iPhone 16 Pro Max (1320x2868)
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install native workspace
+        run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
+      - name: Generate iOS project and install pods
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform ios
+      - name: Compile Release simulator app
+        run: python3 .github/scripts/build-ios-simulator.py
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+      - name: Boot iPhone 16 Pro Max with a clean status bar
+        run: |
+          udid=$(xcrun simctl create vox-shots "iPhone 16 Pro Max")
+          echo "UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl status_bar "$udid" override --time 9:41 --dataNetwork wifi --wifiMode active --wifiBars 3 --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
+          xcrun simctl install "$udid" "$(ls -d apps/mobile/ios/build/DerivedData/Build/Products/Release-iphonesimulator/*.app)"
+      - name: Walk the app and capture screens
+        run: |
+          mkdir -p shots/ios
+          cd shots/ios
+          maestro --device "$UDID" test ../../.github/maestro/store-screenshots.yaml
+          for f in *.png; do sips -g pixelWidth -g pixelHeight "$f" | tail -2 | tr '\n' ' '; echo " $f"; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-ios-iphone-6.9
+          path: |
+            shots/ios/*.png
+            ~/.maestro/tests/**/*
+          retention-days: 14
+
+  android:
+    name: Android phone (1080x1920)
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install native workspace
+        run: npm ci --workspace=@vox/mobile --include-workspace-root=false --no-audit --no-fund
+      - name: Generate Android project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+      - name: Build Release APK for the x86_64 emulator
+        working-directory: apps/mobile/android
+        run: ./gradlew app:assembleRelease --no-daemon --max-workers=2 -PreactNativeArchitectures=x86_64
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Walk the app and capture screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            adb shell wm size 1080x1920
+            adb shell wm density 420
+            adb shell settings put global sysui_demo_allowed 1
+            adb shell am broadcast -a com.android.systemui.demo -e command enter
+            adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 0941
+            adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false
+            adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 -e fully true
+            adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
+            mkdir -p shots/android && cd shots/android && maestro test ../../.github/maestro/store-screenshots.yaml
+      - name: Check screenshot sizes
+        if: always()
+        run: python3 -c "import glob,struct; [print(f, struct.unpack('>II', open(f,'rb').read()[16:24])) for f in sorted(glob.glob('shots/android/*.png'))]"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshots-android-phone
+          path: |
+            shots/android/*.png
+            ~/.maestro/tests/**/*
+          retention-days: 14

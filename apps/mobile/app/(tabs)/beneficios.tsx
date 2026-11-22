@@ -1,8 +1,9 @@
+import { panelStyles } from '../../src/panel';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
-import { request, sessionRevision } from '../src/api';
-import { pendingReward, redeemReward } from '../src/rewards';
+import { request, sessionRevision } from '../../src/api';
+import { pendingReward, redeemReward } from '../../src/rewards';
 type Points = { saldo: number; nivel: string; recompensas: { id: string; titulo: string; pontos: number }[]; resgates: { id: string; codigo: string; usadoEm: string | null; recompensa: { titulo: string } }[]; historico: { id: string; pontos: number; descricao: string }[] };
 export default function Benefits() {
   const [data, setData] = useState<Points | null>(null);
@@ -46,4 +47,4 @@ export default function Benefits() {
     </>}
   </ScrollView>;
 }
-const styles = StyleSheet.create({ screen: { padding: 20, paddingBottom: 40 }, heading: { color: '#10243e', fontSize: 25, fontWeight: '700', marginBottom: 16 }, title: { color: '#10243e', fontSize: 19, fontWeight: '700', marginBottom: 12 }, text: { color: '#52647b', lineHeight: 22, marginBottom: 12 }, card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#dce4f3', borderRadius: 16, padding: 20, marginBottom: 16 }, button: { backgroundColor: '#0036cc', minHeight: 48, padding: 14, borderRadius: 12, marginBottom: 12 }, buttonText: { color: '#fff', textAlign: 'center', fontWeight: '700' }, error: { color: '#9c1230', marginBottom: 12 }, link: { color: '#0036cc', paddingVertical: 14 } });
+const styles = { ...StyleSheet.create({ screen: { padding: 20, paddingBottom: 40 }, heading: { color: '#14213d', fontSize: 25, fontFamily: 'DMSans_700Bold', marginBottom: 16 }, title: { color: '#14213d', fontSize: 19, fontFamily: 'DMSans_700Bold', marginBottom: 12 }, text: { color: '#4a5870', lineHeight: 22, marginBottom: 12 }, card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#dce3ef', borderRadius: 16, padding: 20, marginBottom: 16 }, button: { backgroundColor: '#0825A3', minHeight: 48, padding: 14, borderRadius: 12, marginBottom: 12 }, buttonText: { color: '#fff', textAlign: 'center', fontFamily: 'DMSans_700Bold' }, error: { color: '#b91c1c', marginBottom: 12 }, link: { color: '#0825A3', paddingVertical: 14 } }), ...panelStyles };

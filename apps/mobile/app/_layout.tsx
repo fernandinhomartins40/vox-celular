@@ -1,6 +1,14 @@
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed';
 import NotificationNavigation from '../src/NotificationNavigation';
+import { C } from '../src/ui';
+import { P } from '../src/panel';
 export default function Layout() {
-  return <SafeAreaProvider><Stack screenOptions={{ headerTintColor: '#0036cc', headerStyle: { backgroundColor: '#fff' }, contentStyle: { backgroundColor: '#f4f6fc' } }}><Stack.Screen name="(tabs)" options={{ headerShown: false }} /><Stack.Screen name="novidades" options={{ title: 'Novidades da Vox' }} /><Stack.Screen name="produto" options={{ title: 'Detalhes do produto' }} /><Stack.Screen name="pedidos" options={{ title: 'Meus pedidos' }} /><Stack.Screen name="favoritos" options={{ title: 'Meus favoritos' }} /><Stack.Screen name="privacidade" options={{ title: 'Privacidade' }} /><Stack.Screen name="servicos" options={{ title: 'Serviços e atendimentos' }} /><Stack.Screen name="carrinho" options={{ title: 'Meu carrinho' }} /><Stack.Screen name="acessos" options={{ title: 'Acessos da conta' }} /><Stack.Screen name="beneficios" options={{ title: 'Meus benefícios' }} /><Stack.Screen name="senha" options={{ title: 'Alterar senha' }} /><Stack.Screen name="avisos" options={{ title: 'Meus avisos' }} /></Stack><NotificationNavigation /></SafeAreaProvider>;
+  const [loaded, failed] = useFonts({ DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold, DMSans_700Bold, BarlowCondensed_600SemiBold, BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold });
+  // Fonts are bundled with the app, so this only waits a frame; on failure the system font is used.
+  if (!loaded && !failed) return null;
+  return <SafeAreaProvider><StatusBar style="dark" /><Stack screenOptions={{ headerTintColor: C.blue, headerStyle: { backgroundColor: C.bg }, headerShadowVisible: false, headerTitleStyle: { fontFamily: 'DMSans_700Bold', color: C.ink }, contentStyle: { backgroundColor: P.paper } }}><Stack.Screen name="(tabs)" options={{ headerShown: false }} /><Stack.Screen name="assistente" options={{ headerShown: false }} /><Stack.Screen name="descobertas" options={{ headerShown: false }} /><Stack.Screen name="novidades" options={{ headerShown: false }} /><Stack.Screen name="produto" options={{ headerShown: false, presentation: 'modal' }} /><Stack.Screen name="carrinho" options={{ headerShown: false, presentation: 'modal' }} /></Stack><NotificationNavigation /></SafeAreaProvider>;
 }

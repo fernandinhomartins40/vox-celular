@@ -1,8 +1,9 @@
+import { panelStyles } from '../../src/panel';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
-import { assetUrl, requestForSession, sessionRevision } from '../src/api';
-import CartButton from '../src/CartButton';
+import { assetUrl, requestForSession, sessionRevision } from '../../src/api';
+import CartButton from '../../src/CartButton';
 type Product = { id: string; lojaId: string; nome: string; sub: string; preco: number; estoque: number; imgUrl: string; atributosTecnicos?: { verificado?: boolean; ramGB?: number; armazenamentoGB?: number; bateriaMah?: number } };
 export default function Favorites() {
   const [rows, setRows] = useState<Product[] | null>(null);
@@ -35,4 +36,4 @@ export default function Favorites() {
     {compared.length > 0 && <View accessibilityLabel="Comparação de favoritos"><Text accessibilityRole="header" style={styles.heading}>Compare suas escolhas</Text><Text style={styles.text}>Somente características conferidas pela loja. Dados ausentes não foram inferidos.</Text>{compared.map(row => <View key={row.id} style={styles.card}><Text style={styles.name}>{row.nome}</Text>{([['RAM', 'ramGB', 'GB'], ['Armazenamento', 'armazenamentoGB', 'GB'], ['Bateria', 'bateriaMah', 'mAh']] as const).map(([label, attribute, unit]) => <Text key={attribute} style={styles.text}>{label}: {row.atributosTecnicos?.verificado && row.atributosTecnicos[attribute] ? `${row.atributosTecnicos[attribute]} ${unit}` : 'Não informado'}</Text>)}</View>)}</View>}
   </ScrollView>;
 }
-const styles = StyleSheet.create({ heading: { color: '#10243e', fontSize: 25, fontWeight: '700', marginBottom: 16 }, text: { color: '#52647b', marginVertical: 10 }, name: { color: '#10243e', fontSize: 18, fontWeight: '700', marginVertical: 10 }, card: { backgroundColor: '#fff', padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#dce4f3', borderRadius: 16 }, link: { color: '#0036cc', paddingVertical: 12 }, control: { minHeight: 48 }, error: { color: '#9c1230' } });
+const styles = { ...StyleSheet.create({ heading: { color: '#14213d', fontSize: 25, fontFamily: 'DMSans_700Bold', marginBottom: 16 }, text: { color: '#4a5870', marginVertical: 10 }, name: { color: '#14213d', fontSize: 18, fontFamily: 'DMSans_700Bold', marginVertical: 10 }, card: { backgroundColor: '#fff', padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#dce3ef', borderRadius: 16 }, link: { color: '#0825A3', paddingVertical: 12 }, control: { minHeight: 48 }, error: { color: '#b91c1c' } }), ...panelStyles };

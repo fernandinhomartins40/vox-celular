@@ -1,10 +1,11 @@
+import { P, panelStyles } from '../../src/panel';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Link, useFocusEffect } from 'expo-router';
-import { requestForSession, sessionRevision } from '../src/api';
-import AccountClosure from '../src/AccountClosure';
-import { shareAccountExport } from '../src/accountExport';
-import NativePushControls from '../src/NativePushControls';
+import { requestForSession, sessionRevision } from '../../src/api';
+import AccountClosure from '../../src/AccountClosure';
+import { shareAccountExport } from '../../src/accountExport';
+import NativePushControls from '../../src/NativePushControls';
 
 type Preferences = { personalizacao: boolean; notificacoes: boolean; versaoAviso: string };
 export default function Privacy() {
@@ -62,9 +63,9 @@ export default function Privacy() {
     {loading && <ActivityIndicator color="#0036cc" accessibilityLabel="Consultando preferências" />}
     {error && <View><Text accessibilityRole="alert" style={styles.error}>{error}</Text><Link href="/conta" style={styles.link}>Ir para minha conta</Link></View>}
     {!loading && draft && <View style={styles.card}>
-      <View style={styles.option}><Text style={styles.label}>Personalizar recomendações</Text><Switch accessibilityLabel="Personalizar recomendações" value={draft.personalizacao} disabled={busy} onValueChange={value => { setDraft(previous => previous && { ...previous, personalizacao: value }); setMessage(''); }} trackColor={{ false: '#77849a', true: '#0036cc' }} /></View>
+      <View style={styles.option}><Text style={styles.label}>Personalizar recomendações</Text><Switch accessibilityLabel="Personalizar recomendações" value={draft.personalizacao} disabled={busy} onValueChange={value => { setDraft(previous => previous && { ...previous, personalizacao: value }); setMessage(''); }} trackColor={{ false: '#77849a', true: '#0825A3' }} /></View>
       <Text style={styles.description}>Autorizar o uso das suas preferências para recomendações personalizadas. Não autoriza compartilhar senhas ou dados de pagamento.</Text>
-      <View style={styles.option}><Text style={styles.label}>Receber notificações</Text><Switch accessibilityLabel="Receber notificações" value={draft.notificacoes} disabled={busy} onValueChange={value => { setDraft(previous => previous && { ...previous, notificacoes: value }); setMessage(''); }} trackColor={{ false: '#77849a', true: '#0036cc' }} /></View>
+      <View style={styles.option}><Text style={styles.label}>Receber notificações</Text><Switch accessibilityLabel="Receber notificações" value={draft.notificacoes} disabled={busy} onValueChange={value => { setDraft(previous => previous && { ...previous, notificacoes: value }); setMessage(''); }} trackColor={{ false: '#77849a', true: '#0825A3' }} /></View>
       <Text style={styles.description}>Autorizar avisos da Vox. Para cadastrar este aparelho, use a opção abaixo e permita notificações no sistema.</Text>
       <Text style={styles.description}>Versão do aviso: {draft.versaoAviso}</Text>
       <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy || !changed }} disabled={busy || !changed} onPress={save} style={[styles.button, (busy || !changed) && styles.disabled]}><Text style={styles.buttonText}>{busy ? 'Salvando…' : 'Salvar preferências'}</Text></Pressable>
@@ -82,4 +83,4 @@ export default function Privacy() {
     <AccountClosure />
   </ScrollView>;
 }
-const styles = StyleSheet.create({ screen: { padding: 20, paddingBottom: 40 }, heading: { color: '#10243e', fontSize: 25, fontWeight: '700', marginBottom: 16 }, description: { color: '#52647b', marginBottom: 16, lineHeight: 22 }, card: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#dce4f3' }, option: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, marginBottom: 8 }, label: { flex: 1, fontSize: 17, fontWeight: '600', color: '#10243e' }, button: { backgroundColor: '#0036cc', borderRadius: 12, padding: 14, minHeight: 48, marginBottom: 16 }, buttonText: { color: '#fff', fontWeight: '700', textAlign: 'center' }, disabled: { opacity: 0.5 }, error: { color: '#9c1230' }, link: { color: '#0036cc', paddingVertical: 14 } });
+const styles = { ...StyleSheet.create({ screen: { padding: 20, paddingBottom: 40 }, heading: { color: '#14213d', fontSize: 25, fontFamily: 'DMSans_700Bold', marginBottom: 16 }, description: { color: '#4a5870', marginBottom: 16, lineHeight: 22 }, card: { backgroundColor: '#fff', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#dce3ef' }, option: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, marginBottom: 8 }, label: { flex: 1, fontSize: 17, fontFamily: 'DMSans_600SemiBold', color: '#14213d' }, button: { backgroundColor: '#0825A3', borderRadius: 12, padding: 14, minHeight: 48, marginBottom: 16 }, buttonText: { color: '#fff', fontFamily: 'DMSans_700Bold', textAlign: 'center' }, disabled: { opacity: 0.5 }, error: { color: '#b91c1c' }, link: { color: '#0825A3', paddingVertical: 14 } }), ...panelStyles, label: StyleSheet.create({ l: { flex: 1, fontSize: 16, color: P.ink, fontFamily: "DMSans_600SemiBold" } }).l };

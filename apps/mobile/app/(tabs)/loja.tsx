@@ -1,28 +1,59 @@
-import CartButton from '../../src/CartButton';
-import FavoriteButton from '../../src/FavoriteButton';
+// Store from the PWA (/app/loja): search, category chips, ordering and the two-column product grid.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { assetUrl } from '../../src/api';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { loadCatalog } from '../../src/offlineCatalog';
-import { Link } from 'expo-router';
-type Product = { id: string; lojaId: string; nome: string; sub: string; categoria: string; preco: number; estoque: number; imgUrl: string };
+import { filterCatalog, type Sort } from '../../src/catalog';
+import { ProductGrid, type CatalogItem } from '../../src/ProductCard';
+import { Icon } from '../../src/icons';
+import { AppHeader, C, Heading, Message, font } from '../../src/ui';
+
+const sorts: [Sort, string][] = [['destaque', 'Em destaque'], ['menor', 'Menor preço'], ['maior', 'Maior preço']];
+
 export default function Catalog() {
-  const [products, setProducts] = useState<Product[] | null>(null);
-  const [error, setError] = useState('');
+  const [products, setProducts] = useState<CatalogItem[] | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [reload, setReload] = useState(0);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
-  const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
-  const categories = useMemo(() => [...new Set((products || []).map(product => product.categoria))].sort(), [products]);
-  const filtered = useMemo(() => (products || []).filter(product => (!category || product.categoria === category) && normalize(`${product.nome} ${product.sub} ${product.categoria}`).includes(normalize(search.trim()))), [products, search, category]);
+  const [category, setCategory] = useState('Todos');
+  const [sort, setSort] = useState<Sort>('destaque');
+  const [sorting, setSorting] = useState(false);
   useEffect(() => {
     let active = true;
-    loadCatalog().then(result => { if (active) { setProducts(result.products); setSavedAt(result.savedAt); setError(''); } }).catch(e => { if (active) setError(e.message); });
+    loadCatalog().then(result => { if (active) { setProducts(result.products); setSavedAt(result.savedAt); setError(''); } }).catch(e => { if (active) setError(e instanceof Error ? e.message : 'Não foi possível consultar o catálogo.'); });
     return () => { active = false; };
   }, [reload]);
-  return <View style={styles.screen}>
-    {error ? <View accessibilityLiveRegion="polite"><Text style={styles.error}>{error}</Text><Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={styles.button}><Text style={styles.buttonText}>Tentar novamente</Text></Pressable></View> : products === null ? <ActivityIndicator size="large" color="#0036cc" accessibilityLabel="Carregando catálogo" /> : <FlatList data={filtered} keyExtractor={item => item.id} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }} ListHeaderComponent={<View><Text accessibilityRole="header" style={styles.heading}>Encontre seu próximo aparelho</Text><Text style={styles.subtitle}>{savedAt ? `Consulta salva em ${new Date(savedAt).toLocaleString('pt-BR')}. Até 200 produtos; preços e estoque precisam de confirmação online. Imagens podem não estar disponíveis.` : 'Produtos e preços atuais da Vox.'}</Text>{savedAt && <Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={styles.button}><Text style={styles.buttonText}>Consultar catálogo online</Text></Pressable>}<TextInput accessibilityLabel="Buscar produto ou categoria" value={search} onChangeText={setSearch} placeholder="Buscar produto ou categoria" autoCorrect={false} maxLength={100} style={{ borderWidth: 1, borderColor: '#dce4f3', backgroundColor: '#fff', borderRadius: 12, minHeight: 48, padding: 12, fontSize: 16, marginBottom: 12 }} /><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 12 }}>{['', ...categories].map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: category === value }} onPress={() => setCategory(value)} style={{ minHeight: 48, padding: 14, borderRadius: 12, backgroundColor: category === value ? '#0036cc' : '#fff' }}><Text style={{ color: category === value ? '#fff' : '#0036cc' }}>{value || 'Todos'}</Text></Pressable>)}</ScrollView><Text accessibilityLiveRegion="polite" style={styles.subtitle}>{filtered.length} produto(s)</Text>{(search || category) && <Pressable accessibilityRole="button" onPress={() => { setSearch(''); setCategory(''); }} style={{ minHeight: 48, paddingVertical: 14 }}><Text style={{ color: '#0036cc' }}>Limpar filtros</Text></Pressable>}<Link href="/assistente" style={{ color: '#0036cc', paddingVertical: 14 }}>Preciso de ajuda para escolher</Link></View>} ListEmptyComponent={<Text>{products.length ? 'Nenhum produto corresponde aos filtros. Tente outra busca ou limpe os filtros.' : 'Nenhum produto disponível no catálogo.'}</Text>} renderItem={({ item }) => <View style={styles.card}><Image source={{ uri: assetUrl(item.imgUrl) }} accessibilityLabel={item.nome} style={styles.image} resizeMode="contain" /><Text style={styles.name}>{item.nome}</Text><Text style={styles.subtitle}>{item.sub}</Text><Text style={styles.price}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.preco)}</Text><Text>{savedAt ? 'Disponibilidade não confirmada' : item.estoque > 0 ? 'Disponível na loja' : 'Sem estoque no momento'}</Text><Link href={{ pathname: '/produto', params: { id: item.id } }} style={{ color: '#0036cc', paddingVertical: 14 }}>Ver detalhes</Link>{!savedAt && <><CartButton storeId={item.lojaId} productId={item.id} stock={item.estoque} /><FavoriteButton productId={item.id} /></>}</View>} />}
+  const filtered = useMemo(() => filterCatalog(products || [], { category, search, sort }), [products, category, search, sort]);
+  const categories = ['Todos', ...new Set((products || []).map(row => row.categoria))];
+  const sortLabel = sorts.find(([value]) => value === sort)![1];
+  return <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <AppHeader />
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 20, paddingBottom: 28 }}>
+      <Heading title="Loja" subtitle="Encontre seu próximo aparelho." />
+      <View style={st.search}><Icon.search size={21} color="#78849a" /><TextInput accessibilityLabel="Buscar na loja do aplicativo" placeholder="Buscar aparelho ou acessório" placeholderTextColor="#8792a5" value={search} onChangeText={setSearch} autoCorrect={false} maxLength={100} style={[st.input, font()]} /></View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} accessibilityLabel="Categorias" contentContainerStyle={{ gap: 8, paddingTop: 16, paddingBottom: 12 }}>
+        {categories.map(value => { const on = category === value; return <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setCategory(value)} style={[st.chip, on && st.chipOn]}><Text style={[{ fontSize: 12, color: on ? C.white : C.muted }, font()]}>{value}</Text></Pressable>; })}
+      </ScrollView>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Ordenar catálogo: ${sortLabel}`} accessibilityState={{ expanded: sorting }} onPress={() => setSorting(v => !v)} style={st.sort}>
+        <Text style={[{ fontSize: 12, color: C.muted }, font()]}>{sortLabel}</Text><Text style={{ fontSize: 10, color: C.muted }}>▾</Text>
+      </Pressable>
+      {sorting && <View style={st.menu}>{sorts.map(([value, label]) => <Pressable key={value} accessibilityRole="menuitem" accessibilityState={{ selected: value === sort }} onPress={() => { setSort(value); setSorting(false); }} style={st.option}><Text style={[{ fontSize: 14, color: value === sort ? C.blue : C.text }, font(value === sort ? 700 : 400)]}>{label}</Text></Pressable>)}</View>}
+      {savedAt ? <Message action="Consultar catálogo online" onAction={() => setReload(v => v + 1)}>{`Consulta salva em ${new Date(savedAt).toLocaleString('pt-BR')}. Preços e estoque precisam de confirmação online.`}</Message> : null}
+      {error ? <Message tone="error" action="Tentar novamente" onAction={() => { setError(''); setProducts(null); setReload(v => v + 1); }}>{error}</Message>
+        : products === null ? <Message>Carregando produtos…</Message> : null}
+      {notice ? <Message>{notice}</Message> : null}
+      {products && !error && (filtered.length ? <ProductGrid products={filtered} onNotice={setNotice} offline={Boolean(savedAt)} /> : <Message>{products.length ? 'Nenhum produto encontrado. Ajuste sua busca.' : 'Nenhum produto publicado no momento.'}</Message>)}
+    </ScrollView>
   </View>;
 }
-const styles = StyleSheet.create({ screen: { flex: 1, padding: 20 }, heading: { fontSize: 26, fontWeight: '700', color: '#10243e', marginBottom: 8 }, subtitle: { color: '#52647b', marginBottom: 12 }, card: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: '#dce4f3', padding: 20, marginBottom: 16 }, image: { height: 180, width: '100%', marginBottom: 12 }, name: { fontSize: 18, fontWeight: '700', color: '#10243e', marginBottom: 6 }, price: { fontSize: 22, fontWeight: '700', color: '#0036cc', marginBottom: 8 }, error: { color: '#9c1230', marginBottom: 16 }, button: { minHeight: 48, backgroundColor: '#0036cc', borderRadius: 12, padding: 14 }, buttonText: { color: '#fff', fontWeight: '700' } });
+
+const st = StyleSheet.create({
+  search: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, paddingHorizontal: 14, backgroundColor: C.white, borderWidth: 1, borderColor: C.line2, borderRadius: 16, minHeight: 50 },
+  input: { flex: 1, fontSize: 16, color: C.text, paddingVertical: 8 },
+  chip: { minHeight: 42, justifyContent: 'center', borderWidth: 1, borderColor: '#e1e7f2', borderRadius: 14, backgroundColor: C.white, paddingHorizontal: 14 },
+  chipOn: { backgroundColor: C.blue, borderColor: C.blue },
+  menu: { alignSelf: 'flex-start', backgroundColor: C.white, borderWidth: 1, borderColor: C.line, borderRadius: 14, marginTop: -8, marginBottom: 12, paddingVertical: 4 },
+  option: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16 },
+  sort: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', minHeight: 42, paddingHorizontal: 4, marginBottom: 12 },
+});

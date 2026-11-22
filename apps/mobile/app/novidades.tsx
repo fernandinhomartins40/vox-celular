@@ -1,10 +1,17 @@
+// Store news from the PWA (pages/Novidades.jsx).
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Link, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { request } from '../src/api';
+import { font } from '../src/ui';
+
 type News = { id: string; titulo: string; resumo: string; texto?: string; fonte: string; revisadoEm: string; validoAte: string };
 const date = (value: string) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(new Date(value));
+
 export default function NewsPage() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const id = typeof params.id === 'string' ? params.id : '';
   const [rows, setRows] = useState<News[] | null>(null);
@@ -28,13 +35,36 @@ export default function NewsPage() {
       await Linking.openURL(url.href);
     } catch { setError('Não foi possível abrir a fonte.'); }
   }
-  return <ScrollView contentContainerStyle={styles.screen}><Text accessibilityRole="header" style={styles.heading}>Novidades da Vox</Text><Text style={styles.text}>Conteúdo publicado e revisado pela loja. Confira a fonte e a validade das informações.</Text>
-    {error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
-    <Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={styles.control}><Text style={styles.link}>Atualizar novidades</Text></Pressable>
-    {!rows && !error && <ActivityIndicator color="#0036cc" accessibilityLabel="Consultando novidades" />}
-    {rows?.length === 0 && <Text style={styles.text}>Nenhuma novidade publicada no momento.</Text>}
-    {rows?.map(row => <View key={row.id} style={styles.card}><Text accessibilityRole="header" style={styles.title}>{row.titulo}</Text><Text style={styles.text}>{row.resumo}</Text>{id && <Text selectable style={styles.text}>{row.texto}</Text>}<Text style={styles.text}>Revisado em {date(row.revisadoEm)} · Válido até {date(row.validoAte)}</Text>{id ? <Pressable accessibilityRole="link" onPress={() => openSource(row.fonte)} style={styles.control}><Text style={styles.link}>Consultar fonte</Text></Pressable> : <Link href={{ pathname: '/novidades', params: { id: row.id } }} style={styles.link}>Ler novidade</Link>}</View>)}
-    {id && <Link href="/novidades" style={styles.link}>Todas as novidades</Link>}
-  </ScrollView>;
+  return <View style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+    <View style={[st.header, { paddingTop: insets.top + 12 }]}>
+      <Pressable accessibilityRole="link" accessibilityLabel="Vox Celular, início" onPress={() => router.navigate('/')}><Image source={require('../assets/brand/vox-logo.png')} style={{ width: 92, height: 70 }} resizeMode="contain" /></Pressable>
+      <Pressable accessibilityRole="link" onPress={() => router.canGoBack() ? router.back() : router.navigate('/')} style={st.control}><Text style={[st.link, font(600)]}>Voltar à loja</Text></Pressable>
+    </View>
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 32 }}>
+      <Text accessibilityRole="header" style={[{ fontSize: 30, lineHeight: 36, color: '#0f172a' }, font(700)]}>Novidades da Vox</Text>
+      <Text style={[st.text, { marginTop: 12 }, font()]}>Conteúdo publicado e revisado pela loja. Confira a fonte e a validade das informações.</Text>
+      <Pressable accessibilityRole="button" onPress={() => setReload(value => value + 1)} style={st.refresh}><Text style={[st.link, font(600)]}>Atualizar novidades</Text></Pressable>
+      {error ? <Text accessibilityRole="alert" style={[{ color: '#b91c1c', fontSize: 15, lineHeight: 22 }, font()]}>{error}</Text> : null}
+      {!rows && !error ? <ActivityIndicator color="#1d4ed8" accessibilityLabel="Consultando novidades" /> : null}
+      {rows?.length === 0 ? <Text style={[st.text, font()]}>Nenhuma novidade publicada no momento.</Text> : null}
+      {rows?.map(row => <View key={row.id} style={st.card}>
+        <Text accessibilityRole="header" style={[{ fontSize: 20, color: '#0f172a' }, font(700)]}>{row.titulo}</Text>
+        <Text style={[st.text, { marginTop: 12 }, font()]}>{row.resumo}</Text>
+        {id ? <Text selectable style={[{ marginTop: 20, fontSize: 15, lineHeight: 24, color: '#0f172a' }, font()]}>{row.texto}</Text> : null}
+        <Text style={[{ marginTop: 16, fontSize: 13, color: '#64748b' }, font()]}>Revisado em {date(row.revisadoEm)} · Válido até {date(row.validoAte)}</Text>
+        {id ? <Pressable accessibilityRole="link" onPress={() => openSource(row.fonte)} style={st.control}><Text style={[st.link, font(600)]}>Consultar fonte</Text></Pressable>
+          : <Pressable accessibilityRole="link" onPress={() => router.push({ pathname: '/novidades', params: { id: row.id } })} style={st.control}><Text style={[st.link, font(600)]}>Ler novidade</Text></Pressable>}
+      </View>)}
+      {id ? <Pressable accessibilityRole="link" onPress={() => router.replace('/novidades')} style={st.control}><Text style={[st.link, font(600)]}>Todas as novidades</Text></Pressable> : null}
+    </ScrollView>
+  </View>;
 }
-const styles = StyleSheet.create({ screen: { padding: 20, paddingBottom: 40 }, heading: { color: '#10243e', fontSize: 25, fontWeight: '700', marginBottom: 16 }, title: { color: '#10243e', fontSize: 20, fontWeight: '700', marginBottom: 12 }, text: { color: '#52647b', fontSize: 16, lineHeight: 23, marginBottom: 12 }, card: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#dce4f3', borderRadius: 16, padding: 20, marginBottom: 16 }, control: { minHeight: 48, justifyContent: 'center' }, link: { color: '#0036cc', paddingVertical: 14, fontWeight: '600' }, error: { color: '#9c1230', marginBottom: 12 } });
+
+const st = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16, paddingHorizontal: 20, paddingBottom: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  text: { color: '#475569', fontSize: 15, lineHeight: 22 },
+  link: { color: '#1d4ed8', fontSize: 15 },
+  control: { minHeight: 44, justifyContent: 'center', marginTop: 12 },
+  refresh: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, marginVertical: 16, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: '#fff' },
+  card: { marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: '#fff', padding: 24 },
+});

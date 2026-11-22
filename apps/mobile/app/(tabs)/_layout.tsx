@@ -1,11 +1,18 @@
-import { Tabs, Link } from 'expo-router';
-import { Text } from 'react-native';
+import { Tabs } from 'expo-router';
+import AppTabs from '../../src/AppTabs';
+import { PanelHeader, P } from '../../src/panel';
+import { C } from '../../src/ui';
+
+// Customer-area pages keep the bottom bar, as in the PWA; their header is the panel top bar.
+const account = ['pedidos', 'favoritos', 'servicos', 'beneficios', 'avisos', 'privacidade', 'senha', 'acessos'];
+const panel = { headerShown: true, header: () => <PanelHeader />, sceneStyle: { backgroundColor: P.paper } };
+
 export default function MainTabs() {
-  return <Tabs screenOptions={{ headerTintColor: '#0036cc', headerStyle: { backgroundColor: '#fff' }, sceneStyle: { backgroundColor: '#f4f6fc' }, tabBarActiveTintColor: '#0036cc', tabBarInactiveTintColor: '#52647b', tabBarLabelStyle: { fontSize: 12, fontWeight: '600' }, tabBarStyle: { backgroundColor: '#fff', borderTopColor: '#dce4f3' }, headerRight: () => <Link href="/carrinho" style={{ color: '#0036cc', padding: 14, minHeight: 48 }}>Carrinho</Link> }}>
-    <Tabs.Screen name="index" options={{ title: 'Vox Celular', tabBarLabel: 'Início', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }} accessibilityElementsHidden>⌂</Text> }} />
-    <Tabs.Screen name="loja" options={{ title: 'Loja', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }} accessibilityElementsHidden>▦</Text> }} />
-    <Tabs.Screen name="assistente" options={{ title: 'Assistente', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }} accessibilityElementsHidden>✦</Text> }} />
-    <Tabs.Screen name="ajuda" options={{ title: 'Ajuda', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }} accessibilityElementsHidden>?</Text> }} />
-    <Tabs.Screen name="conta" options={{ title: 'Minha conta', tabBarLabel: 'Conta', tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 22 }} accessibilityElementsHidden>○</Text> }} />
+  return <Tabs backBehavior="history" tabBar={props => <AppTabs {...props} />} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: C.bg } }}>
+    <Tabs.Screen name="index" options={{ title: 'Início' }} />
+    <Tabs.Screen name="loja" options={{ title: 'Loja' }} />
+    <Tabs.Screen name="ajuda" options={{ title: 'Ajuda' }} />
+    <Tabs.Screen name="conta" options={{ title: 'Conta' }} />
+    {account.map(name => <Tabs.Screen key={name} name={name} options={panel} />)}
   </Tabs>;
 }

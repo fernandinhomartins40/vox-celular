@@ -60,5 +60,19 @@ O app declara os domínios www.voxcelular.com.br e voxcelular.com.br. A API gera
 ## APK de teste no GitHub
 No workflow Build and Deploy Production, execução manual com build_android_test habilitado prepara APK standalone com assinatura de teste. Artefato vox-android-test-COMMIT fica disponível por sete dias se a compilação passar. Não é assinatura de distribuição, não publica na loja e ainda exige instalação/validação em aparelho. A execução manual também percorre o workflow normal de deploy autorizado. Builds ocorrem no GitHub, nunca na VPS. Referência: https://docs.expo.dev/guides/local-app-production/.
 
+## AAB e IPA para as lojas no GitHub
+Workflow manual `Native store builds (AAB and IPA)` (`.github/workflows/apps-nativos.yml`). Não faz deploy da web/API.
+O `versionCode`/`buildNumber` é o número da execução (`VOX_BUILD_NUMBER`, lido em `app.config.js`).
+
+- **Android (AAB):** `gradlew bundleRelease` assinado com a chave de upload (segredos `VOX_ANDROID_UPLOAD_KEYSTORE_BASE64`,
+  `VOX_ANDROID_UPLOAD_KEYSTORE_PASSWORD`, `VOX_ANDROID_UPLOAD_KEY_ALIAS`). O job confere que o AAB saiu com o certificado
+  de upload e não com o debug. Artefato `vox-android-aab-N` (30 dias). `publish_play` envia para teste interno como
+  rascunho via `PLAY_SERVICE_ACCOUNT_JSON`; exige o app criado na Play Console e a conta de serviço com acesso a ele.
+  A Play só aceita envio pela API depois do primeiro AAB enviado manualmente pela Console.
+- **iOS (IPA):** runner macOS, archive com assinatura automática pela chave da API do App Store Connect e export
+  `app-store-connect`. Segredos: `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64` (base64 do `.p8`,
+  papel Admin). Artefato `vox-ios-ipa-N`. `publish_testflight` envia ao App Store Connect, que exige o app criado lá
+  com o bundle `br.com.voxcelular.cliente`.
+
 ## iOS para simulador no GitHub
 Execução manual do mesmo workflow com build_ios_simulator gera app Release para simulador no runner macOS, sem certificado de distribuição. Artefato zip dura sete dias se compilação passar. Não é IPA para iPhone físico nem publicação/TestFlight. Pode executar junto ao job Android; ambos independem do deploy web/API. Ainda requer execução Xcode e teste no simulador antes de declarar validação.

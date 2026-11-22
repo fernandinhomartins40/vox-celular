@@ -1,0 +1,79 @@
+# Store screenshots: walks the real app against the production catalog and captures 8 screens.
+appId: br.com.voxcelular.cliente
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Na loja"
+    timeout: 90000
+- extendedWaitUntil:
+    visible: ".*R\\$ .*"
+    timeout: 60000
+- takeScreenshot: 01-inicio
+
+- tapOn: "Loja"
+- extendedWaitUntil:
+    visible: "Em destaque"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: ".*iPhone 15 128 GB"
+    timeout: 30000
+- takeScreenshot: 02-loja
+
+- tapOn:
+    text: ".*iPhone 15 128 GB"
+    index: 0
+- extendedWaitUntil:
+    visible: "CELULARES"
+    timeout: 30000
+- takeScreenshot: 03-produto
+- scrollUntilVisible:
+    element: "Adicionar — .*"
+    direction: DOWN
+- tapOn: "Adicionar — .*"
+- extendedWaitUntil:
+    visible: "Em destaque"
+    timeout: 15000
+
+- tapOn: "Abrir carrinho.*"
+- extendedWaitUntil:
+    visible: "Entrar para confirmar pedido"
+    timeout: 30000
+- takeScreenshot: 04-carrinho
+- tapOn: "Fechar carrinho"
+
+- tapOn: "Assistente"
+- extendedWaitUntil:
+    visible: "Qual vai ser seu upgrade\\?"
+    timeout: 15000
+- takeScreenshot: 05-assistente
+- tapOn: "Continuar"
+- tapOn: "R\\$ 3\\.000"
+- tapOn: "Continuar"
+- tapOn: "Criar"
+- extendedWaitUntil:
+    visible: "Fotos e vídeos"
+    timeout: 10000
+- takeScreenshot: 06-vibe
+- tapOn: "Continuar"
+- tapOn: "Mostrar opções"
+- extendedWaitUntil:
+    visible: "Seu próximo match\\."
+    timeout: 60000
+- extendedWaitUntil:
+    visible: "Adicionar ao carrinho"
+    timeout: 30000
+- takeScreenshot: 07-match
+- tapOn: "Voltar à loja Vox"
+
+- tapOn: "Ajuda"
+- extendedWaitUntil:
+    visible: "Qual é sua operadora\\?"
+    timeout: 30000
+- takeScreenshot: 08-ajuda
+
+- tapOn: "Conta"
+- extendedWaitUntil:
+    visible: "Sua conta na VOX"
+    timeout: 30000
+- takeScreenshot: 09-conta

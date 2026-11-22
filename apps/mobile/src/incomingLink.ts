@@ -2,7 +2,7 @@ const routes: Record<string, string> = {
   '/assistente': '/assistente', '/novidades': '/novidades',
   '/area-cliente/pedidos': '/pedidos', '/area-cliente/servicos': '/servicos',
   '/area-cliente/beneficios': '/beneficios', '/area-cliente/avisos': '/avisos',
-  '/area-cliente/favoritos': '/favoritos', '/area-cliente': '/conta',
+  '/area-cliente/favoritos': '/favoritos', '/area-cliente': '/conta', '/app/descobertas': '/descobertas',
 };
 function identifiedRoute(route: string, url: URL) {
   const id = url.searchParams.get('id');
@@ -21,7 +21,7 @@ export function incomingLink(path: string) {
       const nativePath = native.hostname ? `/${native.hostname}${native.pathname}` : native.pathname;
       if (nativePath === '/produto' || nativePath === '/novidades') return identifiedRoute(nativePath, native);
       if (nativePath === '/pedidos') return orderRoute(native);
-      const allowed = ['/', '/loja', '/assistente', '/ajuda', '/conta', '/pedidos', '/servicos', '/beneficios', '/avisos', '/favoritos', '/carrinho'];
+      const allowed = ['/', '/loja', '/assistente', '/ajuda', '/conta', '/pedidos', '/servicos', '/beneficios', '/avisos', '/favoritos', '/carrinho', '/descobertas'];
       return allowed.includes(nativePath) ? nativePath : '/';
     }
     const url = new URL(path, 'https://www.voxcelular.com.br');
