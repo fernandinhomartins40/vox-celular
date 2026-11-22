@@ -13,7 +13,7 @@ appId: br.com.voxcelular.cliente
 
 - tapOn: "Loja"
 - extendedWaitUntil:
-    visible: "Em destaque"
+    visible: "Encontre seu próximo aparelho\\."
     timeout: 30000
 - extendedWaitUntil:
     visible: ".*Samsung Galaxy A55 5G"
@@ -35,7 +35,7 @@ appId: br.com.voxcelular.cliente
     direction: DOWN
 - tapOn: "Adicionar — .*"
 - extendedWaitUntil:
-    visible: "Em destaque"
+    visible: "Encontre seu próximo aparelho\\."
     timeout: 15000
 
 - tapOn: "Abrir carrinho.*"
@@ -51,7 +51,8 @@ appId: br.com.voxcelular.cliente
     timeout: 15000
 - takeScreenshot: 05-assistente
 - tapOn: "Continuar"
-- tapOn: "R\\$ 3\\.000"
+# The price uses a non-breaking space on Android, so match any character after R$.
+- tapOn: "R\\$.3\\.000"
 - tapOn: "Continuar"
 - tapOn: "Criar"
 - extendedWaitUntil:
