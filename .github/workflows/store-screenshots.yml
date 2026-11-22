@@ -21,7 +21,8 @@ env:
 jobs:
   ios:
     name: iPhone 16 Pro Max (1320x2868)
-    runs-on: macos-15
+    # Expo SDK 57 needs Swift 6.2, which ships with Xcode 26.
+    runs-on: macos-26
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +47,8 @@ jobs:
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
       - name: Boot iPhone 16 Pro Max with a clean status bar
         run: |
-          udid=$(xcrun simctl create vox-shots "iPhone 16 Pro Max")
+          xcodebuild -version
+          udid=$(xcrun simctl create vox-shots "iPhone 16 Pro Max" 2>/dev/null || xcrun simctl create vox-shots "iPhone 17 Pro Max")
           echo "UDID=$udid" >> "$GITHUB_ENV"
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" -b

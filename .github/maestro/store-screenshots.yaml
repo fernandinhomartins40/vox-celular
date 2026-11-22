@@ -1,14 +1,14 @@
-# Store screenshots: walks the real app against the production catalog and captures 8 screens.
+# Store screenshots: walks the real app against the production catalog and captures 9 screens.
 appId: br.com.voxcelular.cliente
 ---
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: "Na loja"
+    visible: "O que você precisa hoje\\?"
     timeout: 90000
 - extendedWaitUntil:
-    visible: ".*R\\$ .*"
-    timeout: 60000
+    visible: "Novidades"
+    timeout: 30000
 - takeScreenshot: 01-inicio
 
 - tapOn: "Loja"
@@ -16,9 +16,12 @@ appId: br.com.voxcelular.cliente
     visible: "Em destaque"
     timeout: 30000
 - extendedWaitUntil:
-    visible: ".*iPhone 15 128 GB"
+    visible: ".*Samsung Galaxy A55 5G"
     timeout: 30000
 - takeScreenshot: 02-loja
+- scrollUntilVisible:
+    element: ".*iPhone 15 128 GB"
+    direction: DOWN
 
 - tapOn:
     text: ".*iPhone 15 128 GB"
