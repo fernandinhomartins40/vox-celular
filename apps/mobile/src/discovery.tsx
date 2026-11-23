@@ -70,7 +70,7 @@ export function DiscoveryShell({ children, savedLink = true }: { children: React
 }
 
 export function YellowButton({ label, onPress, disabled, trailing = '↗', style }: { label: string; onPress: () => void; disabled?: boolean; trailing?: string; style?: ViewStyle }) {
-  return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={({ pressed }) => [st.next, pressed && { transform: [{ translateY: 3 }], borderBottomWidth: 2 }, disabled && { opacity: 0.6 }, style]}>
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={({ pressed }) => [st.next, pressed && { transform: [{ translateY: 3 }], borderBottomWidth: 2 }, disabled && { opacity: 0.6 }, style]}>
     <LinearGradient colors={['#ffe57b', '#ffcf42']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />
     <Text style={[{ color: '#19366c', fontSize: 15, flex: 1, textAlign: 'center' }, font(700)]}>{label}</Text>{trailing ? <Text style={[{ color: '#19366c', fontSize: 15, position: 'absolute', right: 20 }, font(700)]}>{trailing}</Text> : null}
   </Pressable>;
