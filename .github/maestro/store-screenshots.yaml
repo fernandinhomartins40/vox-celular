@@ -50,16 +50,34 @@ appId: br.com.voxcelular.cliente
     visible: "Qual vai ser seu upgrade\\?"
     timeout: 15000
 - takeScreenshot: 05-assistente
+- scrollUntilVisible:
+    element: "Continuar"
+    direction: DOWN
 - tapOn: "Continuar"
 # The price uses a non-breaking space on Android, so match any character after R$.
+- scrollUntilVisible:
+    element: "R\\$.3\\.000"
+    direction: DOWN
 - tapOn: "R\\$.3\\.000"
+- scrollUntilVisible:
+    element: "Continuar"
+    direction: DOWN
 - tapOn: "Continuar"
+- scrollUntilVisible:
+    element: "Criar"
+    direction: DOWN
 - tapOn: "Criar"
-- extendedWaitUntil:
-    visible: "Fotos e vídeos"
-    timeout: 10000
+- scrollUntilVisible:
+    element: "Fotos e vídeos"
+    direction: UP
 - takeScreenshot: 06-vibe
+- scrollUntilVisible:
+    element: "Continuar"
+    direction: DOWN
 - tapOn: "Continuar"
+- scrollUntilVisible:
+    element: "Mostrar opções"
+    direction: DOWN
 - tapOn: "Mostrar opções"
 - extendedWaitUntil:
     visible: "Seu próximo match\\."

@@ -1,5 +1,6 @@
 """Build a simulator app only; never import signing credentials or submit it."""
 import json
+import os
 from pathlib import Path
 import subprocess
 import zipfile
@@ -21,7 +22,9 @@ subprocess.run(['xcodebuild', '-workspace', str(workspace), '-scheme', scheme,
                 '-configuration', 'Release', '-sdk', 'iphonesimulator',
                 '-destination', 'generic/platform=iOS Simulator',
                 '-derivedDataPath', str(derived), '-jobs', '2',
-                'CODE_SIGNING_ALLOWED=NO', 'build'], check=True)
+                # Ad-hoc "Sign to Run Locally" embeds entitlements so Keychain (SecureStore) works in the simulator.
+                *(['CODE_SIGN_IDENTITY=-', 'CODE_SIGNING_ALLOWED=YES'] if os.environ.get('SIMULATOR_SIGN_LOCALLY') == '1' else ['CODE_SIGNING_ALLOWED=NO']),
+                'build'], check=True)
 apps = list((derived / 'Build/Products/Release-iphonesimulator').glob('*.app'))
 if len(apps) != 1:
     raise RuntimeError('Expected exactly one compiled simulator application')

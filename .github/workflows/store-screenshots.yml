@@ -40,6 +40,8 @@ jobs:
         working-directory: apps/mobile
         run: npx expo prebuild --platform ios
       - name: Compile Release simulator app
+        env:
+          SIMULATOR_SIGN_LOCALLY: '1'
         run: python3 .github/scripts/build-ios-simulator.py
       - name: Install Maestro
         run: |

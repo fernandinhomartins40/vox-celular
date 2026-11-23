@@ -27,7 +27,7 @@ export default function ShoppingCart() {
     let active = true;
     setLoading(true); setError('');
     (async () => {
-      const [saved, session, store] = await Promise.all([readCart(), hasSavedSession(), request<{ id: string; telefone?: string }>('/loja').catch(() => null)]);
+      const [saved, session, store] = await Promise.all([readCart(), hasSavedSession().catch(() => false), request<{ id: string; telefone?: string }>('/loja').catch(() => null)]);
       if (active) { setCart(saved); setSignedIn(session); setPhone(store?.telefone || ''); }
       const rows = saved.storeId ? await request<Product[]>(`/produtos?lojaId=${encodeURIComponent(saved.storeId)}`) : [];
       if (active) setProducts(rows);

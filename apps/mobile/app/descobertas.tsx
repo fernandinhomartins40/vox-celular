@@ -27,7 +27,7 @@ export default function Discoveries() {
     setLoading(true);
     (async () => {
       const selection = await readDiscoveries();
-      const session = await hasSavedSession();
+      const session = await hasSavedSession().catch(() => false);
       const [favorites, products] = await Promise.all([session ? request<Product[]>('/favoritos', undefined, true) : Promise.resolve([]), selection ? request<Product[]>(`/produtos?lojaId=${encodeURIComponent(selection.lojaId)}`) : Promise.resolve([])]);
       if (!active) return;
       setSignedIn(session); setPending(selection);

@@ -1,6 +1,6 @@
 // Vox Discovery from the PWA (pages/Assistente.jsx): one choice per screen, then the match card.
 import { useState } from 'react';
-import { Animated, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { Animated, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 import { useRouter } from 'expo-router';
@@ -22,12 +22,15 @@ const usages: [string, string, string][] = [['dia-a-dia', 'Conectar', 'Meu dia a
 const priorities: [string, string][] = [['equilibrado', 'Equilíbrio'], ['economia', 'Economia'], ['bateria', 'Bateria'], ['armazenamento', 'Espaço']];
 const questions: Record<Scene, string> = { type: 'Qual vai ser seu upgrade?', budget: 'Até quanto vamos?', usage: 'O que te move?', priority: 'O que faz a diferença?' };
 
+// Art scales with the screen height, like the PWA's clamp(..., 35dvh), so the buttons stay on screen.
+function useStage() { const { height } = useWindowDimensions(); return Math.min(270, Math.round(height * 0.28)); }
 function Device({ tablet }: { tablet: boolean }) {
+  const h = useStage();
   const float = useFloat();
-  return <View style={st.stage} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+  return <View style={[st.stage, { height: h }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
     <Svg style={st.deviceShadow} width={220} height={40}><Defs><RadialGradient id="shadow" cx="50%" cy="50%" rx="50%" ry="50%"><Stop offset="0" stopColor="#06134b" stopOpacity="0.55" /><Stop offset="1" stopColor="#06134b" stopOpacity="0" /></RadialGradient></Defs><Ellipse cx="110" cy="20" rx="110" ry="20" fill="url(#shadow)" /></Svg>
     <Animated.View style={{ transform: [{ translateY: float }, { perspective: 800 }, { rotateY: tablet ? '-14deg' : '-20deg' }, { rotateZ: tablet ? '8deg' : '-10deg' }] }}>
-      <View style={[st.deviceEdge, tablet ? { width: 190, height: 240, borderRadius: 22 } : { width: 140, height: 240, borderRadius: 25 }]}>
+      <View style={[st.deviceEdge, tablet ? { width: h * 0.7, height: h * 0.89, borderRadius: 22 } : { width: h * 0.52, height: h * 0.89, borderRadius: 25 }]}>
         <LinearGradient colors={['#f9fcff', '#698cd9', '#233778', '#cce5ff']} locations={[0, 0.35, 0.65, 1]} start={{ x: 0, y: 0.3 }} end={{ x: 1, y: 0.7 }} style={[StyleSheet.absoluteFill, { borderRadius: tablet ? 22 : 25 }]} />
         <View style={[st.screen, { borderRadius: tablet ? 17 : 20 }]}>
           <LinearGradient colors={['#82e5ff', '#1864ff', '#5031df']} locations={[0, 0.45, 1]} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -41,19 +44,21 @@ function Device({ tablet }: { tablet: boolean }) {
   </View>;
 }
 function Coin() {
+  const h = useStage();
   const float = useFloat();
-  return <View style={st.stage} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+  return <View style={[st.stage, { height: h }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
     <Animated.View style={{ transform: [{ translateY: float }, { perspective: 800 }, { rotateY: '-20deg' }, { rotateZ: '-12deg' }] }}>
-      <View style={st.coinEdge}><LinearGradient colors={['#fff5bc', '#ffcf42', '#df981d']} locations={[0, 0.7, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={st.coin}><Text style={[st.coinText, font(700)]}>R$</Text></LinearGradient></View>
+      <View style={st.coinEdge}><LinearGradient colors={['#fff5bc', '#ffcf42', '#df981d']} locations={[0, 0.7, 1]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[st.coin, { width: h * 0.63, height: h * 0.63, borderRadius: h * 0.32 }]}><Text style={[st.coinText, font(700), { fontSize: h * 0.23 }]}>R$</Text></LinearGradient></View>
     </Animated.View>
     <Text style={[st.floatingSpark, { fontSize: 35, right: '19%', top: '13%' }]}>✦</Text>
   </View>;
 }
 function Vibe({ value }: { value: string }) {
+  const h = useStage();
   const float = useFloat();
-  return <View style={st.stage} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+  return <View style={[st.stage, { height: h }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
     <View style={st.orbit} />
-    <Animated.Image source={vibeImage(value)} style={[st.vibe, { transform: [{ translateY: float }] }]} resizeMode="contain" />
+    <Animated.Image source={vibeImage(value)} style={[st.vibe, { width: h * 0.81, height: h * 0.81, transform: [{ translateY: float }] }]} resizeMode="contain" />
     <Text style={[st.floatingSpark, { fontSize: 27, right: '15%', top: '15%', color: '#d4f6ff' }]}>✦</Text>
   </View>;
 }
