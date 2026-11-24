@@ -9,6 +9,14 @@ appId: br.com.voxcelular.cliente
 - extendedWaitUntil:
     visible: "Novidades"
     timeout: 30000
+- extendedWaitUntil:
+    notVisible: "Carregando produtos…"
+    timeout: 60000
+# Taller screens show the first products: wait for them to render (skipped where they sit below the fold).
+- extendedWaitUntil:
+    visible: ".*Samsung Galaxy A55 5G"
+    timeout: 20000
+    optional: true
 - takeScreenshot: 01-inicio
 
 - tapOn: "Loja"
